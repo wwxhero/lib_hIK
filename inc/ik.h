@@ -1,9 +1,5 @@
 #pragma once
-#ifdef UTRECORDPARSER_EXPORTS
-#define IKAPI __declspec(dllexport)
-#else
-#define IKAPI __declspec(dllimport)
-#endif
+#include "pch.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

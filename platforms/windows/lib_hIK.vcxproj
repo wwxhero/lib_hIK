@@ -241,6 +241,7 @@
       <PreprocessorDefinitions>_DEBUG;UTRECORDPARSER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>../../inc</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -373,13 +374,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="framework.h" />
-    <ClInclude Include="ik.h" />
-    <ClInclude Include="pch.h" />
+    <ClInclude Include="..\..\inc\ik.h" />
+    <ClInclude Include="..\..\inc\pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\ik.cpp" />
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="ik.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='DebugGame|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='DebugGame_Editor|Win32'">Create</PrecompiledHeader>
