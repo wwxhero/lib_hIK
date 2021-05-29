@@ -374,11 +374,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\ik.h" />
+    <ClInclude Include="..\..\inc\articulated_body.h" />
     <ClInclude Include="..\..\inc\pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\ik.cpp" />
+    <ClCompile Include="..\..\src\articulated_body.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='DebugGame|Win32'">Create</PrecompiledHeader>

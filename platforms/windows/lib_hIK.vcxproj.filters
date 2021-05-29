@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\ik.h">
+    <ClInclude Include="..\..\inc\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\pch.h">
+    <ClInclude Include="..\..\inc\articulated_body.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -29,7 +29,7 @@
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\ik.cpp">
+    <ClCompile Include="..\..\src\articulated_body.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

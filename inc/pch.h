@@ -15,9 +15,9 @@
 #endif
 
 #ifdef UTRECORDPARSER_EXPORTS
-#define IKAPI __declspec(dllexport)
+#define HIKAPI __declspec(dllexport)
 #else
-#define IKAPI __declspec(dllimport)
+#define HIKAPI __declspec(dllimport)
 #endif
 
 #endif //PCH_H
