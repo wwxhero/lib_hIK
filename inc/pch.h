@@ -19,10 +19,10 @@
 // calling convention:
 //		https://en.wikipedia.org/wiki/X86_calling_conventions#Microsoft_x64_calling_convention
 #ifdef UTRECORDPARSER_EXPORTS
-#define HIKAPI(rtype, func)\
+#define HIKLIB(rtype, func)\
 	__declspec(dllexport) rtype __stdcall func
 #else
-#define HIKAPI(rtype, func)\
+#define HIKLIB(rtype, func)\
 	__declspec(dllimport) rtype __stdcall func
 #endif
 
