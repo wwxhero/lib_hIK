@@ -4,7 +4,7 @@
 #include <sstream>
 #include <Windows.h>
 #include "ArtiBody.h"
-float HIKAPI ik_test(float theta)
+float ik_test(float theta)
 {
 	//std::stringstream info;
 	//info << theta;

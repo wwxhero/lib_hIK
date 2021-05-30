@@ -14,10 +14,16 @@
 #	include <windows.h>
 #endif
 
+// DLL export C functions:
+//		https://docs.microsoft.com/en-us/cpp/build/exporting-from-a-dll-using-declspec-dllexport?view=msvc-160
+// calling convention:
+//		https://en.wikipedia.org/wiki/X86_calling_conventions#Microsoft_x64_calling_convention
 #ifdef UTRECORDPARSER_EXPORTS
-#define HIKAPI __declspec(dllexport)
+#define HIKAPI(rtype, func)\
+	__declspec(dllexport) rtype __stdcall func
 #else
-#define HIKAPI __declspec(dllimport)
+#define HIKAPI(rtype, func)\
+	__declspec(dllimport) rtype __stdcall func
 #endif
 
 #endif //PCH_H
