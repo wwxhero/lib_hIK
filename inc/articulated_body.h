@@ -24,7 +24,7 @@ struct _TRANSFORM
 {
 	_SCALE s;
 	_ROT r;
-	_TRANSLATE t;
+	_TRANSLATE tt;
 };
 
 #ifdef __cplusplus
