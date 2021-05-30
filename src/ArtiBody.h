@@ -5,6 +5,7 @@ class CArtiBody
 public:
 	CArtiBody(const wchar_t *name
 		, const _TRANSFORM* t_rest_local);
+	~CArtiBody();
 	const wchar_t* GetName_w()
 	{
 		return m_namew.c_str();

@@ -35,3 +35,10 @@ CArtiBody::CArtiBody(const wchar_t *name
 	m_namew = name;
 }
 
+CArtiBody::~CArtiBody()
+{
+	m_parent = NULL;
+	m_firstChild = NULL;
+	m_nextSibling = NULL;
+}
+

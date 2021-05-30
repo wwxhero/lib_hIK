@@ -19,6 +19,12 @@ HBODY create_arti_body_f(const wchar_t* name
 	return body;
 }
 
+void destroy_arti_body(HBODY hBody)
+{
+	CArtiBody* body = reinterpret_cast<CArtiBody*>(hBody);
+	delete body;
+}
+
 void cnn_arti_body(HBODY from, HBODY to, enum CNN type)
 {
 	CArtiBody* body_from = reinterpret_cast<CArtiBody*>(from);
