@@ -49,3 +49,9 @@ HBODY get_next_sibling(HBODY body)
 	CArtiBody* artiBody = reinterpret_cast<CArtiBody*>(body);
 	return artiBody->GetNextSibling();
 }
+
+void get_joint_transform_l2w(HBODY body, _TRANSFORM* tm_l2w)
+{
+	CArtiBody* artiBody = reinterpret_cast<CArtiBody*>(body);
+	CArtiBody::GetJointTransformLocal2World(artiBody, tm_l2w);
+}
