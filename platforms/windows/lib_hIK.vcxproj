@@ -372,6 +372,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\articulated_body.h" />
+    <ClInclude Include="..\..\inc\motion_pipeline.h" />
     <ClInclude Include="..\..\inc\pch.h" />
     <ClInclude Include="..\..\src\ArtiBody.h" />
     <ClInclude Include="..\..\src\Joint.h" />
@@ -381,6 +382,7 @@
     <ClCompile Include="..\..\src\ArtiBody.cpp" />
     <ClCompile Include="..\..\src\articulated_body.cpp" />
     <ClCompile Include="..\..\src\Joint.cpp" />
+    <ClCompile Include="..\..\src\motion_pipeline.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='DebugGame|Win32'">Create</PrecompiledHeader>

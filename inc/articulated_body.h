@@ -1,7 +1,5 @@
 #pragma once
 #include "pch.h"
-#define H_INVALID NULL
-typedef void* HBODY;
 
 enum CNN {FIRSTCHD = 0, NEXTSIB};
 

@@ -26,4 +26,11 @@
 	__declspec(dllimport) rtype __stdcall func
 #endif
 
+#define H_INVALID NULL
+
+typedef void* HBODY;
+typedef void* HMOTIONPIPE;
+typedef void* HPIPELINE;
+
+
 #endif //PCH_H
