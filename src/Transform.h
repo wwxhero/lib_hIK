@@ -1,14 +1,14 @@
 #pragma once
-#include <Eigen/Geometry>
+
 
 class CTransform
 {
 public:
 	CTransform(const _TRANSFORM& tm)
 	{
-		Eigen::Vector3f p(tm.tt.x, tm.tt.y, tm.tt.z);
-		Eigen::Quaternionf r(tm.r.w, tm.r.x, tm.r.y, tm.r.z);
-		Eigen::Vector3f s(tm.s.x, tm.s.y, tm.s.z);
+		Eigen::Vector3r p(tm.tt.x, tm.tt.y, tm.tt.z);
+		Eigen::Quaternionr r(tm.r.w, tm.r.x, tm.r.y, tm.r.z);
+		Eigen::Vector3r s(tm.s.x, tm.s.y, tm.s.z);
 		m_t.fromPositionOrientationScale(p, r, s);
 	}
 
@@ -24,11 +24,11 @@ public:
 
 	void CopyTo(_TRANSFORM& tm)
 	{
-		Eigen::Matrix3f r_m, s_m;
+		Eigen::Matrix3r r_m, s_m;
 		m_t.computeRotationScaling(&r_m, &s_m);
-		Eigen::Quaternionf r(r_m);
-		Eigen::Vector3f s(s_m.diagonal());
-		Eigen::Vector3f t(m_t.translation());
+		Eigen::Quaternionr r(r_m);
+		Eigen::Vector3r s(s_m.diagonal());
+		Eigen::Vector3r t(m_t.translation());
 
 		tm.s.x = s.x();
 		tm.s.y = s.y();
@@ -44,6 +44,6 @@ public:
 		tm.tt.z = t.z();
 	}
 private:
-	Eigen::Affine3f m_t;
+	Eigen::Affine3r m_t;
 };
 
