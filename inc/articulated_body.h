@@ -39,6 +39,7 @@ HIKLIB(HBODY,			get_next_sibling)(HBODY body);
 HIKLIB(const wchar_t*,	body_name_w)(HBODY body);
 HIKLIB(const char*,		body_name_c)(HBODY body);
 HIKLIB(void,			get_joint_transform_l2w)(HBODY body, _TRANSFORM* tm_l2w);
+HIKLIB(void,			get_joint_transform_l2p)(HBODY body, _TRANSFORM* tm_l2w);
 
 
 #ifdef __cplusplus
