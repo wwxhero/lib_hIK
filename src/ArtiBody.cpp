@@ -1,4 +1,6 @@
 #include "pch.h"
+#include <locale>
+#include <codecvt>
 #include "articulated_body.h"
 #include "ArtiBody.h"
 
@@ -54,6 +56,20 @@ CArtiBody::CArtiBody(const wchar_t *name
 					, m_local2parent(*tm_rest_l2p)
 {
 	m_namew = name;
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	m_namec = converter.to_bytes(m_namew);
+}
+
+CArtiBody::CArtiBody(const char *name
+					, const _TRANSFORM* tm_rest_l2p)
+					: m_parent(NULL)
+					, m_firstChild(NULL)
+					, m_nextSibling(NULL)
+					, m_local2parent(*tm_rest_l2p)
+{
+	m_namec = name;
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	m_namew = converter.from_bytes(m_namec);
 }
 
 CArtiBody::~CArtiBody()

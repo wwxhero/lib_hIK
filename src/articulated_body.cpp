@@ -12,7 +12,14 @@ float ik_test(float theta)
 	return -- theta;
 }
 
-HBODY create_arti_body_f(const wchar_t* name
+HBODY create_arti_body_w(const wchar_t* name
+						, const _TRANSFORM* t_rest_local)
+{
+	CArtiBody* body = new CArtiBody(name, t_rest_local);
+	return body;
+}
+
+HBODY create_arti_body_c(const char* name
 						, const _TRANSFORM* t_rest_local)
 {
 	CArtiBody* body = new CArtiBody(name, t_rest_local);
@@ -36,6 +43,12 @@ const wchar_t* body_name_w(HBODY body)
 {
 	CArtiBody* artiBody = reinterpret_cast<CArtiBody*>(body);
 	return artiBody->GetName_w();
+}
+
+const char* body_name_c(HBODY body)
+{
+	CArtiBody* artiBody = reinterpret_cast<CArtiBody*>(body);
+	return artiBody->GetName_c();
 }
 
 HBODY get_first_child(HBODY body)

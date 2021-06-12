@@ -28,9 +28,11 @@
 
 #define H_INVALID NULL
 
+typedef float Real;
 typedef void* HBODY;
 typedef void* HMOTIONPIPE;
 typedef void* HPIPELINE;
+
 
 
 #endif //PCH_H

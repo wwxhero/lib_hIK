@@ -7,11 +7,18 @@ class CArtiBody
 public:
 	CArtiBody(const wchar_t *name
 		, const _TRANSFORM* t_rest_local);
+	CArtiBody(const char *name
+		, const _TRANSFORM* t_rest_local);
 	~CArtiBody();
 	const wchar_t* GetName_w()
 	{
 		return m_namew.c_str();
 	}
+	const char* GetName_c()
+	{
+		return m_namec.c_str();
+	}
+
 	CArtiBody* GetFirstChild()
 	{
 		return m_firstChild;
@@ -26,7 +33,7 @@ public:
 	static void Connect(CArtiBody* body_from, CArtiBody* body_to, CNN type);
 	static void GetJointTransformLocal2World(CArtiBody* body, _TRANSFORM* tm_l2w);
 private:
-	std::string m_name;
+	std::string m_namec;
 	std::wstring m_namew;
 	CArtiBody* m_parent;
 	CArtiBody* m_firstChild;
