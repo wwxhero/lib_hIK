@@ -1,41 +1,41 @@
 #include "pch.h"
 #include "motion_pipeline.h"
 
-HMOTIONPIPE createHomoSpaceMotionPipe(HBODY start, HBODY end)
+
+HMOTIONNODE	create_tree_motion_node(HBODY mo_src)
 {
-	//the articulated bodies are in same coordinate space but in different postures
+	//todo: create a tree node that represents motions that could read from articulated body mo_src
 	return H_INVALID;
 }
 
-HMOTIONPIPE createXSpaceMotionPipe(HBODY start, HBODY end)
+bool motion_sync_cnn_homo(HMOTIONNODE parent, HMOTIONNODE child)
 {
-	//the articulated bodies are in different coordiante space but in same (aligned) posture
-	return H_INVALID;
-}
-
-HPIPELINE createPipeline(HMOTIONPIPE pipe)
-{
-	//a pipe line contains several motion pipes
-	return H_INVALID;
-}
-
-bool appendPipe(HPIPELINE line, HMOTIONPIPE pipe, HMOTIONPIPE pipe_suc)
-{
-	//p == rear(line) -> end(p) == start(pipe)
+	//todo: connection to motion nodes as a homo-space map
 	return false;
 }
 
-void destroyMotionPipe(HMOTIONPIPE pipe)
+bool motion_sync_cnn_cross(HMOTIONNODE parent, HMOTIONNODE child, const char* pairs[][2], int n_pairs)
 {
-
+	//todo: connection to motion nodes as a cross-space map
+	return false;
 }
 
-void executePipeLine(HPIPELINE line)
+void motion_sync(HMOTIONNODE root)
 {
-	// execute the pipe in sequence
+	//todo: sync motions from tree root to leaf
 }
 
-void destroyPipeline(HPIPELINE line)
+void destroy_tree_motion_node(HMOTIONNODE node)
 {
+	//todo: destroy motion node
+}
 
+HMOTIONNODE	get_first_child_mo_node(HMOTIONNODE node)
+{
+	return H_INVALID;
+}
+
+HMOTIONNODE	get_next_sibling_mo_node(HMOTIONNODE node)
+{
+	return H_INVALID;
 }

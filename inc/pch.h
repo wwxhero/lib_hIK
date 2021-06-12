@@ -69,8 +69,8 @@ typedef Transform<Real,3,Affine> Affine3r;
 } // end namespace Eigen
 
 typedef void* HBODY;
-typedef void* HMOTIONPIPE;
-typedef void* HPIPELINE;
+typedef void* HMOTIONNODE;
+
 
 
 

@@ -30,12 +30,12 @@ extern "C" {
 #endif
 
 HIKLIB(float,			ik_test)(float theta);
-HIKLIB(HBODY,			create_arti_body_w)(const wchar_t* name, const _TRANSFORM* tm_l2p);
-HIKLIB(HBODY,			create_arti_body_c)(const char* name, const _TRANSFORM* tm_l2p);
-HIKLIB(void,			destroy_arti_body)(HBODY hBody);
+HIKLIB(HBODY,			create_tree_body_node_w)(const wchar_t* name, const _TRANSFORM* tm_l2p);
+HIKLIB(HBODY,			create_tree_body_node_c)(const char* name, const _TRANSFORM* tm_l2p);
+HIKLIB(void,			destroy_tree_body_node)(HBODY hBody);
 HIKLIB(void,			cnn_arti_body)(HBODY from, HBODY to, enum CNN);
-HIKLIB(HBODY,			get_first_child)(HBODY body);
-HIKLIB(HBODY,			get_next_sibling)(HBODY body);
+HIKLIB(HBODY,			get_first_child_body)(HBODY body);
+HIKLIB(HBODY,			get_next_sibling_body)(HBODY body);
 HIKLIB(const wchar_t*,	body_name_w)(HBODY body);
 HIKLIB(const char*,		body_name_c)(HBODY body);
 HIKLIB(void,			get_joint_transform_l2w)(HBODY body, _TRANSFORM* tm_l2w);

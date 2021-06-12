@@ -12,21 +12,21 @@ float ik_test(float theta)
 	return -- theta;
 }
 
-HBODY create_arti_body_w(const wchar_t* name
+HBODY create_tree_body_node_w(const wchar_t* name
 						, const _TRANSFORM* t_rest_local)
 {
 	CArtiBody* body = new CArtiBody(name, t_rest_local);
 	return body;
 }
 
-HBODY create_arti_body_c(const char* name
+HBODY create_tree_body_node_c(const char* name
 						, const _TRANSFORM* t_rest_local)
 {
 	CArtiBody* body = new CArtiBody(name, t_rest_local);
 	return body;
 }
 
-void destroy_arti_body(HBODY hBody)
+void destroy_tree_body_node(HBODY hBody)
 {
 	CArtiBody* body = reinterpret_cast<CArtiBody*>(hBody);
 	delete body;
@@ -51,13 +51,13 @@ const char* body_name_c(HBODY body)
 	return artiBody->GetName_c();
 }
 
-HBODY get_first_child(HBODY body)
+HBODY get_first_child_body(HBODY body)
 {
 	CArtiBody* artiBody = reinterpret_cast<CArtiBody*>(body);
 	return artiBody->GetFirstChild();
 }
 
-HBODY get_next_sibling(HBODY body)
+HBODY get_next_sibling_body(HBODY body)
 {
 	CArtiBody* artiBody = reinterpret_cast<CArtiBody*>(body);
 	return artiBody->GetNextSibling();
