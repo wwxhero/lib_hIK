@@ -77,12 +77,3 @@ void get_body_transform_l2p(HBODY body, _TRANSFORM* tm_l2w)
 	tm.CopyTo(*tm_l2w);
 }
 
-void set_joint_transform(HBODY body, const _TRANSFORM* delta)
-{
-	//todo: assign transform delta to the articulated body joint
-}
-
-void get_joint_transform(HBODY body, _TRANSFORM* delta)
-{
-
-}

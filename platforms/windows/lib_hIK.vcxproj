@@ -372,6 +372,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\articulated_body.h" />
+    <ClInclude Include="..\..\inc\fk_joint.h" />
     <ClInclude Include="..\..\inc\motion_pipeline.h" />
     <ClInclude Include="..\..\inc\pch.h" />
     <ClInclude Include="..\..\src\ArtiBody.h" />
