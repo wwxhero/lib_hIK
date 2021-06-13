@@ -63,16 +63,26 @@ HBODY get_next_sibling_body(HBODY body)
 	return artiBody->GetNextSibling();
 }
 
-void get_joint_transform_l2w(HBODY body, _TRANSFORM* tm_l2w)
+void get_body_transform_l2w(HBODY body, _TRANSFORM* tm_l2w)
 {
 	CArtiBody* artiBody = reinterpret_cast<CArtiBody*>(body);
 	CArtiBody::GetJointTransformLocal2World(artiBody, tm_l2w);
 }
 
-void get_joint_transform_l2p(HBODY body, _TRANSFORM* tm_l2w)
+void get_body_transform_l2p(HBODY body, _TRANSFORM* tm_l2w)
 {
 	CArtiBody* artiBody = reinterpret_cast<CArtiBody*>(body);
 	CTransform tm;
 	artiBody->GetJointTransformLocal2Parent(tm);
 	tm.CopyTo(*tm_l2w);
+}
+
+void set_joint_transform(HBODY body, const _TRANSFORM* delta)
+{
+	//todo: assign transform delta to the articulated body joint
+}
+
+void get_joint_transform(HBODY body, _TRANSFORM* delta)
+{
+
 }
