@@ -1,4 +1,5 @@
 #include "pch.h"
+#include <queue>
 #include <locale>
 #include <codecvt>
 #include "articulated_body.h"
@@ -28,24 +29,20 @@ void CArtiBody::Connect(CArtiBody* body_from, CArtiBody* body_to, CNN type)
 	*hook[inverse] = target[inverse];
 }
 
-void CArtiBody::GetTransformLocal2Parent(CTransform& l2p)
+void CArtiBody::FK_Update(CArtiBody* root)
 {
-	l2p = m_local2parent0 * m_delta_l;
-}
-
-void CArtiBody::GetTransformLocal2World(CArtiBody* body, _TRANSFORM* tm_l2w)
-{
-	CTransform l2w;
-	body->GetTransformLocal2Parent(l2w);
-	for (CArtiBody* precceeding = body->m_parent
-		; NULL != precceeding
-		; precceeding = precceeding->m_parent)
+	std::queue<CArtiBody*> queBFS;
+	queBFS.push(root);
+	while (!queBFS.empty())
 	{
-		CTransform l2p;
-		precceeding->GetTransformLocal2Parent(l2p);
-		l2w = l2p * l2w;
+		auto body_this = queBFS.front();
+		body_this->FK_UpdateNode();
+		for ( auto body_child = body_this->m_firstChild
+			; NULL != body_child
+			; body_child = body_child->m_nextSibling)
+			queBFS.push(body_child);
+		queBFS.pop();
 	}
-	l2w.CopyTo(*tm_l2w);
 }
 
 void CArtiBody::GetJointTransform(CTransform& delta_l)

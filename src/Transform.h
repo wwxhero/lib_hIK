@@ -50,6 +50,14 @@ public:
 		ret.m_t = m_t * other.m_t;
 		return ret;
 	}
+
+	CTransform inverse() const
+	{
+		CTransform ret;
+		ret.m_t = m_t.inverse();
+		return ret;
+	}
+
 private:
 	Eigen::Affine3r m_t;
 };

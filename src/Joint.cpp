@@ -19,3 +19,9 @@ void get_joint_transform(HBODY body, _TRANSFORM* tm_l)
 	artiBody->GetJointTransform(tm);
 	tm.CopyTo(*tm_l);
 }
+
+void update_fk(HBODY root)
+{
+	CArtiBody* artiBody = reinterpret_cast<CArtiBody*>(root);
+	CArtiBody::FK_Update(artiBody);
+}
