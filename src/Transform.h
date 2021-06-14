@@ -14,6 +14,7 @@ public:
 
 	CTransform()
 	{
+		m_t = Eigen::Affine3r::Identity();
 	}
 
 	CTransform& operator*(const CTransform& second)

@@ -28,10 +28,12 @@ public:
 		return m_nextSibling;
 	}
 
-	void GetJointTransformLocal2Parent(CTransform& l2p);
+	void GetTransformLocal2Parent(CTransform& l2p);
+	void GetJointTransform(CTransform& delta);
+	void SetJointTransform(const CTransform& delta);
 
 	static void Connect(CArtiBody* body_from, CArtiBody* body_to, CNN type);
-	static void GetJointTransformLocal2World(CArtiBody* body, _TRANSFORM* tm_l2w);
+	static void GetTransformLocal2World(CArtiBody* body, _TRANSFORM* tm_l2w);
 private:
 	std::string m_namec;
 	std::wstring m_namew;
@@ -39,5 +41,6 @@ private:
 	CArtiBody* m_firstChild;
 	CArtiBody* m_nextSibling;
 	//CJoint* m_joint;
-	CTransform m_local2parent;
+	CTransform m_local2parent0;
+	CTransform m_delta_l;
 };
