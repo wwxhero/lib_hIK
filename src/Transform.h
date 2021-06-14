@@ -12,14 +12,14 @@ public:
 		m_t.fromPositionOrientationScale(p, r, s);
 	}
 
-	CTransform()
+	CTransform(const CTransform& tm)
 	{
+		m_t = tm.m_t;
 	}
 
-	CTransform& operator*(const CTransform& second)
+	CTransform()
 	{
-		m_t = m_t * second.m_t;
-		return *this;
+		m_t = Eigen::Affine3r::Identity();
 	}
 
 	void CopyTo(_TRANSFORM& tm)
@@ -43,6 +43,21 @@ public:
 		tm.tt.y = t.y();
 		tm.tt.z = t.z();
 	}
+
+	CTransform operator* (const CTransform& other) const
+	{
+		CTransform ret;
+		ret.m_t = m_t * other.m_t;
+		return ret;
+	}
+
+	CTransform inverse() const
+	{
+		CTransform ret;
+		ret.m_t = m_t.inverse();
+		return ret;
+	}
+
 private:
 	Eigen::Affine3r m_t;
 };

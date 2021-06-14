@@ -1,4 +1,5 @@
 #include "pch.h"
+#include <queue>
 #include <locale>
 #include <codecvt>
 #include "articulated_body.h"
@@ -28,24 +29,30 @@ void CArtiBody::Connect(CArtiBody* body_from, CArtiBody* body_to, CNN type)
 	*hook[inverse] = target[inverse];
 }
 
-void CArtiBody::GetJointTransformLocal2Parent(CTransform& l2p)
+void CArtiBody::FK_Update(CArtiBody* root)
 {
-	l2p = m_local2parent;
+	std::queue<CArtiBody*> queBFS;
+	queBFS.push(root);
+	while (!queBFS.empty())
+	{
+		auto body_this = queBFS.front();
+		body_this->FK_UpdateNode();
+		for ( auto body_child = body_this->m_firstChild
+			; NULL != body_child
+			; body_child = body_child->m_nextSibling)
+			queBFS.push(body_child);
+		queBFS.pop();
+	}
 }
 
-void CArtiBody::GetJointTransformLocal2World(CArtiBody* body, _TRANSFORM* tm_l2w)
+void CArtiBody::GetJointTransform(CTransform& delta_l)
 {
-	CTransform l2w;
-	body->GetJointTransformLocal2Parent(l2w);
-	for (CArtiBody* precceeding = body->m_parent
-		; NULL != precceeding
-		; precceeding = precceeding->m_parent)
-	{
-		CTransform l2p;
-		precceeding->GetJointTransformLocal2Parent(l2p);
-		l2w = l2p * l2w;
-	}
-	l2w.CopyTo(*tm_l2w);
+	delta_l = m_delta_l;
+}
+
+void CArtiBody::SetJointTransform(const CTransform& delta_l)
+{
+	m_delta_l = delta_l;
 }
 
 CArtiBody::CArtiBody(const wchar_t *name
@@ -53,7 +60,7 @@ CArtiBody::CArtiBody(const wchar_t *name
 					: m_parent(NULL)
 					, m_firstChild(NULL)
 					, m_nextSibling(NULL)
-					, m_local2parent(*tm_rest_l2p)
+					, m_local2parent0(*tm_rest_l2p)
 {
 	m_namew = name;
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
@@ -65,7 +72,7 @@ CArtiBody::CArtiBody(const char *name
 					: m_parent(NULL)
 					, m_firstChild(NULL)
 					, m_nextSibling(NULL)
-					, m_local2parent(*tm_rest_l2p)
+					, m_local2parent0(*tm_rest_l2p)
 {
 	m_namec = name;
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
