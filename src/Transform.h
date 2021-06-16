@@ -1,6 +1,5 @@
 #pragma once
-
-
+#include "articulated_body.h"
 class CTransform
 {
 public:
