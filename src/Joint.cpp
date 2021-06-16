@@ -20,6 +20,12 @@ void get_joint_transform(HBODY body, _TRANSFORM* tm_l)
 	tm.CopyTo(*tm_l);
 }
 
+void initialize_kina(HBODY root)
+{
+	CArtiBody* artiBody = reinterpret_cast<CArtiBody*>(root);
+	CArtiBody::KINA_Initialize(artiBody);
+}
+
 void update_fk(HBODY root)
 {
 	CArtiBody* artiBody = reinterpret_cast<CArtiBody*>(root);

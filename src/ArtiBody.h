@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <list>
 #include "Joint.h"
 #include "Transform.h"
 class CArtiBody
@@ -43,6 +44,7 @@ public:
 	void SetJointTransform(const CTransform& delta);
 
 	static void Connect(CArtiBody* body_from, CArtiBody* body_to, CNN type);
+	static void KINA_Initialize(CArtiBody* root);
 	static void FK_Update(CArtiBody* root);
 private:
 	inline void FK_UpdateNode()
@@ -57,6 +59,8 @@ private:
 		// m_world2local_cached = m_parent2local_cached * m_parent->m_world2local_cached;
 		m_world2local_cached = m_local2world_cached.inverse();
 	}
+private:
+	std::list<CArtiBody*> m_kinalst;
 private:
 	std::string m_namec;
 	std::wstring m_namew;

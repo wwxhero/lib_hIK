@@ -1,5 +1,6 @@
 #include "pch.h"
 #include <queue>
+#include <stack>
 #include <locale>
 #include <codecvt>
 #include "articulated_body.h"
@@ -29,20 +30,69 @@ void CArtiBody::Connect(CArtiBody* body_from, CArtiBody* body_to, CNN type)
 	*hook[inverse] = target[inverse];
 }
 
+template<typename LAMaccessEnter, typename LAMaccessLeave>
+inline void TraverseDFS_botree_nonrecur(CArtiBody* root, LAMaccessEnter OnEnterBody, LAMaccessLeave OnLeaveBody)
+{
+	assert(H_INVALID != root);
+	typedef struct _EDGE
+	{
+		CArtiBody* body_this;
+		CArtiBody* body_child;
+	} EDGE;
+	std::stack<EDGE> stkDFS;
+	stkDFS.push({ root, root->GetFirstChild() });
+	//printArtName(body_name_w(root), 0);
+	OnEnterBody(root);
+	while (!stkDFS.empty())
+	{
+		EDGE &edge = stkDFS.top();
+		// size_t n_indent = stkDFS.size();
+		if (H_INVALID == edge.body_child)
+		{
+			stkDFS.pop();
+			OnLeaveBody(edge.body_this);
+		}
+		else
+		{
+			//printArtName(body_name_w(edge.body_child), n_indent);
+			OnEnterBody(edge.body_child);
+			CArtiBody* body_grandchild = edge.body_child->GetFirstChild();
+			CArtiBody* body_nextchild = edge.body_child->GetNextSibling();
+			stkDFS.push({ edge.body_child, body_grandchild });
+			edge.body_child = body_nextchild;
+		}
+	}
+}
+
+void CArtiBody::KINA_Initialize(CArtiBody* root)
+{
+	auto onEnterBody = [](CArtiBody* node_this)
+					{
+						node_this->m_kinalst.clear();
+						node_this->m_kinalst.push_back(node_this);
+					};
+
+	auto onLeaveBody = [](CArtiBody* node_this)
+					{
+						auto& this_kinalst = node_this->m_kinalst;
+						for (auto node_child = node_this->GetFirstChild();
+							node_child != NULL;
+							node_child = node_child->GetNextSibling())
+						{
+							const auto& child_kinalst = node_child->m_kinalst;
+							this_kinalst.insert(this_kinalst.end(),
+												child_kinalst.begin(),
+												child_kinalst.end());
+						}
+					};
+
+	TraverseDFS_botree_nonrecur(root, onEnterBody, onLeaveBody);
+}
+
 void CArtiBody::FK_Update(CArtiBody* root)
 {
-	std::queue<CArtiBody*> queBFS;
-	queBFS.push(root);
-	while (!queBFS.empty())
-	{
-		auto body_this = queBFS.front();
-		body_this->FK_UpdateNode();
-		for ( auto body_child = body_this->m_firstChild
-			; NULL != body_child
-			; body_child = body_child->m_nextSibling)
-			queBFS.push(body_child);
-		queBFS.pop();
-	}
+	for (auto body : root->m_kinalst)
+		body->FK_UpdateNode();
 }
 
 void CArtiBody::GetJointTransform(CTransform& delta_l)

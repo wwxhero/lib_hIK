@@ -10,6 +10,7 @@ extern "C" {
 
 HIKLIB(void,	set_joint_transform)(HBODY body, const _TRANSFORM* tm_l);
 HIKLIB(void,	get_joint_transform)(HBODY body, _TRANSFORM* tm_l);
+HIKLIB(void,	initialize_kina)(HBODY body);
 HIKLIB(void,	update_fk)(HBODY body);
 
 #ifdef __cplusplus
