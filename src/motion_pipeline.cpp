@@ -5,7 +5,7 @@
 HMOTIONNODE	create_tree_motion_node(HBODY mo_src)
 {
 	//todo: create a tree node that represents motions of the articulated body mo_src
-	CArtiBody* body = reinterpret_cast<CArtiBody*>(mo_src);
+	CArtiBodyNode* body = reinterpret_cast<CArtiBodyNode*>(mo_src);
 	CMoNode* mo = new CMoNode(body);
 	return mo;
 }

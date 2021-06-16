@@ -7,17 +7,15 @@
 #include "ArtiBody.h"
 
 
-
-
-void CArtiBody::KINA_Initialize(CArtiBody* root)
+void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 {
-	auto onEnterBody = [](CArtiBody* node_this)
+	auto onEnterBody = [](CArtiBodyNode* node_this)
 					{
 						node_this->m_kinalst.clear();
 						node_this->m_kinalst.push_back(node_this);
 					};
 
-	auto onLeaveBody = [](CArtiBody* node_this)
+	auto onLeaveBody = [](CArtiBodyNode* node_this)
 					{
 						auto& this_kinalst = node_this->m_kinalst;
 						for (auto node_child = node_this->GetFirstChild();
@@ -31,28 +29,28 @@ void CArtiBody::KINA_Initialize(CArtiBody* root)
 						}
 					};
 
-	Tree<CArtiBody>::TraverseDFS_botree_nonrecur(root, onEnterBody, onLeaveBody);
+	Tree<CArtiBodyNode>::TraverseDFS_botree_nonrecur(root, onEnterBody, onLeaveBody);
 }
 
-void CArtiBody::FK_Update(CArtiBody* root)
+void CArtiBodyTree::FK_Update(CArtiBodyNode* root)
 {
 	for (auto body : root->m_kinalst)
 		body->FK_UpdateNode();
 }
 
-void CArtiBody::GetJointTransform(CTransform& delta_l)
+void CArtiBodyNode::GetJointTransform(CTransform& delta_l)
 {
 	delta_l = m_delta_l;
 }
 
-void CArtiBody::SetJointTransform(const CTransform& delta_l)
+void CArtiBodyNode::SetJointTransform(const CTransform& delta_l)
 {
 	m_delta_l = delta_l;
 }
 
-CArtiBody::CArtiBody(const wchar_t *name
+CArtiBodyNode::CArtiBodyNode(const wchar_t *name
 					, const _TRANSFORM* tm_rest_l2p)
-					: TreeNode<CArtiBody>()
+					: TreeNode<CArtiBodyNode>()
 					, m_local2parent0(*tm_rest_l2p)
 {
 	m_namew = name;
@@ -60,9 +58,9 @@ CArtiBody::CArtiBody(const wchar_t *name
 	m_namec = converter.to_bytes(m_namew);
 }
 
-CArtiBody::CArtiBody(const char *name
+CArtiBodyNode::CArtiBodyNode(const char *name
 					, const _TRANSFORM* tm_rest_l2p)
-					: TreeNode<CArtiBody>()
+					: TreeNode<CArtiBodyNode>()
 					, m_local2parent0(*tm_rest_l2p)
 {
 	m_namec = name;
@@ -70,7 +68,7 @@ CArtiBody::CArtiBody(const char *name
 	m_namew = converter.from_bytes(m_namec);
 }
 
-CArtiBody::~CArtiBody()
+CArtiBodyNode::~CArtiBodyNode()
 {
 	m_parent = NULL;
 	m_firstChild = NULL;

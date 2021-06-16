@@ -98,14 +98,15 @@ public:
 
 };
 
-class CArtiBody : public TreeNode<CArtiBody>
+class CArtiBodyNode : public TreeNode<CArtiBodyNode>
 {
+	friend class CArtiBodyTree;
 public:
-	CArtiBody(const wchar_t *name
+	CArtiBodyNode(const wchar_t *name
 		, const _TRANSFORM* t_rest_local);
-	CArtiBody(const char *name
+	CArtiBodyNode(const char *name
 		, const _TRANSFORM* t_rest_local);
-	~CArtiBody();
+	~CArtiBodyNode();
 	const wchar_t* GetName_w()
 	{
 		return m_namew.c_str();
@@ -128,9 +129,6 @@ public:
 	void GetJointTransform(CTransform& delta);
 	void SetJointTransform(const CTransform& delta);
 
-
-	static void KINA_Initialize(CArtiBody* root);
-	static void FK_Update(CArtiBody* root);
 private:
 	inline void FK_UpdateNode()
 	{
@@ -145,7 +143,7 @@ private:
 		m_world2local_cached = m_local2world_cached.inverse();
 	}
 private:
-	std::list<CArtiBody*> m_kinalst;
+	std::list<CArtiBodyNode*> m_kinalst;
 private:
 	std::string m_namec;
 	std::wstring m_namew;
@@ -158,4 +156,11 @@ private:
 	CTransform m_parent2local_cached;
 	CTransform m_local2world_cached;
 	CTransform m_world2local_cached;
+};
+
+class CArtiBodyTree : Tree<CArtiBodyNode>
+{
+public:
+	static void KINA_Initialize(CArtiBodyNode* root);
+	static void FK_Update(CArtiBodyNode* root);
 };

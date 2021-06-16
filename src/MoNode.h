@@ -3,7 +3,7 @@
 class CMoNode
 {
 public:
-	CMoNode(CArtiBody* body)
+	CMoNode(CArtiBodyNode* body)
 	{
 
 	}
