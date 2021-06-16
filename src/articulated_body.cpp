@@ -36,7 +36,7 @@ void cnn_arti_body(HBODY from, HBODY to, enum CNN type)
 {
 	CArtiBody* body_from = reinterpret_cast<CArtiBody*>(from);
 	CArtiBody* body_to = reinterpret_cast<CArtiBody*>(to);
-	CArtiBody::Connect(body_from, body_to, type);
+	Tree<CArtiBody>::Connect(body_from, body_to, type);
 }
 
 const wchar_t* body_name_w(HBODY body)
