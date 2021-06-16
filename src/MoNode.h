@@ -3,7 +3,6 @@
 class CMoNode
 {
 public:
-	enum CNN_TYPE {homo, cross};
 	CMoNode(CArtiBody* body)
 	{
 
@@ -23,7 +22,12 @@ public:
 	{
 		return NULL;
 	}
+};
 
-	static bool Connect(CMoNode* parent, CMoNode* child, CNN_TYPE type, const char* pairs[][2], int n_pairs);
+class CMoTree
+{
+public:
+	enum EDGE { homo = 0, cross };
+	static bool Connect(CMoNode* parent, CMoNode* child, CNN cnn_type, EDGE e_type, const char* pairs[][2], int n_pairs);
 	static void Motion_sync(CMoNode* root);
 };

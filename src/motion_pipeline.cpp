@@ -17,27 +17,27 @@ void destroy_tree_motion_node(HMOTIONNODE node)
 	delete mo;
 }
 
-bool motion_sync_cnn_homo(HMOTIONNODE parent, HMOTIONNODE child)
+bool motion_sync_cnn_homo(HMOTIONNODE parent, HMOTIONNODE child, CNN type, const char* pairs[][2], int n_pairs)
 {
 	//todo: connection to motion nodes as a homo-space map
 	CMoNode* mo_parent = reinterpret_cast<CMoNode*>(parent);
 	CMoNode* mo_child = reinterpret_cast<CMoNode*>(child);
-	return CMoNode::Connect(mo_parent, mo_child, CMoNode::homo, NULL, 0);
+	return CMoTree::Connect(mo_parent, mo_child, type, CMoTree::homo, pairs, n_pairs);
 }
 
-bool motion_sync_cnn_cross(HMOTIONNODE parent, HMOTIONNODE child, const char* pairs[][2], int n_pairs)
+bool motion_sync_cnn_cross(HMOTIONNODE parent, HMOTIONNODE child, CNN type, const char* pairs[][2], int n_pairs)
 {
 	//todo: connection to motion nodes as a cross-space map
 	CMoNode* mo_parent = reinterpret_cast<CMoNode*>(parent);
 	CMoNode* mo_child = reinterpret_cast<CMoNode*>(child);
-	return CMoNode::Connect(mo_parent, mo_child, CMoNode::cross, pairs, n_pairs);
+	return CMoTree::Connect(mo_parent, mo_child, type, CMoTree::cross, pairs, n_pairs);
 }
 
 void motion_sync(HMOTIONNODE root)
 {
 	//todo: sync motions from tree root to leaf
 	CMoNode* mo_root = reinterpret_cast<CMoNode*>(root);
-	CMoNode::Motion_sync(mo_root);
+	CMoTree::Motion_sync(mo_root);
 }
 
 HMOTIONNODE	get_first_child_mo_node(HMOTIONNODE node)
