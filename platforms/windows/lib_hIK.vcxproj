@@ -381,6 +381,7 @@
     <ClInclude Include="..\..\src\Joint.h" />
     <ClInclude Include="..\..\src\MoNode.h" />
     <ClInclude Include="..\..\src\Transform.h" />
+    <ClInclude Include="..\..\src\treebase.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\ArtiBody.cpp" />
