@@ -1,6 +1,10 @@
 #include "pch.h"
 #include "MoNode.h"
 
+enum TM_TYPE { homo = 0, cross, identity };
+
+const char* CMoNode::TM_TYPE_STR[] = {"homo", "cross", "identity"};
+
 bool CMoNode::MoCNN_Initialize(TM_TYPE tm_type)
 {
 	m_tmType = tm_type;
@@ -42,6 +46,7 @@ bool CMoNode::MoCNN_Initialize(TM_TYPE tm_type)
 
 bool CMoNode::MoCNN_Initialize(TM_TYPE tm_type, const char* name_pairs[][2], int n_pairs)
 {
+	assert(n_pairs > 0);
 	m_tmType = tm_type;
 	std::map<std::string, const CArtiBodyNode*>	bodies_from;
 	std::map<std::string, CArtiBodyNode*>		bodies_to;
@@ -89,9 +94,16 @@ bool CMoTree::Connect(CMoNode* parent, CMoNode* child, CNN cnn_type, CMoNode::TM
 	Tree<CMoNode>::Connect(parent, child, cnn_type);
 	bool connected = false;
 	if (n_pairs > 0)
-		connected = child->MoCNN_Initialize(tm_type, pairs, n_pairs);
+		child->MoCNN_Initialize(tm_type, pairs, n_pairs);
 	else
-		connected = child->MoCNN_Initialize(tm_type);
+		child->MoCNN_Initialize(tm_type);
+	return connected;
+}
+
+bool CMoTree::Connect(CMoNode* parent, CMoNode* child, CNN cnn_type, CMoNode::TM_TYPE tm_type)
+{
+	Tree<CMoNode>::Connect(parent, child, cnn_type);
+	bool connected = child->MoCNN_Initialize(tm_type);
 	return connected;
 }
 

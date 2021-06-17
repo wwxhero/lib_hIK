@@ -379,6 +379,7 @@
     <ClInclude Include="..\..\inc\pch.h" />
     <ClInclude Include="..\..\src\ArtiBody.h" />
     <ClInclude Include="..\..\src\Joint.h" />
+    <ClInclude Include="..\..\src\Logger.h" />
     <ClInclude Include="..\..\src\MoNode.h" />
     <ClInclude Include="..\..\src\Transform.h" />
     <ClInclude Include="..\..\src\treebase.h" />
@@ -387,6 +388,7 @@
     <ClCompile Include="..\..\src\ArtiBody.cpp" />
     <ClCompile Include="..\..\src\articulated_body.cpp" />
     <ClCompile Include="..\..\src\Joint.cpp" />
+    <ClCompile Include="..\..\src\Logger.cpp" />
     <ClCompile Include="..\..\src\MoNode.cpp" />
     <ClCompile Include="..\..\src\motion_pipeline.cpp" />
     <ClCompile Include="dllmain.cpp" />

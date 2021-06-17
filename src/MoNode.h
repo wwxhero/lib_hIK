@@ -2,13 +2,14 @@
 #include <vector>
 #include <map>
 #include "ArtiBody.h"
-
+#include "Logger.h"
 typedef CArtiBodyNode CJoint; //CJoint is yet to be developed
 
 class CMoNode : public TreeNode<CMoNode>
 {
 public:
 	enum TM_TYPE { homo = 0, cross, identity };
+	static const char* TM_TYPE_STR[];
 private:
 	struct JointPair
 	{
@@ -83,6 +84,12 @@ public:
 			 		break;
 			}
 			j_to->SetJointTransform(delta_to);
+#ifdef _DEBUG
+			std::stringstream logInfo;
+			logInfo << TM_TYPE_STR[m_tmType] << j_from->GetName_c() <<":" << delta_from.ToString().c_str() << "\n"
+					<< "\t" << TM_TYPE_STR[m_tmType] << j_to->GetName_c() << ":" <<  delta_to.ToString().c_str() << "\n";
+			g_logger.Out(logInfo.str());
+#endif
 		}
 		CArtiBodyTree::FK_Update(m_hostee);
 	}
@@ -97,5 +104,6 @@ class CMoTree : public Tree<CMoNode>
 {
 public:
 	static bool Connect(CMoNode* parent, CMoNode* child, CNN cnn_type, CMoNode::TM_TYPE tm_type, const char* pairs[][2], int n_pairs);
+	static bool Connect(CMoNode* parent, CMoNode* child, CNN cnn_type, CMoNode::TM_TYPE tm_type);
 	static void Motion_sync(CMoNode* root);
 };

@@ -21,7 +21,7 @@ public:
 		m_t = Eigen::Affine3r::Identity();
 	}
 
-	void CopyTo(_TRANSFORM& tm)
+	void CopyTo(_TRANSFORM& tm) const
 	{
 		Eigen::Matrix3r r_m, s_m;
 		m_t.computeRotationScaling(&r_m, &s_m);
@@ -55,6 +55,20 @@ public:
 		CTransform ret;
 		ret.m_t = m_t.inverse();
 		return ret;
+	}
+
+	std::string ToString() const
+	{
+		_TRANSFORM tm;
+		CopyTo(tm);
+		const unsigned int szBuff = 1024;
+		char info[szBuff] = {0};
+		sprintf_s(info, szBuff, "s[%.4f\t%.4f\t%.4f], r[%.4f\t%.4f\t%.4f\t%.4f], tt[%.4f\t%.4f\t%.4f]"
+					, tm.s.x, tm.s.y, tm.s.z
+					, tm.r.w, tm.r.x, tm.r.y, tm.r.z
+					, tm.tt.x, tm.tt.y, tm.tt.z);
+		std::string strInfo(info);
+		return strInfo;
 	}
 
 private:
