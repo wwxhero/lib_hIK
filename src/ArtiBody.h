@@ -10,6 +10,7 @@
 class CArtiBodyNode : public TreeNode<CArtiBodyNode>
 {
 	friend class CArtiBodyTree;
+	friend class CMoNode;		//for accessing m_kinalst
 public:
 	CArtiBodyNode(const wchar_t *name
 		, const _TRANSFORM* t_rest_local);
@@ -25,14 +26,24 @@ public:
 		return m_namec.c_str();
 	}
 
-	void GetTransformLocal2Parent(CTransform& l2p)
+	void GetTransformLocal2Parent(CTransform& l2p) const
 	{
 		l2p = m_local2parent_cached;
 	}
 
-	void GetTransformLocal2World(CTransform& l2w)
+	void GetTransformParent2Local(CTransform& p2l) const
+	{
+		p2l = m_parent2local_cached;
+	}
+
+	void GetTransformLocal2World(CTransform& l2w) const
 	{
 		l2w = m_local2world_cached;
+	}
+
+	void GetTransformWorld2Local(CTransform& w2l) const
+	{
+		w2l = m_world2local_cached;
 	}
 
 	void GetJointTransform(CTransform& delta);
