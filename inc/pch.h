@@ -79,4 +79,6 @@ typedef void* HMOTIONNODE;
 #define new DEBUG_NEW
 #endif
 
+const Real c_epsilon = 1e-5;
+
 #endif //PCH_H

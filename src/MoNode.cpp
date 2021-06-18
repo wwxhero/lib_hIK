@@ -35,7 +35,7 @@ bool CMoNode::MoCNN_Initialize(TM_TYPE tm_type)
 			{
 				const CArtiBodyNode* bodyPair[] = {*it_body_from, *it_body_to};
 				JointPair* pair = (m_jointPairs[i_pair ++] = new JointPair);
-				InitJointPair(pair, bodyPair, tm_type);
+				ok = InitJointPair(pair, bodyPair, tm_type);
 			}
 		}
 	}
@@ -82,7 +82,7 @@ bool CMoNode::MoCNN_Initialize(TM_TYPE tm_type, const char* name_pairs[][2], int
 				it_j_from->second,
 				it_j_to->second
 			};
-			InitJointPair(pair, artiPair, tm_type);
+			ok = InitJointPair(pair, artiPair, tm_type);
 		}
 	}
 	assert(ok && "the given pair should be consistant with the given arti body");
@@ -94,9 +94,9 @@ bool CMoTree::Connect(CMoNode* parent, CMoNode* child, CNN cnn_type, CMoNode::TM
 	Tree<CMoNode>::Connect(parent, child, cnn_type);
 	bool connected = false;
 	if (n_pairs > 0)
-		child->MoCNN_Initialize(tm_type, pairs, n_pairs);
+		connected = child->MoCNN_Initialize(tm_type, pairs, n_pairs);
 	else
-		child->MoCNN_Initialize(tm_type);
+		connected = child->MoCNN_Initialize(tm_type);
 	return connected;
 }
 

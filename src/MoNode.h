@@ -19,26 +19,42 @@ private:
 		CTransform to2from;
 	};
 
-	inline void InitJointPair(JointPair* pair, const CArtiBodyNode* artiPair[2], TM_TYPE tm_type)
+	inline bool InitJointPair(JointPair* pair, const CArtiBodyNode* artiPair[2], TM_TYPE tm_type)
 	{
 		pair->j_from = (CJoint *)artiPair[0]; // todo: need a real joint
 		pair->j_to = (CJoint *)artiPair[1];
-		if (cross == tm_type)
+		bool has_parent_0 = (NULL != artiPair[0]->GetParent());
+		bool has_parent_1 = (NULL != artiPair[1]->GetParent());
+		bool name_match = (0 == strcmp(artiPair[0]->GetName_c(), artiPair[1]->GetName_c()));
+		bool ok = (has_parent_0 == has_parent_1
+				&& name_match);
+		if (ok)
 		{
-			CTransform from2world, world2to;
-			artiPair[0]->GetTransformLocal2World(from2world);
-			artiPair[1]->GetTransformWorld2Local(world2to);
-			pair->from2to = world2to * from2world;
-			pair->to2from = pair->from2to.inverse();
+			if (cross == tm_type)
+			{
+				CTransform from2world, world2to;
+				artiPair[0]->GetTransformLocal2World(from2world);
+				artiPair[1]->GetTransformWorld2Local(world2to);
+				pair->from2to = world2to * from2world;
+				pair->to2from = pair->from2to.inverse();
+			}
+			else if(homo == tm_type)
+			{
+				CTransform bound_from, bound_to_inv;
+				artiPair[0]->GetTransformLocal2Parent(bound_from);
+				artiPair[1]->GetTransformParent2Local(bound_to_inv);
+				pair->from2to = bound_to_inv * bound_from;
+				// pair->to2from = pair->from2to.inverse(); to2from is not used for homo transformation
+				if (has_parent_1)
+					ok = !pair->from2to.HasTT();
+				else
+					pair->from2to.SetTT(0, 0, 0);
+			}
 		}
-		else if(homo == tm_type)
-		{
-			CTransform bound_from, bound_to_inv;
-			artiPair[0]->GetTransformLocal2Parent(bound_from);
-			artiPair[1]->GetTransformParent2Local(bound_to_inv);
-			pair->from2to = bound_to_inv * bound_from;
-			// pair->to2from = pair->from2to.inverse(); to2from is not used for homo transformation
-		}
+
+		bool homo_has_no_tt = (homo != tm_type || !pair->from2to.HasTT());
+		assert(homo_has_no_tt);
+		return ok;
 	}
 	inline void UnInitJointPair(JointPair* pair)
 	{

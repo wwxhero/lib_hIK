@@ -71,6 +71,16 @@ public:
 		return strInfo;
 	}
 
+	void SetTT(Real x, Real y, Real z)
+	{
+		m_t.translation() = Eigen::Vector3r(x, y, z);
+	}
+
+	bool HasTT() const
+	{
+		Eigen::Vector3r tt = m_t.translation();
+		return tt.norm() > c_epsilon;
+	}
 private:
 	Eigen::Affine3r m_t;
 };

@@ -23,6 +23,10 @@ public:
 	{
 		return m_nextSibling;
 	}
+	This* GetParent() const
+	{
+		return m_parent;
+	}
 
 protected:
 	This* m_parent;

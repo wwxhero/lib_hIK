@@ -17,11 +17,11 @@ public:
 	CArtiBodyNode(const char *name
 		, const _TRANSFORM* t_rest_local);
 	~CArtiBodyNode();
-	const wchar_t* GetName_w()
+	const wchar_t* GetName_w() const
 	{
 		return m_namew.c_str();
 	}
-	const char* GetName_c()
+	const char* GetName_c() const
 	{
 		return m_namec.c_str();
 	}
