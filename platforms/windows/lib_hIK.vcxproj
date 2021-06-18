@@ -380,6 +380,7 @@
     <ClInclude Include="..\..\src\ArtiBody.h" />
     <ClInclude Include="..\..\src\Joint.h" />
     <ClInclude Include="..\..\src\ik_logger.h" />
+    <ClInclude Include="..\..\src\loggerSrv_i.h" />
     <ClInclude Include="..\..\src\MoNode.h" />
     <ClInclude Include="..\..\src\Transform.h" />
     <ClInclude Include="..\..\src\treebase.h" />
@@ -389,6 +390,9 @@
     <ClCompile Include="..\..\src\articulated_body.cpp" />
     <ClCompile Include="..\..\src\Joint.cpp" />
     <ClCompile Include="..\..\src\ik_logger.cpp" />
+    <ClCompile Include="..\..\src\loggerfast_win.cpp" />
+    <ClCompile Include="..\..\src\loggerSrv_i.c" />
+    <ClCompile Include="..\..\src\loggerSrv_p.c" />
     <ClCompile Include="..\..\src\MoNode.cpp" />
     <ClCompile Include="..\..\src\motion_pipeline.cpp" />
     <ClCompile Include="dllmain.cpp" />
