@@ -19,7 +19,6 @@
 /* @@MIDL_FILE_HEADING(  ) */
 
 
-
 #ifdef __cplusplus
 extern "C"{
 #endif 

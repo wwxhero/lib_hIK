@@ -1,10 +1,11 @@
+#include "pch.h"
 #include <windows.h>
 #include <comutil.h>
 #include <comdef.h>
 #include <cstdlib>
 #include "loggerSrv_i.h"
 #include "loggerfast.h"
-#include "BLI_assert.h"
+
 
 void SimpleUTF16(const char* src, unsigned int len, wchar_t* dst)
 {
@@ -57,7 +58,7 @@ LoggerFast::LoggerFast() throw(...)
 	{
 		m_pLogger = NULL;
 		const char* error = "Logger not installed on the platform";
-		BLI_assert(0);
+		assert(0);
 		throw error;
 	}
 	InitializeCriticalSection(&m_cs);
@@ -95,12 +96,12 @@ int LoggerFast::Out(const char* _Format, va_list _ArgList)
 	#pragma warning(disable: 4996) // Deprecation
 	_Result = _vsprintf_l(m_pFmtBuff, _Format, NULL, _ArgList);
 	#pragma warning(pop)
-	BLI_assert(_Result < c_fmtBuffSz);
+	assert(_Result < (int)c_fmtBuffSz);
 	if (_Result > 0)
 	{
 		SimpleUTF16(m_pFmtBuff, _Result, m_pFmtBuffw);
 		_bstr_t data(m_pFmtBuffw);
-		BLI_assert(_Result == data.length());
+		assert(_Result == data.length());
 		m_pLogger->LogOut(data);
 	}
 	LeaveCriticalSection(&m_cs);

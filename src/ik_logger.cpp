@@ -1,8 +1,5 @@
-#include <stdio.h>
+#include "pch.h"
 #include "ik_logger.h"
-#include "BLI_assert.h"
-#include "DNA_constraint_types.h"
-#include "DNA_action_types.h"
 #include "loggerfast.h"
 
 const char *file_short(const char *file_f)
@@ -20,7 +17,7 @@ const char *file_short(const char *file_f)
 		if (*p == DELIMITER)
 			p_delim = p;
 	}
-	BLI_assert(NULL != p_delim);
+	assert(NULL != p_delim);
 	return ++ p_delim;
 }
 
@@ -204,7 +201,8 @@ void LogInfoFlag(short flag, FlagText* dfns, unsigned short n_dfn, const char* f
 
 void LogInfoEnum(short flag, EnumText* dfns, unsigned short n_dfn, const char* file, unsigned int line, const char* token)
 {
-	char str_flags[1024] = {0};
+	const int len_str_flags = 1024;
+	char str_flags[len_str_flags] = {0};
 	char *p_flags_dst = str_flags;
 	bool matched = false;
 	for (int i_enum = 0
@@ -225,7 +223,7 @@ void LogInfoEnum(short flag, EnumText* dfns, unsigned short n_dfn, const char* f
 	if (matched)
 		*p_flags_dst = '\0';
 	else
-		strcpy(p_flags_dst, "UnMatched");
+		strcpy_s(p_flags_dst, len_str_flags, "UnMatched");
 
 #ifndef SMOOTH_LOGGING
 	fprintf(stdout
@@ -243,133 +241,6 @@ void LogInfoEnum(short flag, EnumText* dfns, unsigned short n_dfn, const char* f
 						, str_flags);
 #endif
 }
-
-//#define DECLARE_TYPELOG(func)\
-//	void func(const char* file, unsigned int line, const char* token, short type);
-#define ENUM_START(LogInfoEnum_x)\
-	void LogInfoEnum_x(const char* file, unsigned int line, const char* token, short type)\
-	{\
-		EnumText flagsDfn [] = {
-#define ENUM_END\
-		};\
-		LogInfoEnum(type, flagsDfn, sizeof(flagsDfn)/sizeof(EnumText), file, line, token);\
-	}
-#define ENUM_ITEM(type)\
-	{type, #type} ,
-
-
-ENUM_START(LogInfoEnum_contype)
-	ENUM_ITEM(CONSTRAINT_TYPE_NULL)
-	/** Unimplemented non longer :) - during constraints recode, Aligorith */
-	ENUM_ITEM(CONSTRAINT_TYPE_CHILDOF)
-	ENUM_ITEM(CONSTRAINT_TYPE_TRACKTO)
-	ENUM_ITEM(CONSTRAINT_TYPE_KINEMATIC)
-	ENUM_ITEM(CONSTRAINT_TYPE_FOLLOWPATH)
-	/** Unimplemented no longer :) - Aligorith */
-	ENUM_ITEM(CONSTRAINT_TYPE_ROTLIMIT)
-	/** Unimplemented no longer :) - Aligorith */
-	ENUM_ITEM(CONSTRAINT_TYPE_LOCLIMIT)
-	/** Unimplemented no longer :) - Aligorith */
-	ENUM_ITEM(CONSTRAINT_TYPE_SIZELIMIT)
-	ENUM_ITEM(CONSTRAINT_TYPE_ROTLIKE)
-	ENUM_ITEM(CONSTRAINT_TYPE_LOCLIKE)
-	ENUM_ITEM(CONSTRAINT_TYPE_SIZELIKE)
-	/** Unimplemented no longer :) - Aligorith. Scripts */
-	ENUM_ITEM(CONSTRAINT_TYPE_PYTHON)
-	ENUM_ITEM(CONSTRAINT_TYPE_ACTION)
-	/** New Tracking constraint that locks an axis in place - theeth */
-	ENUM_ITEM(CONSTRAINT_TYPE_LOCKTRACK)
-	/** limit distance */
-	ENUM_ITEM(CONSTRAINT_TYPE_DISTLIMIT)
-	/** claiming this to be mine :) is in tuhopuu bjornmose */
-	ENUM_ITEM(CONSTRAINT_TYPE_STRETCHTO)
-	/** floor constraint */
-	ENUM_ITEM(CONSTRAINT_TYPE_MINMAX)
-	// CONSTRAINT_TYPE_DEPRECATED
-	/** clampto constraint */
-	ENUM_ITEM(CONSTRAINT_TYPE_CLAMPTO)
-	/** transformation (loc/rot/size -> loc/rot/size) constraint */
-	ENUM_ITEM(CONSTRAINT_TYPE_TRANSFORM)
-	/** shrinkwrap (loc/rot) constraint */
-	ENUM_ITEM(CONSTRAINT_TYPE_SHRINKWRAP)
-	/** New Tracking constraint that minimizes twisting */
-	ENUM_ITEM(CONSTRAINT_TYPE_DAMPTRACK)
-	/** Spline-IK - Align 'n' bones to a curve */
-	ENUM_ITEM(CONSTRAINT_TYPE_SPLINEIK)
-	/** Copy transform matrix */
-	ENUM_ITEM(CONSTRAINT_TYPE_TRANSLIKE)
-	/** Maintain volume during scaling */
-	ENUM_ITEM(CONSTRAINT_TYPE_SAMEVOL)
-	/** Pivot Constraint */
-	ENUM_ITEM(CONSTRAINT_TYPE_PIVOT)
-	/** Follow Track Constraint */
-	ENUM_ITEM(CONSTRAINT_TYPE_FOLLOWTRACK)
-	/** Camera Solver Constraint */
-	ENUM_ITEM(CONSTRAINT_TYPE_CAMERASOLVER)
-	/** Object Solver Constraint */
-	ENUM_ITEM(CONSTRAINT_TYPE_OBJECTSOLVER)
-	/** Transform Cache Constraint */
-	ENUM_ITEM(CONSTRAINT_TYPE_TRANSFORM_CACHE)
-	/** Armature Deform Constraint */
-	ENUM_ITEM(CONSTRAINT_TYPE_ARMATURE)
-ENUM_END
-
-#undef ENUM_START
-#undef ENUM_END
-#undef ENUM_ITEM
-
-//#define DECLARE_FLAGLOG(func)\
-//	void func(const char* file, unsigned int line, const char* token, short flag);
-#define FLAG_START(LogInfoFlag_x)\
-	void LogInfoFlag_x(const char* file, unsigned int line, const char* token, short flag)\
-	{\
-		FlagText flagsDfn [] = {
-#define FLAG_END\
-		};\
-		LogInfoFlag(flag, flagsDfn, sizeof(flagsDfn)/sizeof(FlagText), file, line, token);\
-	}
-#define FLAG_ENTRY(flag)\
-	{flag, #flag} ,
-
-FLAG_START(LogInfoFlag_con)
-	FLAG_ENTRY(CONSTRAINT_IK_TIP)
-	FLAG_ENTRY(CONSTRAINT_IK_ROT)
-	/* targetless */
-	FLAG_ENTRY(CONSTRAINT_IK_AUTO)
-	/* autoik */
-	FLAG_ENTRY(CONSTRAINT_IK_TEMP)
-	FLAG_ENTRY(CONSTRAINT_IK_STRETCH)
-	FLAG_ENTRY(CONSTRAINT_IK_POS)
-	FLAG_ENTRY(CONSTRAINT_IK_SETANGLE)
-	FLAG_ENTRY(CONSTRAINT_IK_GETANGLE)
-	/* limit axis */
-	FLAG_ENTRY(CONSTRAINT_IK_NO_POS_X)
-	FLAG_ENTRY(CONSTRAINT_IK_NO_POS_Y)
-	FLAG_ENTRY(CONSTRAINT_IK_NO_POS_Z)
-	FLAG_ENTRY(CONSTRAINT_IK_NO_ROT_X)
-	FLAG_ENTRY(CONSTRAINT_IK_NO_ROT_Y)
-	FLAG_ENTRY(CONSTRAINT_IK_NO_ROT_Z)
-	/* axis relative to target */
-	FLAG_ENTRY(CONSTRAINT_IK_TARGETAXIS)
-FLAG_END
-
-FLAG_START(LogInfoFlag_bone)
-	FLAG_ENTRY(BONE_IK_NO_XDOF)
-	FLAG_ENTRY(BONE_IK_NO_YDOF)
-	FLAG_ENTRY(BONE_IK_NO_ZDOF)
-	FLAG_ENTRY(BONE_IK_XLIMIT)
-	FLAG_ENTRY(BONE_IK_YLIMIT)
-	FLAG_ENTRY(BONE_IK_ZLIMIT)
-	FLAG_ENTRY(BONE_IK_ROTCTL)
-	FLAG_ENTRY(BONE_IK_LINCTL)
-	FLAG_ENTRY(BONE_IK_NO_XDOF_TEMP)
-	FLAG_ENTRY(BONE_IK_NO_YDOF_TEMP)
-	FLAG_ENTRY(BONE_IK_NO_ZDOF_TEMP)
-FLAG_END
-
-#undef FLAG_START
-#undef FLAG_END
-#undef FLAG_ENTRY
 
 int __cdecl LoggerFast_OutFmt(const char* _Format, ...)
 {

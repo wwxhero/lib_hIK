@@ -104,7 +104,7 @@ public:
 			std::stringstream logInfo;
 			logInfo << TM_TYPE_STR[m_tmType] << j_from->GetName_c() <<":" << delta_from.ToString().c_str() << "\n"
 					<< "\t" << TM_TYPE_STR[m_tmType] << j_to->GetName_c() << ":" <<  delta_to.ToString().c_str() << "\n";
-			g_logger.Out(logInfo.str());
+			// g_logger.Out(logInfo.str());
 #endif
 		}
 		CArtiBodyTree::FK_Update(m_hostee);

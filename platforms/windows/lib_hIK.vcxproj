@@ -240,7 +240,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;UTRECORDPARSER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;UTRECORDPARSER_EXPORTS;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>../../inc;$(EIGEN)</AdditionalIncludeDirectories>
@@ -391,8 +391,9 @@
     <ClCompile Include="..\..\src\Joint.cpp" />
     <ClCompile Include="..\..\src\ik_logger.cpp" />
     <ClCompile Include="..\..\src\loggerfast_win.cpp" />
-    <ClCompile Include="..\..\src\loggerSrv_i.c" />
-    <ClCompile Include="..\..\src\loggerSrv_p.c" />
+    <ClCompile Include="..\..\src\loggerSrv_i.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='DebugGame_Editor|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\..\src\MoNode.cpp" />
     <ClCompile Include="..\..\src\motion_pipeline.cpp" />
     <ClCompile Include="dllmain.cpp" />

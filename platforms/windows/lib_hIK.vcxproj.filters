@@ -80,8 +80,5 @@
     <ClCompile Include="..\..\src\loggerSrv_i.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\loggerSrv_p.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>
