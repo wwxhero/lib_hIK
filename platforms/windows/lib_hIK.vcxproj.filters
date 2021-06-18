@@ -42,7 +42,7 @@
     <ClInclude Include="..\..\src\treebase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Logger.h">
+    <ClInclude Include="..\..\src\ik_logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -68,7 +68,7 @@
     <ClCompile Include="..\..\src\MoNode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\Logger.cpp">
+    <ClCompile Include="..\..\src\ik_logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

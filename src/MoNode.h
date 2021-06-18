@@ -2,7 +2,7 @@
 #include <vector>
 #include <map>
 #include "ArtiBody.h"
-#include "Logger.h"
+#include "ik_logger.h"
 typedef CArtiBodyNode CJoint; //CJoint is yet to be developed
 
 class CMoNode : public TreeNode<CMoNode>
