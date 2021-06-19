@@ -3,8 +3,8 @@
 #  define __IK_LOGGER_H__
 
 #  include <string.h>
-#define SMOOTH_LOGGING
-//#define PROFILE_IK
+// #define SMOOTH_LOGGING
+// #define PROFILE_IK
 
 #  ifdef __cplusplus
 extern "C" {

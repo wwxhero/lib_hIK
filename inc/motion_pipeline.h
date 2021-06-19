@@ -1,5 +1,4 @@
 #pragma once
-#include "pch.h"
 #include "articulated_body.h"
 #ifdef __cplusplus
 extern "C" {
