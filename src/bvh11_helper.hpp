@@ -1,21 +1,16 @@
-#ifndef BVH11_HPP_
-#define BVH11_HPP_
+#ifndef BVH11_HELPER_HPP_
+#define BVH11_HELPER_HPP_
+#include "pch.h"
 
 #include <vector>
 #include <list>
 #include <string>
 #include <memory>
 #include <iostream>
-#include <Eigen/Core>
-#include <Eigen/Geometry>
+
 
 #include <stdlib.h>
-#include <crtdbg.h>
-#if defined _DEBUG
-#define _CRTDBG_MAP_ALLOC
-#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
-#define new DEBUG_NEW
-#endif
+
 
 namespace bvh11
 {

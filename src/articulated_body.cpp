@@ -4,7 +4,7 @@
 #include <sstream>
 #include <Windows.h>
 #include "ArtiBody.h"
-#include "leak_check_crt.h"
+
 
 float ik_test(float theta)
 {

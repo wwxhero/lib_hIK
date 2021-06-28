@@ -3,7 +3,7 @@
 #include <stack>
 #include "articulated_body.h"
 #include "ArtiBody.h"
-#include "leak_check_crt.h"
+
 
 void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 {

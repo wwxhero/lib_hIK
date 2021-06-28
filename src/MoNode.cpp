@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "MoNode.h"
-#include "leak_check_crt.h"
+
 
 enum TM_TYPE { homo = 0, cross, identity };
 

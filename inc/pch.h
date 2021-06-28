@@ -41,4 +41,11 @@ typedef void* HMOTIONNODE;
 
 const Real c_epsilon = 1e-5f;
 
+#include <crtdbg.h>
+#if defined LEAK_CHECK
+#define _CRTDBG_MAP_ALLOC
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+#endif
+
 #endif //PCH_H

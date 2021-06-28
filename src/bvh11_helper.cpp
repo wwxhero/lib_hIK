@@ -4,6 +4,7 @@
 #include <fstream>
 #include <queue>
 #include <Windows.h>
+#include "math.hpp"
 #include "bvh11_helper.hpp"
 
 namespace bvh11

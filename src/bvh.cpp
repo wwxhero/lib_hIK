@@ -1,5 +1,8 @@
 #include "pch.h"
+#pragma push_macro("new")
+#undef new
 #include <Eigen/Geometry>
+#pragma pop_macro("new")
 #include <iostream>
 #include <stack>
 #include <queue>
@@ -8,7 +11,7 @@
 #include "articulated_body.h"
 #include "motion_pipeline.h"
 #include "fk_joint.h"
-#include "leak_check_crt.h"
+
 
 #define ZERO_ENTITY_TT_HOMO
 #define ZERO_ENTITY_TT_CROSS
