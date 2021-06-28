@@ -8,6 +8,7 @@
 #include "articulated_body.h"
 #include "motion_pipeline.h"
 #include "fk_joint.h"
+#include "leak_check_crt.h"
 
 #define ZERO_ENTITY_TT_HOMO
 #define ZERO_ENTITY_TT_CROSS
@@ -649,6 +650,15 @@ bool ResetRestPose(bvh11::BvhObject& bvh, int t)
 	TraverseDFS_botree_nonrecur(h_drivee, lam_onBoEnter, lam_onBoLeave);
 
 	return true;
+}
+
+HBODY create_tree_body_bvh(const wchar_t* path_src)
+{
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	auto path_src_c = converter.to_bytes(path_src);
+	bvh11::BvhObject bvh(path_src_c);
+	HBODY h_root = createArticulatedBody(bvh, -1, false);
+	return h_root;
 }
 
 bool ResetRestPose(const char* path_src, int frame, const char* path_dst)

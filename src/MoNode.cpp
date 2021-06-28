@@ -1,9 +1,27 @@
 #include "pch.h"
 #include "MoNode.h"
+#include "leak_check_crt.h"
 
 enum TM_TYPE { homo = 0, cross, identity };
 
 const char* CMoNode::TM_TYPE_STR[] = {"homo", "cross", "identity"};
+
+CMoNode::CMoNode(CArtiBodyNode* body)
+	: m_tmType(identity)
+	, m_hostee(body)
+{
+}
+
+CMoNode::~CMoNode()
+{
+	for (auto jointPair : m_jointPairs)
+	{
+		UnInitJointPair(jointPair);
+		delete jointPair;
+	}
+}
+
+
 
 bool CMoNode::MoCNN_Initialize(TM_TYPE tm_type)
 {

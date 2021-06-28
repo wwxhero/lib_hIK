@@ -62,21 +62,9 @@ private:
 		pair->j_to = NULL;
 	}
 public:
-	CMoNode(CArtiBodyNode* body)
-		: m_tmType(identity)
-		, m_hostee(body)
-	{
+	CMoNode(CArtiBodyNode* body);
+	~CMoNode();
 
-	}
-
-	~CMoNode()
-	{
-		for (auto jointPair : m_jointPairs)
-		{
-			UnInitJointPair(jointPair);
-			delete jointPair;
-		}
-	}
 
 	bool MoCNN_Initialize(TM_TYPE tm_type);
 	bool MoCNN_Initialize(TM_TYPE tm_type, const char* pairs[][2], int n_pairs);

@@ -16,6 +16,8 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <locale>
+#include <codecvt>
 
 // DLL export C functions:
 //		https://docs.microsoft.com/en-us/cpp/build/exporting-from-a-dll-using-declspec-dllexport?view=msvc-160
@@ -36,13 +38,6 @@ typedef float Real;
 typedef void* HBODY;
 typedef void* HMOTIONNODE;
 
-
-#include <crtdbg.h>
-#if defined LEAK_CHECK
-#define _CRTDBG_MAP_ALLOC
-#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
-#define new DEBUG_NEW
-#endif
 
 const Real c_epsilon = 1e-5f;
 

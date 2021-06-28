@@ -4,6 +4,8 @@
 #include <sstream>
 #include <Windows.h>
 #include "ArtiBody.h"
+#include "leak_check_crt.h"
+
 float ik_test(float theta)
 {
 	//std::stringstream info;
@@ -30,6 +32,12 @@ void destroy_tree_body_node(HBODY hBody)
 {
 	CArtiBodyNode* body = reinterpret_cast<CArtiBodyNode*>(hBody);
 	delete body;
+}
+
+void destroy_tree_body(HBODY hBody)
+{
+	CArtiBodyNode* body = reinterpret_cast<CArtiBodyNode*>(hBody);
+	CArtiBodyTree::Destroy(body);
 }
 
 void cnn_arti_body(HBODY from, HBODY to, enum CNN type)

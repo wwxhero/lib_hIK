@@ -1,11 +1,9 @@
 #include "pch.h"
 #include <queue>
 #include <stack>
-#include <locale>
-#include <codecvt>
 #include "articulated_body.h"
 #include "ArtiBody.h"
-
+#include "leak_check_crt.h"
 
 void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 {
@@ -36,6 +34,20 @@ void CArtiBodyTree::FK_Update(CArtiBodyNode* root)
 {
 	for (auto body : root->m_kinalst)
 		body->FK_UpdateNode();
+}
+
+void CArtiBodyTree::Destroy(CArtiBodyNode* root)
+{
+	auto onEnterBody = [](CArtiBodyNode* node_this)
+					{
+					};
+
+	auto onLeaveBody = [](CArtiBodyNode* node_this)
+					{
+						delete node_this;
+					};
+
+	Tree<CArtiBodyNode>::TraverseDFS_botree_nonrecur(root, onEnterBody, onLeaveBody);
 }
 
 void CArtiBodyNode::GetJointTransform(CTransform& delta_l)

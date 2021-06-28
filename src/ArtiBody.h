@@ -83,4 +83,5 @@ class CArtiBodyTree : Tree<CArtiBodyNode>
 public:
 	static void KINA_Initialize(CArtiBodyNode* root);
 	static void FK_Update(CArtiBodyNode* root);
+	static void Destroy(CArtiBodyNode* root);
 };
