@@ -37,6 +37,7 @@ typedef float Real;
 
 typedef void* HBODY;
 typedef void* HMOTIONNODE;
+typedef void* HBVH;
 
 
 const Real c_epsilon = 1e-5f;

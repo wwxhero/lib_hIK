@@ -664,6 +664,26 @@ HBODY create_tree_body_bvh(const wchar_t* path_src)
 	return h_root;
 }
 
+HBVH load_bvh(const wchar_t* path_src)
+{
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	auto path_src_c = converter.to_bytes(path_src);
+	bvh11::BvhObject* bvh = new bvh11::BvhObject(path_src_c);
+	return bvh;
+}
+
+void unload_bvh(HBVH hBvh)
+{
+	bvh11::BvhObject* bvh = reinterpret_cast<bvh11::BvhObject*>(hBvh);
+	delete bvh;
+}
+
+unsigned int get_n_frames(HBVH hBvh)
+{
+	bvh11::BvhObject* bvh = reinterpret_cast<bvh11::BvhObject*>(hBvh);
+	return bvh->frames();
+}
+
 bool ResetRestPose(const char* path_src, int frame, const char* path_dst)
 {
 	bvh11::BvhObject bvh(path_src);
@@ -673,5 +693,6 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst)
 			bvh.WriteBvhFile(path_dst);
 	return resetted;
 }
+
 
 #pragma warning( pop )
