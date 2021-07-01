@@ -20,14 +20,6 @@ T CAST_2H(F* p)
 #endif
 }
 
-#ifdef _DEBUG
-#define VALID_HANDLE(h)\
-	(h.p != NULL)
-#else
-#define VALID_HANDLE(h)\
-	(h != NULL)
-#endif
-
 #define CAST_2PBVH(hBVH)\
 	CAST_2P<HBVH, bvh11::BvhObject>(hBVH)
 

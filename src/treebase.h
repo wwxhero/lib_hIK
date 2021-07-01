@@ -41,7 +41,7 @@ public:
 	template<typename LAMaccessEnter, typename LAMaccessLeave>
 	static void TraverseDFS_botree_nonrecur(NodeType* root, LAMaccessEnter OnEnterBody, LAMaccessLeave OnLeaveBody)
 	{
-		assert(H_INVALID != root);
+		assert(NULL != root);
 		typedef struct _EDGE
 		{
 			NodeType* body_this;

@@ -31,11 +31,11 @@
 	__declspec(dllimport) rtype __stdcall func
 #endif
 
-#define H_INVALID NULL
-
 typedef float Real;
 
 #ifdef _DEBUG
+
+#define H_INVALID {NULL}
 
 typedef struct _HBODY
 {
@@ -52,11 +52,18 @@ typedef struct _HBVH
 	void* p;
 } HBVH;
 
+#define VALID_HANDLE(h)\
+	(h.p != NULL)
+
 #else
 
+#define H_INVALID NULL
 typedef void* HBODY;
 typedef void* HMOTIONNODE;
 typedef void* HBVH;
+#define VALID_HANDLE(h)\
+	(h != NULL)
+
 
 #endif
 
