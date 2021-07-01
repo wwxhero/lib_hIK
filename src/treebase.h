@@ -55,7 +55,7 @@ public:
 		{
 			EDGE &edge = stkDFS.top();
 			// size_t n_indent = stkDFS.size();
-			if (H_INVALID == edge.body_child)
+			if (NULL == edge.body_child)
 			{
 				stkDFS.pop();
 				OnLeaveBody(edge.body_this);

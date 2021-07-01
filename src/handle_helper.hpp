@@ -3,17 +3,30 @@
 template <typename F, typename T>
 T* CAST_2P(F h)
 {
+#ifdef _DEBUG
 	return reinterpret_cast<T*>(h.p);
+#else
+	return reinterpret_cast<T*>(h);
+#endif
 }
 
 template <typename F, typename T>
 T CAST_2H(F* p)
 {
+#ifdef _DEBUG
 	return {p};
+#else
+	return p;
+#endif
 }
 
+#ifdef _DEBUG
 #define VALID_HANDLE(h)\
 	(h.p != NULL)
+#else
+#define VALID_HANDLE(h)\
+	(h != NULL)
+#endif
 
 #define CAST_2PBVH(hBVH)\
 	CAST_2P<HBVH, bvh11::BvhObject>(hBVH)
