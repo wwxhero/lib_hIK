@@ -11,6 +11,7 @@
 #include "articulated_body.h"
 #include "motion_pipeline.h"
 #include "fk_joint.h"
+#include "handle_helper.hpp"
 
 
 #define ZERO_ENTITY_TT_HOMO
@@ -235,7 +236,7 @@ inline bool BoundResetAsBVHRest(Bound bnd, const bvh11::BvhObject& bvh, int fram
 template<typename LAMaccessEnter, typename LAMaccessLeave>
 inline void TraverseDFS_botree_nonrecur(HBODY root, LAMaccessEnter OnEnterBody, LAMaccessLeave OnLeaveBody)
 {
-	assert(H_INVALID != root);
+	assert(VALID_HANDLE(root));
 	typedef struct _EDGE
 	{
 		HBODY body_this;
@@ -249,7 +250,7 @@ inline void TraverseDFS_botree_nonrecur(HBODY root, LAMaccessEnter OnEnterBody, 
 	{
 		EDGE &edge = stkDFS.top();
 		// size_t n_indent = stkDFS.size();
-		if (H_INVALID == edge.body_child)
+		if (!VALID_HANDLE(edge.body_child))
 		{
 			stkDFS.pop();
 			OnLeaveBody(edge.body_this);
@@ -269,7 +270,7 @@ inline void TraverseDFS_botree_nonrecur(HBODY root, LAMaccessEnter OnEnterBody, 
 template<typename LAMaccessEnter, typename LAMaccessLeave>
 inline void TraverseDFS_motree_nonrecur(HMOTIONNODE root, LAMaccessEnter OnEnterBody, LAMaccessLeave OnLeaveBody)
 {
-	assert(H_INVALID != root);
+	assert(VALID_HANDLE(root));
 	typedef struct _EDGE
 	{
 		HMOTIONNODE body_this;
@@ -283,7 +284,7 @@ inline void TraverseDFS_motree_nonrecur(HMOTIONNODE root, LAMaccessEnter OnEnter
 	{
 		EDGE &edge = stkDFS.top();
 		size_t n_indent = stkDFS.size();
-		if (H_INVALID == edge.body_child)
+		if (!VALID_HANDLE(edge.body_child))
 		{
 			stkDFS.pop();
 			OnLeaveBody(edge.body_this);
@@ -312,7 +313,7 @@ inline void TraverseDFS_boundtree_recur(Bound bound_this, LAMaccessEnter OnEnter
 	auto body_next = get_first_child_body(body_this);
 	bool proceed = (it_bvh_next != children_bvh_this.end());
 	assert((proceed)
-		== (H_INVALID != body_next));
+		== VALID_HANDLE(body_next));
 	while (proceed)
 	{
 		Bound bound_next = std::make_pair(*it_bvh_next, body_next);
@@ -321,7 +322,7 @@ inline void TraverseDFS_boundtree_recur(Bound bound_this, LAMaccessEnter OnEnter
 		body_next = get_next_sibling_body(body_next);
 		proceed = (it_bvh_next != children_bvh_this.end());
 		assert((proceed)
-			== (H_INVALID != body_next));
+			== VALID_HANDLE(body_next));
 	}
 	OnLeaveBound(bound_this);
 }
@@ -442,7 +443,7 @@ inline void TraverseBFS_boundtree_norecur(Bound root, LAMaccessEnter OnEnterBoun
 		auto body_child = get_first_child_body(body_hik);
 		for (
 			; it_bvh_child != children_bvh.end()
-			&& body_child != H_INVALID
+			&& VALID_HANDLE(body_child)
 			; it_bvh_child++,
 			body_child = get_next_sibling_body(body_child))
 		{
@@ -655,7 +656,7 @@ bool ResetRestPose(bvh11::BvhObject& bvh, int t)
 	return true;
 }
 
-HBODY create_tree_body_bvh(const wchar_t* path_src)
+HBODY create_tree_body_bvh_file(const wchar_t* path_src)
 {
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 	auto path_src_c = converter.to_bytes(path_src);
@@ -664,23 +665,31 @@ HBODY create_tree_body_bvh(const wchar_t* path_src)
 	return h_root;
 }
 
+HBODY create_tree_body_bvh(HBVH hBvh)
+{
+	// bvh11::BvhObject* bvh = reinterpret_cast<bvh11::BvhObject*>(hBvh);
+	bvh11::BvhObject* bvh = CAST_2P<HBVH, bvh11::BvhObject>(hBvh);
+	HBODY h_root = createArticulatedBody(*bvh, -1, false);
+	return h_root;
+}
+
 HBVH load_bvh(const wchar_t* path_src)
 {
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 	auto path_src_c = converter.to_bytes(path_src);
 	bvh11::BvhObject* bvh = new bvh11::BvhObject(path_src_c);
-	return bvh;
+	return CAST_2HBVH( bvh);
 }
 
 void unload_bvh(HBVH hBvh)
 {
-	bvh11::BvhObject* bvh = reinterpret_cast<bvh11::BvhObject*>(hBvh);
+	bvh11::BvhObject* bvh = CAST_2PBVH(hBvh);
 	delete bvh;
 }
 
 unsigned int get_n_frames(HBVH hBvh)
 {
-	bvh11::BvhObject* bvh = reinterpret_cast<bvh11::BvhObject*>(hBvh);
+	bvh11::BvhObject* bvh = CAST_2PBVH(hBvh);
 	return bvh->frames();
 }
 

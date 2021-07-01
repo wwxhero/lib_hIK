@@ -380,6 +380,7 @@
     <ClInclude Include="..\..\inc\pch.h" />
     <ClInclude Include="..\..\src\ArtiBody.h" />
     <ClInclude Include="..\..\src\bvh11_helper.hpp" />
+    <ClInclude Include="..\..\src\handle_helper.hpp" />
     <ClInclude Include="..\..\src\Joint.h" />
     <ClInclude Include="..\..\src\ik_logger.h" />
     <ClInclude Include="..\..\src\loggerSrv_i.h" />

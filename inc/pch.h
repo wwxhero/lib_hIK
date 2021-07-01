@@ -35,9 +35,32 @@
 
 typedef float Real;
 
+#ifdef _DEBUG
+
+typedef struct _HBODY
+{
+	void* p;
+} HBODY;
+
+typedef struct _HMOTIONNODE
+{
+	void* p;
+} HMOTIONNODE;
+
+typedef struct _HBVH
+{
+	void* p;
+} HBVH;
+
+#else
+
 typedef void* HBODY;
 typedef void* HMOTIONNODE;
 typedef void* HBVH;
+
+#endif
+
+
 
 
 const Real c_epsilon = 1e-5f;
