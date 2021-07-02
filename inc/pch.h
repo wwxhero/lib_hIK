@@ -53,7 +53,7 @@ typedef struct _HBVH
 } HBVH;
 
 #define VALID_HANDLE(h)\
-	(h.p != NULL)
+	((h).p != NULL)
 
 #else
 
@@ -62,7 +62,7 @@ typedef void* HBODY;
 typedef void* HMOTIONNODE;
 typedef void* HBVH;
 #define VALID_HANDLE(h)\
-	(h != NULL)
+	((h) != NULL)
 
 
 #endif

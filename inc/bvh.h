@@ -11,6 +11,7 @@ HIKLIB(HBVH,			load_bvh)(const wchar_t* path_src);
 HIKLIB(unsigned int,	get_n_frames)(HBVH bvh);
 HIKLIB(void,			unload_bvh)(HBVH bvh);
 HIKLIB(HBODY,			create_tree_body_bvh)(HBVH bvh);
+HIKLIB(void,			pose_body)(HBVH bvh, HBODY body, int i_frame);
 
 
 

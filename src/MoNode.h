@@ -67,7 +67,52 @@ public:
 
 
 	bool MoCNN_Initialize(TM_TYPE tm_type);
-	bool MoCNN_Initialize(TM_TYPE tm_type, const char* pairs[][2], int n_pairs);
+	template<typename CHAR, typename LAMBDA_name>
+	bool MoCNN_Initialize(TM_TYPE tm_type, const CHAR* name_pairs[][2], int n_pairs, LAMBDA_name GetName)
+	{
+		assert(n_pairs > 0);
+		m_tmType = tm_type;
+		typedef std::basic_string<CHAR> STR;
+		std::map<STR, const CArtiBodyNode*>	bodies_from;
+		std::map<STR, CArtiBodyNode*>		bodies_to;
+		assert(NULL != m_parent
+			&& NULL != m_parent->m_hostee); //root motion node is not supposed to run this function
+		CArtiBodyNode* body_from = (m_parent->m_hostee);
+		for (CArtiBodyNode* kina : body_from->m_kinalst)
+			bodies_from[GetName(kina)] = kina;
+
+		CArtiBodyNode* body_to = m_hostee;
+		for (CArtiBodyNode* kina : body_to->m_kinalst)
+			bodies_to[GetName(kina)] = kina;
+
+		bool ok = true;
+		m_jointPairs.resize(n_pairs, NULL);
+		for (int i_pair = 0
+			; i_pair < n_pairs && ok
+			; i_pair ++)
+		{
+			STR name_from(name_pairs[i_pair][0]);
+			STR name_to(name_pairs[i_pair][1]);
+
+			auto it_j_from = bodies_from.find(name_from);
+			auto it_j_to = bodies_to.find(name_to);
+
+			ok = (bodies_from.end() != it_j_from
+				&& bodies_to.end() != it_j_to);
+
+			if (ok)
+			{
+				JointPair* pair = (m_jointPairs[i_pair] = new JointPair);
+				const CArtiBodyNode* artiPair[] = {
+					it_j_from->second,
+					it_j_to->second
+				};
+				ok = InitJointPair(pair, artiPair, tm_type);
+			}
+		}
+		assert(ok && "the given pair should be consistant with the given arti body");
+		return ok;
+	}
 
 	void Motion_sync()
 	{
@@ -107,6 +152,7 @@ class CMoTree : public Tree<CMoNode>
 {
 public:
 	static bool Connect(CMoNode* parent, CMoNode* child, CNN cnn_type, CMoNode::TM_TYPE tm_type, const char* pairs[][2], int n_pairs);
+	static bool Connect(CMoNode* parent, CMoNode* child, CNN cnn_type, CMoNode::TM_TYPE tm_type, const wchar_t* pairs[][2], int n_pairs);
 	static bool Connect(CMoNode* parent, CMoNode* child, CNN cnn_type, CMoNode::TM_TYPE tm_type);
 	static void Motion_sync(CMoNode* root);
 };

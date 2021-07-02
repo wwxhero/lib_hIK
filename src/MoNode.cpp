@@ -62,49 +62,21 @@ bool CMoNode::MoCNN_Initialize(TM_TYPE tm_type)
 
 
 
-bool CMoNode::MoCNN_Initialize(TM_TYPE tm_type, const char* name_pairs[][2], int n_pairs)
+bool CMoTree::Connect(CMoNode* parent, CMoNode* child, CNN cnn_type, CMoNode::TM_TYPE tm_type, const wchar_t* pairs[][2], int n_pairs)
 {
-	assert(n_pairs > 0);
-	m_tmType = tm_type;
-	std::map<std::string, const CArtiBodyNode*>	bodies_from;
-	std::map<std::string, CArtiBodyNode*>		bodies_to;
-	assert(NULL != m_parent
-		&& NULL != m_parent->m_hostee); //root motion node is not supposed to run this function
-	CArtiBodyNode* body_from = (m_parent->m_hostee);
-	for (CArtiBodyNode* kina : body_from->m_kinalst)
-		bodies_from[kina->GetName_c()] = kina;
-
-	CArtiBodyNode* body_to = m_hostee;
-	for (CArtiBodyNode* kina : body_to->m_kinalst)
-		bodies_to[kina->GetName_c()] = kina;
-
-	bool ok = true;
-	m_jointPairs.resize(n_pairs, NULL);
-	for (int i_pair = 0
-		; i_pair < n_pairs && ok
-		; i_pair ++)
+	Tree<CMoNode>::Connect(parent, child, cnn_type);
+	bool connected = false;
+	if (n_pairs > 0)
 	{
-		std::string name_from(name_pairs[i_pair][0]);
-		std::string name_to(name_pairs[i_pair][1]);
-
-		auto it_j_from = bodies_from.find(name_from);
-		auto it_j_to = bodies_to.find(name_to);
-
-		ok = (bodies_from.end() != it_j_from
-			&& bodies_to.end() != it_j_to);
-
-		if (ok)
-		{
-			JointPair* pair = (m_jointPairs[i_pair] = new JointPair);
-			const CArtiBodyNode* artiPair[] = {
-				it_j_from->second,
-				it_j_to->second
-			};
-			ok = InitJointPair(pair, artiPair, tm_type);
-		}
+		auto GetBodyNodeName = [](CArtiBodyNode* node) -> const wchar_t*
+							{
+								return node->GetName_w();
+							};
+		connected = child->MoCNN_Initialize(tm_type, pairs, n_pairs, GetBodyNodeName);
 	}
-	assert(ok && "the given pair should be consistant with the given arti body");
-	return ok;
+	else
+		connected = child->MoCNN_Initialize(tm_type);
+	return connected;
 }
 
 bool CMoTree::Connect(CMoNode* parent, CMoNode* child, CNN cnn_type, CMoNode::TM_TYPE tm_type, const char* pairs[][2], int n_pairs)
@@ -112,7 +84,13 @@ bool CMoTree::Connect(CMoNode* parent, CMoNode* child, CNN cnn_type, CMoNode::TM
 	Tree<CMoNode>::Connect(parent, child, cnn_type);
 	bool connected = false;
 	if (n_pairs > 0)
-		connected = child->MoCNN_Initialize(tm_type, pairs, n_pairs);
+	{
+		auto GetBodyNodeName = [](CArtiBodyNode* node) -> const char*
+						{
+							return node->GetName_c();
+						};
+		connected = child->MoCNN_Initialize(tm_type, pairs, n_pairs, GetBodyNodeName);
+	}
 	else
 		connected = child->MoCNN_Initialize(tm_type);
 	return connected;

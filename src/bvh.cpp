@@ -455,7 +455,7 @@ inline void TraverseBFS_boundtree_norecur(Bound root, LAMaccessEnter OnEnterBoun
 		OnLeaveBound(b_this);
 	}
 }
-
+// pose articulated body with the bvh and the frame
 void pose_nonrecur(HBODY body_root, const bvh11::BvhObject& bvh, int i_frame, bool header_resetted)
 {
 	auto onEnterBound_pose = [&bvh, i_frame](Bound b_this)
@@ -609,7 +609,7 @@ bool ResetRestPose(bvh11::BvhObject& bvh, int t)
 	assert(sync_created && "homo sync should be created for 2 same-header-BVHs");
 
 	HMOTIONNODE h_motion_drivee = create_tree_motion_node(h_drivee);
-	sync_created = motion_sync_cnn_cross(h_motion_driveeProxy, h_motion_drivee, FIRSTCHD, NULL, 0);
+	sync_created = motion_sync_cnn_cross_c(h_motion_driveeProxy, h_motion_drivee, FIRSTCHD, NULL, 0);
 	assert(sync_created && "cross sync should be created for 2 algined postures");
 
 	bool pre_reset_header = true;
@@ -703,5 +703,10 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst)
 	return resetted;
 }
 
+void pose_body(HBVH bvh, HBODY body, int i_frame)
+{
+	auto pBvh = CAST_2PBVH(bvh);
+	pose_nonrecur(body, *pBvh, i_frame, false);
+}
 
 #pragma warning( pop )
