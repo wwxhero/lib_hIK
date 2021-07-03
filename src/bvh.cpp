@@ -610,7 +610,7 @@ bool ResetRestPose(bvh11::BvhObject& bvh, int t)
 	assert(sync_created && "homo sync should be created for 2 same-header-BVHs");
 
 	HMOTIONNODE h_motion_drivee = create_tree_motion_node(h_drivee);
-	sync_created = motion_sync_cnn_cross_c(h_motion_driveeProxy, h_motion_drivee, FIRSTCHD, NULL, 0);
+	sync_created = motion_sync_cnn_cross_c(h_motion_driveeProxy, h_motion_drivee, FIRSTCHD, NULL, 0, NULL);
 	assert(sync_created && "cross sync should be created for 2 algined postures");
 
 	bool pre_reset_header = true;

@@ -19,7 +19,7 @@ private:
 		CTransform to2from;
 	};
 
-	inline bool InitJointPair(JointPair* pair, const CArtiBodyNode* artiPair[2], TM_TYPE tm_type)
+	inline bool InitJointPair(JointPair* pair, const CArtiBodyNode* artiPair[2], TM_TYPE tm_type, Real f2t_w[3][4])
 	{
 		static Real s_f2t[3][4] = {
 			{1,	0,	0,	0},
@@ -36,6 +36,7 @@ private:
 		bool has_parent_1 = (NULL != artiPair[1]->GetParent());
 		bool has_parent = (has_parent_0 || has_parent_1);
 		bool ok = true; // (has_parent_0 == has_parent_1);
+
 		if (ok)
 		{
 			if (cross == tm_type)
@@ -45,6 +46,7 @@ private:
 				artiPair[1]->GetTransformWorld2Local(world2to);
 				pair->from2to = world2to * f2t_w * from2world;
 				// if (has_parent)
+				if (has_parent)
 					pair->from2to.SetTT(0, 0, 0);
 				pair->to2from = pair->from2to.inverse();
 			}
@@ -62,6 +64,7 @@ private:
 			}
 		}
 
+		// homo == tm_type -> !pair->from2to.HasTT()
 		bool homo_has_no_tt = (homo != tm_type || !pair->from2to.HasTT());
 		assert(homo_has_no_tt);
 
@@ -86,9 +89,9 @@ public:
 	~CMoNode();
 
 
-	bool MoCNN_Initialize(TM_TYPE tm_type);
+	bool MoCNN_Initialize(TM_TYPE tm_type, Real p2c_w[3][4]);
 	template<typename CHAR, typename LAMBDA_name>
-	bool MoCNN_Initialize(TM_TYPE tm_type, const CHAR* name_pairs[][2], int n_pairs, LAMBDA_name GetName)
+	bool MoCNN_Initialize(TM_TYPE tm_type, const CHAR* name_pairs[][2], int n_pairs, LAMBDA_name GetName, Real f2t_w[3][4])
 	{
 		assert(n_pairs > 0);
 		m_tmType = tm_type;
@@ -128,7 +131,7 @@ public:
 					it_j_from->second,
 					it_j_to->second
 				};
-				ok = InitJointPair(pair, artiPair, tm_type);
+				ok = InitJointPair(pair, artiPair, tm_type, f2t_w);
 			}
 		}
 		if (!ok)
@@ -181,8 +184,8 @@ private:
 class CMoTree : public Tree<CMoNode>
 {
 public:
-	static bool Connect(CMoNode* parent, CMoNode* child, CNN cnn_type, CMoNode::TM_TYPE tm_type, const char* pairs[][2], int n_pairs);
-	static bool Connect(CMoNode* parent, CMoNode* child, CNN cnn_type, CMoNode::TM_TYPE tm_type, const wchar_t* pairs[][2], int n_pairs);
-	static bool Connect(CMoNode* parent, CMoNode* child, CNN cnn_type, CMoNode::TM_TYPE tm_type);
+	static bool Connect_cross(CMoNode* parent, CMoNode* child, CNN cnn_type, const char* pairs[][2], int n_pairs, Real p2c_w[3][4]);
+	static bool Connect_cross(CMoNode* parent, CMoNode* child, CNN cnn_type, const wchar_t* pairs[][2], int n_pairs, Real p2c_w[3][4]);
+	static bool Connect_homo(CMoNode* parent, CMoNode* child, CNN cnn_type);
 	static void Motion_sync(CMoNode* root);
 };

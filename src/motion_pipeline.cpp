@@ -23,23 +23,33 @@ bool motion_sync_cnn_homo(HMOTIONNODE parent, HMOTIONNODE child, CNN type)
 	//todo: connection to motion nodes as a homo-space map
 	CMoNode* mo_parent = CAST_2PMONODE(parent);
 	CMoNode* mo_child = CAST_2PMONODE(child);
-	return CMoTree::Connect(mo_parent, mo_child, type, CMoNode::homo);
+	return CMoTree::Connect_homo(mo_parent, mo_child, type);
 }
 
-bool motion_sync_cnn_cross_c(HMOTIONNODE parent, HMOTIONNODE child, CNN type, const char* pairs[][2], int n_pairs)
+bool motion_sync_cnn_cross_c(HMOTIONNODE parent
+							, HMOTIONNODE child
+							, CNN type
+							, const char* pairs[][2]
+							, int n_pairs
+							, Real p2c_w[3][4])
 {
 	//todo: connection to motion nodes as a cross-space map
 	CMoNode* mo_parent = CAST_2PMONODE(parent);
 	CMoNode* mo_child = CAST_2PMONODE(child);
-	return CMoTree::Connect(mo_parent, mo_child, type, CMoNode::cross, pairs, n_pairs);
+	return CMoTree::Connect_cross(mo_parent, mo_child, type, pairs, n_pairs, p2c_w);
 }
 
-bool motion_sync_cnn_cross_w(HMOTIONNODE parent, HMOTIONNODE child, CNN type, const wchar_t* pairs[][2], int n_pairs)
+bool motion_sync_cnn_cross_w(HMOTIONNODE parent
+							, HMOTIONNODE child
+							, CNN type
+							, const wchar_t* pairs[][2]
+							, int n_pairs
+							, Real p2c_w[3][4])
 {
 	//todo: connection to motion nodes as a cross-space map
 	CMoNode* mo_parent = CAST_2PMONODE(parent);
 	CMoNode* mo_child = CAST_2PMONODE(child);
-	return CMoTree::Connect(mo_parent, mo_child, type, CMoNode::cross, pairs, n_pairs);
+	return CMoTree::Connect_cross(mo_parent, mo_child, type, pairs, n_pairs, p2c_w);
 }
 
 void motion_sync(HMOTIONNODE root)
