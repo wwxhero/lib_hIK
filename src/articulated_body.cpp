@@ -5,7 +5,7 @@
 #include <Windows.h>
 #include "ArtiBody.h"
 #include "handle_helper.hpp"
-
+#include "ik_logger.h"
 
 float ik_test(float theta)
 {
@@ -88,3 +88,12 @@ void get_body_transform_l2p(HBODY body, _TRANSFORM* tm_l2w)
 	tm.CopyTo(*tm_l2w);
 }
 
+void log_body_node(HBODY body)
+{
+	std::stringstream logInfo;
+	CArtiBodyNode* artiBody = CAST_2PBODY(body);
+	CTransform tm;
+	artiBody->GetTransformLocal2Parent(tm);
+	logInfo << artiBody->GetName_c() << ":" << tm.ToString().c_str() << std::endl;
+	LOGIK(logInfo.str().c_str());
+}
