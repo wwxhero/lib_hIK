@@ -25,6 +25,7 @@ private:
 		pair->j_to = (CJoint *)artiPair[1];
 		bool has_parent_0 = (NULL != artiPair[0]->GetParent());
 		bool has_parent_1 = (NULL != artiPair[1]->GetParent());
+		bool has_parent = (has_parent_0 || has_parent_1);
 		bool ok = (has_parent_0 == has_parent_1);
 		if (ok)
 		{
@@ -34,6 +35,8 @@ private:
 				artiPair[0]->GetTransformLocal2World(from2world);
 				artiPair[1]->GetTransformWorld2Local(world2to);
 				pair->from2to = world2to * from2world;
+				if (has_parent)
+					pair->from2to.SetTT(0, 0, 0);
 				pair->to2from = pair->from2to.inverse();
 			}
 			else if(homo == tm_type)
@@ -52,6 +55,16 @@ private:
 
 		bool homo_has_no_tt = (homo != tm_type || !pair->from2to.HasTT());
 		assert(homo_has_no_tt);
+
+		// (cross == tm_type && has_parent_1) -> !pair->from2to.HasTT()
+		bool cross_had_no_tt = (!(cross == tm_type && has_parent) || !pair->from2to.HasTT());
+		assert(cross_had_no_tt);
+
+		std::stringstream logInfo;
+		logInfo << "Binding:" << TM_TYPE_STR[m_tmType] << "\t"
+				<< pair->j_from->GetName_c() << " => " << pair->j_to->GetName_c() << ":"
+				<< pair->from2to.ToString().c_str() << "\n";
+		LOGIK(logInfo.str().c_str());
 		return ok;
 	}
 	inline void UnInitJointPair(JointPair* pair)
