@@ -25,9 +25,7 @@ private:
 		pair->j_to = (CJoint *)artiPair[1];
 		bool has_parent_0 = (NULL != artiPair[0]->GetParent());
 		bool has_parent_1 = (NULL != artiPair[1]->GetParent());
-		bool name_match = (0 == strcmp(artiPair[0]->GetName_c(), artiPair[1]->GetName_c()));
-		bool ok = (has_parent_0 == has_parent_1
-				&& name_match);
+		bool ok = (has_parent_0 == has_parent_1);
 		if (ok)
 		{
 			if (cross == tm_type)
