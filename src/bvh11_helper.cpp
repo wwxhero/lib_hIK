@@ -506,7 +506,9 @@ namespace bvh11
 	{
 		// Open the input file
 		internal::FastStream ifs(file_path);
-		assert(ifs.is_open() && "Failed to open the input file.");
+		if (!ifs.is_open())
+			return;
+		// assert(ifs.is_open() && "Failed to open the input file.");
 
 		// Read the HIERARCHY part
 		[&]() -> void

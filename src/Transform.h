@@ -24,6 +24,20 @@ public:
 		m_t = Eigen::Affine3r::Identity();
 	}
 
+	explicit CTransform(const Real m_affine[3][4])
+	{
+		Real* data = m_t.data();
+		for (int i_r = 0; i_r < 3; i_r ++)
+		{
+			for (int i_c = 0; i_c < 4; i_c ++)
+			{
+				int i_offset = i_c * 4 + i_r;
+				data[i_offset] = m_affine[i_r][i_c];
+			}
+		}
+		m_t.makeAffine();
+	}
+
 	void CopyTo(_TRANSFORM& tm) const
 	{
 		Eigen::Matrix3r r_m, s_m;

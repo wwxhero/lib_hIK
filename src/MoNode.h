@@ -21,12 +21,19 @@ private:
 
 	inline bool InitJointPair(JointPair* pair, const CArtiBodyNode* artiPair[2], TM_TYPE tm_type)
 	{
+		static Real s_f2t[3][4] = {
+			{1,	0,	0,	0},
+			{0,	0,	1,	0},
+			{0,	1,	0,	0},
+		};
+		CTransform f2t_w(s_f2t);
+
 		pair->j_from = (CJoint *)artiPair[0]; // todo: need a real joint
 		pair->j_to = (CJoint *)artiPair[1];
 		bool has_parent_0 = (NULL != artiPair[0]->GetParent());
 		bool has_parent_1 = (NULL != artiPair[1]->GetParent());
 		bool has_parent = (has_parent_0 || has_parent_1);
-		bool ok = (has_parent_0 == has_parent_1);
+		bool ok = true; // (has_parent_0 == has_parent_1);
 		if (ok)
 		{
 			if (cross == tm_type)
@@ -34,7 +41,7 @@ private:
 				CTransform from2world, world2to;
 				artiPair[0]->GetTransformLocal2World(from2world);
 				artiPair[1]->GetTransformWorld2Local(world2to);
-				pair->from2to = world2to * from2world;
+				pair->from2to = world2to * f2t_w * from2world;
 				if (has_parent)
 					pair->from2to.SetTT(0, 0, 0);
 				pair->to2from = pair->from2to.inverse();
