@@ -19,14 +19,14 @@ private:
 		CTransform to2from;
 	};
 
-	inline bool InitJointPair(JointPair* pair, const CArtiBodyNode* artiPair[2], TM_TYPE tm_type, Real f2t_w[3][4])
+	inline bool InitJointPair(JointPair* pair, const CArtiBodyNode* artiPair[2], TM_TYPE tm_type, Real mf2t_w[3][4])
 	{
-		static Real s_f2t[3][4] = {
-			{1,	0,	0,	0},
-			{0,	0,	1,	0},
-			{0,	1,	0,	0},
-		};
-		CTransform f2t_w(s_f2t);
+		// static Real s_f2t[3][4] = {
+		// 	{1,	0,	0,	0},
+		// 	{0,	0,	1,	0},
+		// 	{0,	1,	0,	0},
+		// };
+		CTransform f2t_w(mf2t_w);
 		CTransform s = CTransform::Scale(6);
 		f2t_w = f2t_w * s;
 
