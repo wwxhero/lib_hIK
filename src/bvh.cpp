@@ -18,7 +18,7 @@
 #define ZERO_ENTITY_TT_HOMO
 #define ZERO_ENTITY_TT_CROSS
 
-const double epsilon = 1e-5;
+const double epsilon = 1e-4;
 
 #pragma warning( push )
 #pragma warning( disable : 4838 )
@@ -682,7 +682,7 @@ HBVH load_bvh(const wchar_t* path_src)
 	try
 	{
 		 bvh = new bvh11::BvhObject(path_src_c);
-	}		
+	}
 	catch (const std::string& info)
 	{
 		LOGIK(info.c_str());

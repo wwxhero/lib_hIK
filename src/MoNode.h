@@ -77,7 +77,7 @@ private:
 		std::stringstream logInfo;
 		logInfo << "Binding:" << TM_TYPE_STR[m_tmType] << "\t"
 				<< pair->j_from->GetName_c() << " => " << pair->j_to->GetName_c() << ":"
-				<< pair->from2to.ToString().c_str() << "\n";
+				<< pair->from2to.ToString().c_str();
 		LOGIK(logInfo.str().c_str());
 		return ok;
 	}

@@ -94,6 +94,6 @@ void log_body_node(HBODY body)
 	CArtiBodyNode* artiBody = CAST_2PBODY(body);
 	CTransform tm;
 	artiBody->GetTransformLocal2Parent(tm);
-	logInfo << artiBody->GetName_c() << ":" << tm.ToString().c_str() << std::endl;
+	logInfo << artiBody->GetName_c() << ":" << tm.ToString().c_str();
 	LOGIK(logInfo.str().c_str());
 }
