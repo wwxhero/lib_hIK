@@ -502,12 +502,16 @@ namespace bvh11
 		return transform;
 	}
 
-	void BvhObject::ReadBvhFile(const std::string& file_path, const double scale)
+	void BvhObject::ReadBvhFile(const std::string& file_path, const double scale) throw(...)
 	{
 		// Open the input file
 		internal::FastStream ifs(file_path);
 		if (!ifs.is_open())
-			return;
+		{
+			std::stringstream expInfo;
+			expInfo << "File: " << file_path.c_str() << " can not be open!!!";
+			throw expInfo.str();
+		}
 		// assert(ifs.is_open() && "Failed to open the input file.");
 
 		// Read the HIERARCHY part

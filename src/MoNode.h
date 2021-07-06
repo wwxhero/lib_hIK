@@ -27,6 +27,8 @@ private:
 			{0,	1,	0,	0},
 		};
 		CTransform f2t_w(s_f2t);
+		CTransform s = CTransform::Scale(6);
+		f2t_w = f2t_w * s;
 
 		pair->j_from = (CJoint *)artiPair[0]; // todo: need a real joint
 		pair->j_to = (CJoint *)artiPair[1];
@@ -42,7 +44,7 @@ private:
 				artiPair[0]->GetTransformLocal2World(from2world);
 				artiPair[1]->GetTransformWorld2Local(world2to);
 				pair->from2to = world2to * f2t_w * from2world;
-				if (has_parent)
+				// if (has_parent)
 					pair->from2to.SetTT(0, 0, 0);
 				pair->to2from = pair->from2to.inverse();
 			}
@@ -105,7 +107,8 @@ public:
 
 		bool ok = true;
 		m_jointPairs.resize(n_pairs, NULL);
-		for (int i_pair = 0
+		int i_pair = 0;
+		for (
 			; i_pair < n_pairs && ok
 			; i_pair ++)
 		{
@@ -127,6 +130,15 @@ public:
 				};
 				ok = InitJointPair(pair, artiPair, tm_type);
 			}
+		}
+		if (!ok)
+		{
+			int n_pair_est = i_pair-1;
+			for (int i_pair = 0; i_pair < n_pair_est; i_pair ++)
+			{
+				UnInitJointPair(m_jointPairs[i_pair]);
+			}
+			m_jointPairs.clear();
 		}
 		assert(ok && "the given pair should be consistant with the given arti body");
 		return ok;

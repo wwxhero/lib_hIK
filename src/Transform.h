@@ -98,6 +98,8 @@ public:
 		Eigen::Vector3r tt = m_t.translation();
 		return tt.norm() > c_epsilon;
 	}
+
+	static CTransform Scale(Real s);
 private:
 	Eigen::Affine3r m_t;
 };

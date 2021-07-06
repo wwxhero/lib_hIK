@@ -12,6 +12,7 @@
 #include "motion_pipeline.h"
 #include "fk_joint.h"
 #include "handle_helper.hpp"
+#include "ik_logger.h"
 
 
 #define ZERO_ENTITY_TT_HOMO
@@ -677,7 +678,21 @@ HBVH load_bvh(const wchar_t* path_src)
 {
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 	auto path_src_c = converter.to_bytes(path_src);
-	bvh11::BvhObject* bvh = new bvh11::BvhObject(path_src_c);
+	bvh11::BvhObject* bvh = NULL;
+	try
+	{
+		 bvh = new bvh11::BvhObject(path_src_c);
+	}		
+	catch (const std::string& info)
+	{
+		LOGIK(info.c_str());
+		return H_INVALID;
+	}
+	catch (...)
+	{
+		LOGIK("Unknown expection");
+		return H_INVALID;
+	}
 	return CAST_2HBVH( bvh);
 }
 
