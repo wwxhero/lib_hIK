@@ -61,9 +61,9 @@ bool CMoNode::MoCNN_Initialize(TM_TYPE tm_type, Real p2c_w[3][4])
 
 
 
-bool CMoTree::Connect_cross(CMoNode* parent, CMoNode* child, CNN cnn_type, const wchar_t* pairs[][2], int n_pairs, Real p2c_w[3][4])
+bool CMoTree::Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const wchar_t* pairs[][2], int n_pairs, Real p2c_w[3][4])
 {
-	Tree<CMoNode>::Connect(parent, child, cnn_type);
+	Tree<CMoNode>::Connect(from, to, cnn_type);
 	bool connected = false;
 	if (n_pairs > 0)
 	{
@@ -71,16 +71,16 @@ bool CMoTree::Connect_cross(CMoNode* parent, CMoNode* child, CNN cnn_type, const
 							{
 								return node->GetName_w();
 							};
-		connected = child->MoCNN_Initialize(CMoNode::cross, pairs, n_pairs, GetBodyNodeName, p2c_w);
+		connected = to->MoCNN_Initialize(CMoNode::cross, pairs, n_pairs, GetBodyNodeName, p2c_w);
 	}
 	else
-		connected = child->MoCNN_Initialize(CMoNode::cross, p2c_w);
+		connected = to->MoCNN_Initialize(CMoNode::cross, p2c_w);
 	return connected;
 }
 
-bool CMoTree::Connect_cross(CMoNode* parent, CMoNode* child, CNN cnn_type, const char* pairs[][2], int n_pairs, Real p2c_w[3][4])
+bool CMoTree::Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const char* pairs[][2], int n_pairs, Real p2c_w[3][4])
 {
-	Tree<CMoNode>::Connect(parent, child, cnn_type);
+	Tree<CMoNode>::Connect(from, to, cnn_type);
 	bool connected = false;
 	if (n_pairs > 0)
 	{
@@ -88,17 +88,17 @@ bool CMoTree::Connect_cross(CMoNode* parent, CMoNode* child, CNN cnn_type, const
 						{
 							return node->GetName_c();
 						};
-		connected = child->MoCNN_Initialize(CMoNode::cross, pairs, n_pairs, GetBodyNodeName, p2c_w);
+		connected = to->MoCNN_Initialize(CMoNode::cross, pairs, n_pairs, GetBodyNodeName, p2c_w);
 	}
 	else
-		connected = child->MoCNN_Initialize(CMoNode::cross, p2c_w);
+		connected = to->MoCNN_Initialize(CMoNode::cross, p2c_w);
 	return connected;
 }
 
-bool CMoTree::Connect_homo(CMoNode* parent, CMoNode* child, CNN cnn_type)
+bool CMoTree::Connect_homo(CMoNode* from, CMoNode* to, CNN cnn_type)
 {
-	Tree<CMoNode>::Connect(parent, child, cnn_type);
-	bool connected = child->MoCNN_Initialize(CMoNode::homo, NULL);
+	Tree<CMoNode>::Connect(from, to, cnn_type);
+	bool connected = to->MoCNN_Initialize(CMoNode::homo, NULL);
 	return connected;
 }
 

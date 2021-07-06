@@ -26,9 +26,11 @@ private:
 		// 	{0,	0,	1,	0},
 		// 	{0,	1,	0,	0},
 		// };
-		CTransform f2t_w(mf2t_w);
-		CTransform s = CTransform::Scale(6);
-		f2t_w = f2t_w * s;
+		CTransform f2t_w = (NULL == mf2t_w
+							? CTransform()
+							: CTransform(mf2t_w));
+		// CTransform s = CTransform::Scale(6);
+		// f2t_w = f2t_w * s;
 
 		pair->j_from = (CJoint *)artiPair[0]; // todo: need a real joint
 		pair->j_to = (CJoint *)artiPair[1];
@@ -184,8 +186,8 @@ private:
 class CMoTree : public Tree<CMoNode>
 {
 public:
-	static bool Connect_cross(CMoNode* parent, CMoNode* child, CNN cnn_type, const char* pairs[][2], int n_pairs, Real p2c_w[3][4]);
-	static bool Connect_cross(CMoNode* parent, CMoNode* child, CNN cnn_type, const wchar_t* pairs[][2], int n_pairs, Real p2c_w[3][4]);
-	static bool Connect_homo(CMoNode* parent, CMoNode* child, CNN cnn_type);
+	static bool Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const char* pairs[][2], int n_pairs, Real p2c_w[3][4]);
+	static bool Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const wchar_t* pairs[][2], int n_pairs, Real p2c_w[3][4]);
+	static bool Connect_homo(CMoNode* from, CMoNode* to, CNN cnn_type);
 	static void Motion_sync(CMoNode* root);
 };
