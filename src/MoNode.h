@@ -3,6 +3,7 @@
 #include <map>
 #include "ArtiBody.h"
 #include "ik_logger.h"
+#include "matrix3.h"
 typedef CArtiBodyNode CJoint; //CJoint is yet to be developed
 
 class CMoNode : public TreeNode<CMoNode>
@@ -15,22 +16,25 @@ private:
 	{
 		CJoint* j_from;
 		CJoint* j_to;
-		CTransform from2to;
-		CTransform to2from;
+		Matrix3 from2to;
+		Matrix3 to2from;
 	};
 
-	inline bool InitJointPair(JointPair* pair, const CArtiBodyNode* artiPair[2], TM_TYPE tm_type, Real mf2t_w[3][4])
+	inline bool InitJointPair(JointPair* pair, const CArtiBodyNode* artiPair[2], TM_TYPE tm_type, Real mf2t_w[3][3])
 	{
-		// static Real s_f2t[3][4] = {
+		// static Real s_f2t[3][3] = {
 		// 	{1,	0,	0,	0},
 		// 	{0,	0,	1,	0},
 		// 	{0,	1,	0,	0},
 		// };
-		CTransform f2t_w = (NULL == mf2t_w
-							? CTransform()
-							: CTransform(mf2t_w));
 		// CTransform s = CTransform::Scale(6);
 		// f2t_w = f2t_w * s;
+
+		Matrix3 f2t_w;
+		if (NULL == mf2t_w)
+			f2t_w.setIdentity();
+		else
+			f2t_w.setData(mf2t_w);
 
 		pair->j_from = (CJoint *)artiPair[0]; // todo: need a real joint
 		pair->j_to = (CJoint *)artiPair[1];
@@ -46,10 +50,7 @@ private:
 				CTransform from2world, world2to;
 				artiPair[0]->GetTransformLocal2World(from2world);
 				artiPair[1]->GetTransformWorld2Local(world2to);
-				pair->from2to = world2to * f2t_w * from2world;
-				// if (has_parent)
-				if (has_parent)
-					pair->from2to.SetTT(0, 0, 0);
+				pair->from2to = world2to.Linear() * f2t_w * from2world.Linear();
 				pair->to2from = pair->from2to.inverse();
 			}
 			else if(homo == tm_type)
@@ -57,22 +58,13 @@ private:
 				CTransform bound_from, bound_to_inv;
 				artiPair[0]->GetTransformLocal2Parent(bound_from);
 				artiPair[1]->GetTransformParent2Local(bound_to_inv);
-				pair->from2to = bound_to_inv * bound_from;
+				pair->from2to = bound_to_inv.Linear() * bound_from.Linear();
 				// pair->to2from = pair->from2to.inverse(); to2from is not used for homo transformation
-				if (has_parent_1)
-					ok = !pair->from2to.HasTT();
-				else
-					pair->from2to.SetTT(0, 0, 0);
 			}
 		}
 
 		// homo == tm_type -> !pair->from2to.HasTT()
-		bool homo_has_no_tt = (homo != tm_type || !pair->from2to.HasTT());
-		assert(homo_has_no_tt);
-
 		// (cross == tm_type && has_parent_1) -> !pair->from2to.HasTT()
-		bool cross_had_no_tt = (!(cross == tm_type && has_parent) || !pair->from2to.HasTT());
-		assert(cross_had_no_tt);
 
 		std::stringstream logInfo;
 		logInfo << "Binding:" << TM_TYPE_STR[m_tmType] << "\t"
@@ -91,9 +83,9 @@ public:
 	~CMoNode();
 
 
-	bool MoCNN_Initialize(TM_TYPE tm_type, Real p2c_w[3][4]);
+	bool MoCNN_Initialize(TM_TYPE tm_type, Real p2c_w[3][3]);
 	template<typename CHAR, typename LAMBDA_name>
-	bool MoCNN_Initialize(TM_TYPE tm_type, const CHAR* name_pairs[][2], int n_pairs, LAMBDA_name GetName, Real f2t_w[3][4])
+	bool MoCNN_Initialize(TM_TYPE tm_type, const CHAR* name_pairs[][2], int n_pairs, LAMBDA_name GetName, Real f2t_w[3][3])
 	{
 		assert(n_pairs > 0);
 		m_tmType = tm_type;
@@ -161,10 +153,19 @@ public:
 			switch (m_tmType)
 			{
 			 	case cross:
-			 		delta_to = pair->from2to * delta_from * pair->to2from;
-			 		break;
+				{
+					Eigen::Matrix3r linear =  pair->from2to
+											* delta_from.Linear()
+											* pair->to2from;
+					Eigen::Vector3r tt = pair->from2to * delta_from.GetTT();
+					delta_to.Initialize(linear, tt);
+					break;
+				}
 			 	case homo:
-			 		delta_to = pair->from2to * delta_from;
+			 		// delta_to = pair->from2to * delta_from;
+			 		Eigen::Matrix3r linear = pair->from2to * delta_from.Linear();
+			 		Eigen::Vector3r tt = pair->from2to * delta_from.GetTT();
+			 		delta_to.Initialize(linear, tt);
 			 		break;
 			}
 			j_to->SetJointTransform(delta_to);
@@ -186,8 +187,8 @@ private:
 class CMoTree : public Tree<CMoNode>
 {
 public:
-	static bool Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const char* pairs[][2], int n_pairs, Real p2c_w[3][4]);
-	static bool Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const wchar_t* pairs[][2], int n_pairs, Real p2c_w[3][4]);
+	static bool Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const char* pairs[][2], int n_pairs, Real p2c_w[3][3]);
+	static bool Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const wchar_t* pairs[][2], int n_pairs, Real p2c_w[3][3]);
 	static bool Connect_homo(CMoNode* from, CMoNode* to, CNN cnn_type);
 	static void Motion_sync(CMoNode* root);
 };

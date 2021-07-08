@@ -38,6 +38,12 @@ public:
 		m_t.makeAffine();
 	}
 
+	void Initialize(const Eigen::Matrix3r& l, const Eigen::Vector3r& tt)
+	{
+		m_t.linear() = l;
+		m_t.translation() = tt;
+	}
+
 	void CopyTo(_TRANSFORM& tm) const
 	{
 		Eigen::Matrix3r r_m, s_m;
@@ -88,9 +94,19 @@ public:
 		return strInfo;
 	}
 
+	Eigen::Matrix3r Linear() const
+	{
+		return m_t.linear();
+	}
+
 	void SetTT(Real x, Real y, Real z)
 	{
 		m_t.translation() = Eigen::Vector3r(x, y, z);
+	}
+
+	const Eigen::Vector3r GetTT() const
+	{
+		return m_t.translation();
 	}
 
 	bool HasTT() const
