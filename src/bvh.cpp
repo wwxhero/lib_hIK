@@ -714,9 +714,9 @@ unsigned int get_n_frames(HBVH hBvh)
 	return bvh->frames();
 }
 
-bool ResetRestPose(const char* path_src, int frame, const char* path_dst)
+bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double scale)
 {
-	bvh11::BvhObject bvh(path_src);
+	bvh11::BvhObject bvh(path_src, scale);
 	int frame_bvh11 = frame - 1;
 	bool resetted = ResetRestPose(bvh, frame_bvh11);
 	if (resetted)
@@ -752,6 +752,12 @@ void PrintJointHierarchy(HBVH hBvh)
 {
 	bvh11::BvhObject* pBVH = CAST_2PBVH(hBvh);
 	return pBVH->PrintJointHierarchy();
+}
+
+void WriteBvhFile(HBVH hBvh, const char* path_dst)
+{
+	auto* pBVH = CAST_2PBVH(hBvh);
+	pBVH->WriteBvhFile(path_dst);
 }
 
 #pragma warning( pop )
