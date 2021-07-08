@@ -674,14 +674,13 @@ HBODY create_tree_body_bvh(HBVH hBvh)
 	return h_root;
 }
 
-HBVH load_bvh(const wchar_t* path_src)
+
+HBVH load_bvh_c(const char* path_src)
 {
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-	auto path_src_c = converter.to_bytes(path_src);
 	bvh11::BvhObject* bvh = NULL;
 	try
 	{
-		 bvh = new bvh11::BvhObject(path_src_c);
+		 bvh = new bvh11::BvhObject(path_src);
 	}
 	catch (const std::string& info)
 	{
@@ -694,6 +693,13 @@ HBVH load_bvh(const wchar_t* path_src)
 		return H_INVALID;
 	}
 	return CAST_2HBVH( bvh);
+}
+
+HBVH load_bvh_w(const wchar_t* path_src)
+{
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	auto path_src_c = converter.to_bytes(path_src);
+	return load_bvh_c(path_src_c.c_str());
 }
 
 void unload_bvh(HBVH hBvh)
@@ -722,6 +728,30 @@ void pose_body(HBVH bvh, HBODY body, int i_frame)
 {
 	auto pBvh = CAST_2PBVH(bvh);
 	pose_nonrecur(body, *pBvh, i_frame, false);
+}
+
+unsigned int channels(HBVH hBvh)
+{
+	bvh11::BvhObject* pBVH = CAST_2PBVH(hBvh);
+	return pBVH->channels().size();
+}
+
+unsigned int frames(HBVH hBvh)
+{
+	bvh11::BvhObject* pBVH = CAST_2PBVH(hBvh);
+	return pBVH->frames();
+}
+
+double frame_time(HBVH hBvh)
+{
+	bvh11::BvhObject* pBVH = CAST_2PBVH(hBvh);
+	return pBVH->frame_time();
+}
+
+void PrintJointHierarchy(HBVH hBvh)
+{
+	bvh11::BvhObject* pBVH = CAST_2PBVH(hBvh);
+	return pBVH->PrintJointHierarchy();
 }
 
 #pragma warning( pop )
