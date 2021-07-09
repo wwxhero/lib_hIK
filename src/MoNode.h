@@ -27,7 +27,7 @@ private:
 		// 	{0,	0,	1,	0},
 		// 	{0,	1,	0,	0},
 		// };
-		// CTransform s = CTransform::Scale(6);
+		// Affine3 s = Affine3::Scale(6);
 		// f2t_w = f2t_w * s;
 
 		Matrix3 f2t_w;
@@ -47,7 +47,7 @@ private:
 		{
 			if (cross == tm_type)
 			{
-				CTransform from2world, world2to;
+				Affine3 from2world, world2to;
 				artiPair[0]->GetTransformLocal2World(from2world);
 				artiPair[1]->GetTransformWorld2Local(world2to);
 				pair->from2to = world2to.Linear() * f2t_w * from2world.Linear();
@@ -55,7 +55,7 @@ private:
 			}
 			else if(homo == tm_type)
 			{
-				CTransform bound_from, bound_to_inv;
+				Affine3 bound_from, bound_to_inv;
 				artiPair[0]->GetTransformLocal2Parent(bound_from);
 				artiPair[1]->GetTransformParent2Local(bound_to_inv);
 				pair->from2to = bound_to_inv.Linear() * bound_from.Linear();
@@ -147,9 +147,9 @@ public:
 		{
 			CJoint* j_from = pair->j_from;
 			CJoint* j_to = pair->j_to;
-			CTransform delta_from;
+			Affine3 delta_from;
 			j_from->GetJointTransform(delta_from);
-			CTransform delta_to;
+			Affine3 delta_to;
 			switch (m_tmType)
 			{
 			 	case cross:

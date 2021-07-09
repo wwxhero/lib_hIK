@@ -8,14 +8,14 @@ void set_joint_transform(HBODY body, const _TRANSFORM* tm_l)
 {
 	//todo: assign transform delta to the articulated body joint
 	CArtiBodyNode* artiBody = CAST_2PBODY(body);
-	CTransform tm(*tm_l);
+	Affine3 tm(*tm_l);
 	artiBody->SetJointTransform(tm);
 }
 
 void get_joint_transform(HBODY body, _TRANSFORM* tm_l)
 {
 	CArtiBodyNode* artiBody = CAST_2PBODY(body);
-	CTransform tm;
+	Affine3 tm;
 	artiBody->GetJointTransform(tm);
 	tm.CopyTo(*tm_l);
 }

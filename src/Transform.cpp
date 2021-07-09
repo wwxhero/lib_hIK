@@ -1,9 +1,9 @@
 #include "pch.h"
 #include "Transform.h"
 
-CTransform CTransform::Scale(Real s)
+Affine3 Affine3::Scale(Real s)
 {
-	CTransform tm;
-	tm.m_t.linear() = tm.m_t.linear() * s;
+	Affine3 tm;
+	tm.linear() = tm.linear() * s;
 	return tm;
 }

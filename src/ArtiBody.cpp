@@ -50,12 +50,12 @@ void CArtiBodyTree::Destroy(CArtiBodyNode* root)
 	Tree<CArtiBodyNode>::TraverseDFS_botree_nonrecur(root, onEnterBody, onLeaveBody);
 }
 
-void CArtiBodyNode::GetJointTransform(CTransform& delta_l)
+void CArtiBodyNode::GetJointTransform(Affine3& delta_l)
 {
 	delta_l = m_delta_l;
 }
 
-void CArtiBodyNode::SetJointTransform(const CTransform& delta_l)
+void CArtiBodyNode::SetJointTransform(const Affine3& delta_l)
 {
 	m_delta_l = delta_l;
 }

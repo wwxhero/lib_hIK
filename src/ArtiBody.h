@@ -26,28 +26,28 @@ public:
 		return m_namec.c_str();
 	}
 
-	void GetTransformLocal2Parent(CTransform& l2p) const
+	void GetTransformLocal2Parent(Affine3& l2p) const
 	{
 		l2p = m_local2parent_cached;
 	}
 
-	void GetTransformParent2Local(CTransform& p2l) const
+	void GetTransformParent2Local(Affine3& p2l) const
 	{
 		p2l = m_parent2local_cached;
 	}
 
-	void GetTransformLocal2World(CTransform& l2w) const
+	void GetTransformLocal2World(Affine3& l2w) const
 	{
 		l2w = m_local2world_cached;
 	}
 
-	void GetTransformWorld2Local(CTransform& w2l) const
+	void GetTransformWorld2Local(Affine3& w2l) const
 	{
 		w2l = m_world2local_cached;
 	}
 
-	void GetJointTransform(CTransform& delta);
-	void SetJointTransform(const CTransform& delta);
+	void GetJointTransform(Affine3& delta);
+	void SetJointTransform(const Affine3& delta);
 
 private:
 	inline void FK_UpdateNode()
@@ -68,14 +68,14 @@ private:
 	std::string m_namec;
 	std::wstring m_namew;
 	//CJoint* m_joint;
-	CTransform m_local2parent0;
-	CTransform m_delta_l;
+	Affine3 m_local2parent0;
+	Affine3 m_delta_l;
 
 private:
-	CTransform m_local2parent_cached;
-	CTransform m_parent2local_cached;
-	CTransform m_local2world_cached;
-	CTransform m_world2local_cached;
+	Affine3 m_local2parent_cached;
+	Affine3 m_parent2local_cached;
+	Affine3 m_local2world_cached;
+	Affine3 m_world2local_cached;
 };
 
 class CArtiBodyTree : Tree<CArtiBodyNode>

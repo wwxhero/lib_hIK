@@ -2,55 +2,60 @@
 #include "articulated_body.h"
 #include "Math.hpp"
 
-
-class CTransform
+class Affine3 : protected Eigen::Affine3r
 {
+	typedef Eigen::Affine3r Super;
 public:
-	CTransform(const _TRANSFORM& tm)
+	Affine3(const _TRANSFORM& tm)
 	{
 		Eigen::Vector3r p(tm.tt.x, tm.tt.y, tm.tt.z);
 		Eigen::Quaternionr r(tm.r.w, tm.r.x, tm.r.y, tm.r.z);
 		Eigen::Vector3r s(tm.s.x, tm.s.y, tm.s.z);
-		m_t.fromPositionOrientationScale(p, r, s);
+		fromPositionOrientationScale(p, r, s);
 	}
 
-	CTransform(const CTransform& tm)
+	Affine3(const Affine3& tm)
+		: Super(tm)
 	{
-		m_t = tm.m_t;
 	}
 
-	CTransform()
+	Affine3(const Eigen::Affine3r& tm)
+		: Super(tm)
 	{
-		m_t = Eigen::Affine3r::Identity();
 	}
 
-	explicit CTransform(const Real m_affine[3][4])
+	Affine3()
 	{
-		Real* data = m_t.data();
+		setIdentity();
+	}
+
+	explicit Affine3(const Real m_affine[3][4])
+	{
+		Real* dat = data();
 		for (int i_r = 0; i_r < 3; i_r ++)
 		{
 			for (int i_c = 0; i_c < 4; i_c ++)
 			{
 				int i_offset = i_c * 4 + i_r;
-				data[i_offset] = m_affine[i_r][i_c];
+				dat[i_offset] = m_affine[i_r][i_c];
 			}
 		}
-		m_t.makeAffine();
+		makeAffine();
 	}
 
 	void Initialize(const Eigen::Matrix3r& l, const Eigen::Vector3r& tt)
 	{
-		m_t.linear() = l;
-		m_t.translation() = tt;
+		linear() = l;
+		translation() = tt;
 	}
 
 	void CopyTo(_TRANSFORM& tm) const
 	{
 		Eigen::Matrix3r r_m, s_m;
-		m_t.computeRotationScaling(&r_m, &s_m);
+		computeRotationScaling(&r_m, &s_m);
 		Eigen::Quaternionr r(r_m);
 		Eigen::Vector3r s(s_m.diagonal());
-		Eigen::Vector3r t(m_t.translation());
+		Eigen::Vector3r t(translation());
 
 		tm.s.x = s.x();
 		tm.s.y = s.y();
@@ -66,17 +71,15 @@ public:
 		tm.tt.z = t.z();
 	}
 
-	CTransform operator* (const CTransform& other) const
+	Affine3 operator* (const Affine3& other) const
 	{
-		CTransform ret;
-		ret.m_t = m_t * other.m_t;
+		Affine3 ret(Super::operator*(other));
 		return ret;
 	}
 
-	CTransform inverse() const
+	Affine3 inverse() const
 	{
-		CTransform ret;
-		ret.m_t = m_t.inverse();
+		Affine3 ret(Super::inverse());
 		return ret;
 	}
 
@@ -96,27 +99,25 @@ public:
 
 	Eigen::Matrix3r Linear() const
 	{
-		return m_t.linear();
+		return linear();
 	}
 
 	void SetTT(Real x, Real y, Real z)
 	{
-		m_t.translation() = Eigen::Vector3r(x, y, z);
+		translation() = Eigen::Vector3r(x, y, z);
 	}
 
 	const Eigen::Vector3r GetTT() const
 	{
-		return m_t.translation();
+		return translation();
 	}
 
 	bool HasTT() const
 	{
-		Eigen::Vector3r tt = m_t.translation();
+		Eigen::Vector3r tt = translation();
 		return tt.norm() > c_epsilon;
 	}
 
-	static CTransform Scale(Real s);
-private:
-	Eigen::Affine3r m_t;
+	static Affine3 Scale(Real s);
 };
 
