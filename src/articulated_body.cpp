@@ -75,7 +75,7 @@ HBODY get_next_sibling_body(HBODY body)
 void get_body_transform_l2w(HBODY body, _TRANSFORM* tm_l2w)
 {
 	CArtiBodyNode* artiBody = CAST_2PBODY(body);
-	Affine3 tm;
+	Transform_TRS tm;
 	artiBody->GetTransformLocal2World(tm);
 	tm.CopyTo(*tm_l2w);
 }
@@ -83,7 +83,7 @@ void get_body_transform_l2w(HBODY body, _TRANSFORM* tm_l2w)
 void get_body_transform_l2p(HBODY body, _TRANSFORM* tm_l2w)
 {
 	CArtiBodyNode* artiBody = CAST_2PBODY(body);
-	Affine3 tm;
+	Transform_TRS tm;
 	artiBody->GetTransformLocal2Parent(tm);
 	tm.CopyTo(*tm_l2w);
 }
@@ -92,7 +92,7 @@ void log_body_node(HBODY body)
 {
 	std::stringstream logInfo;
 	CArtiBodyNode* artiBody = CAST_2PBODY(body);
-	Affine3 tm;
+	Transform_TRS tm;
 	artiBody->GetTransformLocal2Parent(tm);
 	logInfo << artiBody->GetName_c() << ":" << tm.ToString().c_str();
 	LOGIK(logInfo.str().c_str());

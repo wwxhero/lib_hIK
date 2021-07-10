@@ -2,11 +2,23 @@
 #include "articulated_body.h"
 #include "Math.hpp"
 
-class Affine3 : protected Eigen::Affine3r
+class Transform
 {
+public:
+	virtual Eigen::Matrix3r Linear() const = 0;
+	virtual Eigen::Vector3r Translation() const = 0;
+	virtual std::string ToString() const = 0;
+};
+
+class Transform_TRS
+	: protected Eigen::Affine3r
+	, public Transform
+
+{
+	friend class CArtiBodyNode;
 	typedef Eigen::Affine3r Super;
 public:
-	Affine3(const _TRANSFORM& tm)
+	Transform_TRS(const _TRANSFORM& tm)
 	{
 		Eigen::Vector3r p(tm.tt.x, tm.tt.y, tm.tt.z);
 		Eigen::Quaternionr r(tm.r.w, tm.r.x, tm.r.y, tm.r.z);
@@ -14,22 +26,22 @@ public:
 		fromPositionOrientationScale(p, r, s);
 	}
 
-	Affine3(const Affine3& tm)
+	Transform_TRS(const Transform_TRS& tm)
 		: Super(tm)
 	{
 	}
 
-	Affine3(const Eigen::Affine3r& tm)
+	Transform_TRS(const Eigen::Affine3r& tm)
 		: Super(tm)
 	{
 	}
 
-	Affine3()
+	Transform_TRS()
 	{
 		setIdentity();
 	}
 
-	explicit Affine3(const Real m_affine[3][4])
+	explicit Transform_TRS(const Real m_affine[3][4])
 	{
 		Real* dat = data();
 		for (int i_r = 0; i_r < 3; i_r ++)
@@ -71,19 +83,19 @@ public:
 		tm.tt.z = t.z();
 	}
 
-	Affine3 operator* (const Affine3& other) const
+	Transform_TRS operator* (const Transform_TRS& other) const
 	{
-		Affine3 ret(Super::operator*(other));
+		Transform_TRS ret(Super::operator*(other));
 		return ret;
 	}
 
-	Affine3 inverse() const
+	Transform_TRS inverse() const
 	{
-		Affine3 ret(Super::inverse());
+		Transform_TRS ret(Super::inverse());
 		return ret;
 	}
 
-	std::string ToString() const
+	virtual std::string ToString() const
 	{
 		_TRANSFORM tm;
 		CopyTo(tm);
@@ -94,30 +106,29 @@ public:
 					, tm.r.w, tm.r.x, tm.r.y, tm.r.z
 					, tm.tt.x, tm.tt.y, tm.tt.z);
 		std::string strInfo(info);
-		return strInfo;
+		return std::move(strInfo);
 	}
 
-	Eigen::Matrix3r Linear() const
+	virtual Eigen::Matrix3r Linear() const
 	{
 		return linear();
 	}
 
-	void SetTT(Real x, Real y, Real z)
-	{
-		translation() = Eigen::Vector3r(x, y, z);
-	}
-
-	const Eigen::Vector3r GetTT() const
+	virtual Eigen::Vector3r Translation() const
 	{
 		return translation();
 	}
 
-	bool HasTT() const
+	virtual bool HasTT() const
 	{
 		Eigen::Vector3r tt = translation();
 		return tt.norm() > c_epsilon;
 	}
 
-	static Affine3 Scale(Real s);
+	static Transform_TRS Scale(Real s);
 };
 
+class RotScale : public Transform
+{
+
+};
