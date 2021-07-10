@@ -3,7 +3,54 @@
 #include <stack>
 #include "articulated_body.h"
 #include "ArtiBody.h"
+#include "ik_logger.h"
 
+
+
+
+CArtiBodyNode* CArtiBodyTree::CreateAnimNode(const wchar_t* name, const _TRANSFORM* tm)
+{
+	return CreateAnimNodeInternal(name, tm);
+}
+
+CArtiBodyNode* CArtiBodyTree::CreateAnimNode(const char* name, const _TRANSFORM* tm)
+{
+	return CreateAnimNodeInternal(name, tm);
+}
+
+CArtiBodyNode* CArtiBodyTree::CreateSimNode(const wchar_t* name, const _TRANSFORM* tm, TM_TYPE jtm)
+{
+	return CreateSimNodeInternal(name, tm, jtm);
+}
+
+CArtiBodyNode* CArtiBodyTree::CreateSimNode(const char* name, const _TRANSFORM* tm, TM_TYPE jtm)
+{
+	return CreateSimNodeInternal(name, tm, jtm);
+}
+
+void CArtiBodyTree::FK_Update(CArtiBodyNode* root)
+{
+	if (anim == root->c_type)
+	{
+		for (auto body : root->m_kinalst)
+			static_cast<CArtiBodyNode_anim*>(body)->FK_UpdateNode();
+	}
+	else // sim == root->c_type
+	{
+		for (auto body : root->m_kinalst)
+		{
+			switch (body->c_jtmflag)
+			{
+				case t_r:
+					static_cast<CArtiBodyNode_sim_r*>(body)->FK_UpdateNode();
+					break;
+				case t_tr:
+					static_cast<CArtiBodyNode_sim_tr*>(body)->FK_UpdateNode();
+					break;
+			}
+		}
+	}
+}
 
 void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 {
@@ -30,12 +77,6 @@ void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 	Tree<CArtiBodyNode>::TraverseDFS_botree_nonrecur(root, onEnterBody, onLeaveBody);
 }
 
-void CArtiBodyTree::FK_Update(CArtiBodyNode* root)
-{
-	for (auto body : root->m_kinalst)
-		body->FK_UpdateNode();
-}
-
 void CArtiBodyTree::Destroy(CArtiBodyNode* root)
 {
 	auto onEnterBody = [](CArtiBodyNode* node_this)
@@ -50,30 +91,28 @@ void CArtiBodyTree::Destroy(CArtiBodyNode* root)
 	Tree<CArtiBodyNode>::TraverseDFS_botree_nonrecur(root, onEnterBody, onLeaveBody);
 }
 
-void CArtiBodyNode::GetJointTransform(Transform_TRS& delta_l)
+#ifdef _DEBUG
+void CArtiBodyTree::Connect(CArtiBodyNode* from, CArtiBodyNode* to, CNN type)
 {
-	delta_l = m_delta_l;
+	assert(from->c_type == to->c_type);
+	Super::Connect(from, to, type);
 }
+#endif
 
-void CArtiBodyNode::SetJointTransform(const Transform_TRS& delta_l)
-{
-	m_delta_l = delta_l;
-}
-
-CArtiBodyNode::CArtiBodyNode(const wchar_t *name
-					, const _TRANSFORM* tm_rest_l2p)
+CArtiBodyNode::CArtiBodyNode(const wchar_t *name, NODETYPE type, TM_TYPE jtmflag)
 					: TreeNode<CArtiBodyNode>()
-					, m_local2parent0(*tm_rest_l2p)
+					, c_type(type)
+					, c_jtmflag(jtmflag)
 {
 	m_namew = name;
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 	m_namec = converter.to_bytes(m_namew);
 }
 
-CArtiBodyNode::CArtiBodyNode(const char *name
-					, const _TRANSFORM* tm_rest_l2p)
+CArtiBodyNode::CArtiBodyNode(const char *name, NODETYPE type, TM_TYPE jtmflag)
 					: TreeNode<CArtiBodyNode>()
-					, m_local2parent0(*tm_rest_l2p)
+					, c_type(type)
+					, c_jtmflag(jtmflag)
 {
 	m_namec = name;
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;

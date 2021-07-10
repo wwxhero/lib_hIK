@@ -15,17 +15,33 @@ float ik_test(float theta)
 	return ++ theta;
 }
 
-HBODY create_tree_body_node_w(const wchar_t* name
+HBODY create_anim_body_node_w(const wchar_t* name
 						, const _TRANSFORM* t_rest_local)
 {
-	CArtiBodyNode* body = new CArtiBodyNode(name, t_rest_local);
+	CArtiBodyNode* body = CArtiBodyTree::CreateAnimNode(name, t_rest_local);
 	return CAST_2HBODY(body);
 }
 
-HBODY create_tree_body_node_c(const char* name
+HBODY create_anim_body_node_c(const char* name
 						, const _TRANSFORM* t_rest_local)
 {
-	CArtiBodyNode* body = new CArtiBodyNode(name, t_rest_local);
+	CArtiBodyNode* body = CArtiBodyTree::CreateAnimNode(name, t_rest_local);
+	return CAST_2HBODY(body);
+}
+
+HBODY create_sim_body_node_w(const wchar_t* name
+						, const _TRANSFORM* t_rest_local
+						, TM_TYPE jtm)
+{
+	CArtiBodyNode* body = CArtiBodyTree::CreateSimNode(name, t_rest_local, jtm);
+	return CAST_2HBODY(body);
+}
+
+HBODY create_sim_body_node_c(const char* name
+						, const _TRANSFORM* t_rest_local
+						, TM_TYPE jtm)
+{
+	CArtiBodyNode* body = CArtiBodyTree::CreateSimNode(name, t_rest_local, jtm);
 	return CAST_2HBODY(body);
 }
 
@@ -45,7 +61,7 @@ void cnn_arti_body(HBODY from, HBODY to, enum CNN type)
 {
 	CArtiBodyNode* body_from = CAST_2PBODY(from);
 	CArtiBodyNode* body_to = CAST_2PBODY(to);
-	Tree<CArtiBodyNode>::Connect(body_from, body_to, type);
+	CArtiBodyTree::Connect(body_from, body_to, type);
 }
 
 const wchar_t* body_name_w(HBODY body)
@@ -75,25 +91,22 @@ HBODY get_next_sibling_body(HBODY body)
 void get_body_transform_l2w(HBODY body, _TRANSFORM* tm_l2w)
 {
 	CArtiBodyNode* artiBody = CAST_2PBODY(body);
-	Transform_TRS tm;
-	artiBody->GetTransformLocal2World(tm);
-	tm.CopyTo(*tm_l2w);
+	const Transform* tm = artiBody->GetTransformLocal2World();
+	tm->CopyTo(*tm_l2w);
 }
 
 void get_body_transform_l2p(HBODY body, _TRANSFORM* tm_l2w)
 {
 	CArtiBodyNode* artiBody = CAST_2PBODY(body);
-	Transform_TRS tm;
-	artiBody->GetTransformLocal2Parent(tm);
-	tm.CopyTo(*tm_l2w);
+	const Transform* tm = artiBody->GetTransformLocal2Parent();
+	tm->CopyTo(*tm_l2w);
 }
 
 void log_body_node(HBODY body)
 {
 	std::stringstream logInfo;
 	CArtiBodyNode* artiBody = CAST_2PBODY(body);
-	Transform_TRS tm;
-	artiBody->GetTransformLocal2Parent(tm);
-	logInfo << artiBody->GetName_c() << ":" << tm.ToString().c_str();
+	const Transform* tm = artiBody->GetTransformLocal2Parent();
+	logInfo << artiBody->GetName_c() << ":" << tm->ToString().c_str();
 	LOGIK(logInfo.str().c_str());
 }

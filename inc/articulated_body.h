@@ -1,7 +1,17 @@
 #pragma once
 #include "pch.h"
 
-enum CNN {FIRSTCHD = 0, NEXTSIB};
+enum CNN
+{
+	FIRSTCHD = 0,
+	NEXTSIB
+};
+
+enum NODETYPE
+{
+	anim,
+	sim
+};
 
 struct _SCALE
 {
@@ -25,13 +35,27 @@ struct _TRANSFORM
 	_TRANSLATE tt;
 };
 
+enum TM_TYPE {
+	t_tt = 0x00000001,
+	t_rx = 0x00000002,
+	t_ry = 0x00000004,
+	t_rz = 0x00000008,
+	t_r  = t_rx|t_ry|t_rz,
+	t_tr = t_tt|t_r,
+	t_s	 = 0x00000010,
+	t_trs = t_tt|t_r|t_s,
+};
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 HIKLIB(float,			ik_test)(float theta);
-HIKLIB(HBODY,			create_tree_body_node_w)(const wchar_t* name, const _TRANSFORM* tm_l2p);
-HIKLIB(HBODY,			create_tree_body_node_c)(const char* name, const _TRANSFORM* tm_l2p);
+HIKLIB(HBODY,			create_anim_body_node_w)(const wchar_t* name, const _TRANSFORM* tm_l2p);
+HIKLIB(HBODY,			create_anim_body_node_c)(const char* name, const _TRANSFORM* tm_l2p);
+HIKLIB(HBODY,			create_sim_body_node_w)(const wchar_t* name, const _TRANSFORM* tm_l2p, TM_TYPE jtm);
+HIKLIB(HBODY,			create_sim_body_node_c)(const char* name, const _TRANSFORM* tm_l2p, TM_TYPE jtm);
 HIKLIB(void,			destroy_tree_body_node)(HBODY hBody);
 HIKLIB(void,			destroy_tree_body)(HBODY hBody);
 HIKLIB(void,			cnn_arti_body)(HBODY from, HBODY to, enum CNN);
