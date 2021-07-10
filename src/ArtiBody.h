@@ -1,51 +1,54 @@
 #pragma once
 #include <string>
 #include <list>
+#include "TreeBase.h"
 #include "Joint.h"
 #include "Transform.h"
-class CArtiBody
+
+
+
+class CArtiBodyNode : public TreeNode<CArtiBodyNode>
 {
+	friend class CArtiBodyTree;
+	friend class CMoNode;		//for accessing m_kinalst
 public:
-	CArtiBody(const wchar_t *name
+	CArtiBodyNode(const wchar_t *name
 		, const _TRANSFORM* t_rest_local);
-	CArtiBody(const char *name
+	CArtiBodyNode(const char *name
 		, const _TRANSFORM* t_rest_local);
-	~CArtiBody();
-	const wchar_t* GetName_w()
+	~CArtiBodyNode();
+	const wchar_t* GetName_w() const
 	{
 		return m_namew.c_str();
 	}
-	const char* GetName_c()
+	const char* GetName_c() const
 	{
 		return m_namec.c_str();
 	}
 
-	CArtiBody* GetFirstChild()
-	{
-		return m_firstChild;
-	}
-	CArtiBody* GetNextSibling()
-	{
-		return m_nextSibling;
-	}
-
-
-	void GetTransformLocal2Parent(CTransform& l2p)
+	void GetTransformLocal2Parent(Transform_TRS& l2p) const
 	{
 		l2p = m_local2parent_cached;
 	}
 
-	void GetTransformLocal2World(CTransform& l2w)
+	void GetTransformParent2Local(Transform_TRS& p2l) const
+	{
+		p2l = m_parent2local_cached;
+	}
+
+	void GetTransformLocal2World(Transform_TRS& l2w) const
 	{
 		l2w = m_local2world_cached;
 	}
 
-	void GetJointTransform(CTransform& delta);
-	void SetJointTransform(const CTransform& delta);
+	void GetTransformWorld2Local(Transform_TRS& w2l) const
+	{
+		w2l = m_world2local_cached;
+	}
 
-	static void Connect(CArtiBody* body_from, CArtiBody* body_to, CNN type);
-	static void KINA_Initialize(CArtiBody* root);
-	static void FK_Update(CArtiBody* root);
+	void GetJointTransform(Transform_TRS& delta);
+	void SetJointTransform(const Transform_TRS& delta);
+
 private:
 	inline void FK_UpdateNode()
 	{
@@ -60,20 +63,25 @@ private:
 		m_world2local_cached = m_local2world_cached.inverse();
 	}
 private:
-	std::list<CArtiBody*> m_kinalst;
+	std::list<CArtiBodyNode*> m_kinalst;
 private:
 	std::string m_namec;
 	std::wstring m_namew;
-	CArtiBody* m_parent;
-	CArtiBody* m_firstChild;
-	CArtiBody* m_nextSibling;
 	//CJoint* m_joint;
-	CTransform m_local2parent0;
-	CTransform m_delta_l;
+	Transform_TRS m_local2parent0;
+	Transform_TRS m_delta_l;
 
 private:
-	CTransform m_local2parent_cached;
-	CTransform m_parent2local_cached;
-	CTransform m_local2world_cached;
-	CTransform m_world2local_cached;
+	Transform_TRS m_local2parent_cached;
+	Transform_TRS m_parent2local_cached;
+	Transform_TRS m_local2world_cached;
+	Transform_TRS m_world2local_cached;
+};
+
+class CArtiBodyTree : Tree<CArtiBodyNode>
+{
+public:
+	static void KINA_Initialize(CArtiBodyNode* root);
+	static void FK_Update(CArtiBodyNode* root);
+	static void Destroy(CArtiBodyNode* root);
 };
