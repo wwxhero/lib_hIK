@@ -33,25 +33,29 @@ HBODY create_arti_body(bvh11::BvhObject& bvh, Joint_bvh_ptr j_bvh, int frame)
 	auto tm_bvh = bvh.GetTransformationRelativeToParent(j_bvh, frame);
 	Eigen::Quaterniond rq(tm_bvh.linear());
 	Eigen::Vector3d tt;
-#ifdef ZERO_ENTITY_TT_HOMO
-	if (nullptr == j_bvh->parent())
+	TM_TYPE jtm;
+	bool is_root = (nullptr == j_bvh->parent());
+	if (is_root)
+	{
 		tt = Eigen::Vector3d::Zero();
+		jtm = t_tr; //translation and rotation joint
+	}
 	else
+	{
 		tt = tm_bvh.translation();
-#else
-	tt = tm_bvh.translation();
-#endif
+		jtm = t_r; //rotation joint
+	}
 
 	_TRANSFORM tm_hik = {
 		{1, 1, 1},
 		{rq.w(), rq.x(), rq.y(), rq.z()},
 		{tt.x(), tt.y(), tt.z()}
 	};
-	auto b_hik = create_tree_body_node_c(name, &tm_hik);
-#ifdef ZERO_ENTITY_TT_HOMO
+	auto b_hik = create_sim_body_node_c(name, &tm_hik, jtm);
+
 	assert(nullptr != j_bvh->parent()
 		|| tt.norm() < epsilon);
-#endif
+
 	return b_hik;
 }
 
@@ -61,18 +65,18 @@ HBODY create_arti_body_as_rest_bvh_pose(bvh11::BvhObject& bvh, Joint_bvh_ptr j_b
 	auto tm_bvh = bvh.GetTransformation(j_bvh, frame);
 	Eigen::Affine3d tm_parent_bvh;
 	auto j_parent_bvh = j_bvh->parent();
-	if (nullptr == j_parent_bvh)
+	TM_TYPE jtm;
+	bool is_root = (nullptr == j_parent_bvh);
+	if (is_root)
 	{
-#if defined ZERO_ENTITY_TT_CROSS
 		tm_parent_bvh.linear() = Eigen::Matrix3d::Identity();
 		tm_parent_bvh.translation() = tm_bvh.translation();
-#else
-		tm_parent_bvh = Eigen::Affine3d::Identity();
-#endif
+		jtm = t_tr;
 	}
 	else
 	{
 		tm_parent_bvh = bvh.GetTransformation(j_parent_bvh, frame);
+		jtm = t_r;
 	}
 
 	Eigen::Vector3d tt = tm_bvh.translation() - tm_parent_bvh.translation();
@@ -81,7 +85,7 @@ HBODY create_arti_body_as_rest_bvh_pose(bvh11::BvhObject& bvh, Joint_bvh_ptr j_b
 		{1, 0, 0, 0},
 		{tt.x(), tt.y(), tt.z()}
 	};
-	auto b_hik = create_tree_body_node_c(name, &tm_hik);
+	auto b_hik = create_sim_body_node_c(name, &tm_hik, jtm);
 	assert(nullptr != j_parent_bvh
 		|| tt.norm() < epsilon);
 	return b_hik;
@@ -668,8 +672,7 @@ HBODY create_tree_body_bvh_file(const wchar_t* path_src)
 
 HBODY create_tree_body_bvh(HBVH hBvh)
 {
-	// bvh11::BvhObject* bvh = reinterpret_cast<bvh11::BvhObject*>(hBvh);
-	bvh11::BvhObject* bvh = CAST_2P<HBVH, bvh11::BvhObject>(hBvh);
+	bvh11::BvhObject* bvh = CAST_2PBVH(hBvh);
 	HBODY h_root = createArticulatedBody(*bvh, -1, false);
 	return h_root;
 }
@@ -733,7 +736,7 @@ void pose_body(HBVH bvh, HBODY body, int i_frame)
 unsigned int channels(HBVH hBvh)
 {
 	bvh11::BvhObject* pBVH = CAST_2PBVH(hBvh);
-	return pBVH->channels().size();
+	return (unsigned int)pBVH->channels().size();
 }
 
 unsigned int frames(HBVH hBvh)

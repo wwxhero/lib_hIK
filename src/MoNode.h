@@ -4,7 +4,6 @@
 #include "ArtiBody.h"
 #include "ik_logger.h"
 #include "matrix3.h"
-typedef CArtiBodyNode CJoint; //CJoint is yet to be developed
 
 class CMoNode : public TreeNode<CMoNode>
 {
@@ -14,8 +13,8 @@ public:
 private:
 	struct JointPair
 	{
-		CJoint* j_from;
-		CJoint* j_to;
+		const IJoint* j_from;
+		IJoint* j_to;
 		Matrix3 from2to;
 		Matrix3 to2from;
 	};
@@ -36,8 +35,8 @@ private:
 		else
 			f2t_w.setData(mf2t_w);
 
-		pair->j_from = (CJoint *)artiPair[0]; // todo: need a real joint
-		pair->j_to = (CJoint *)artiPair[1];
+		pair->j_from = artiPair[0]->GetJoint(); 
+		pair->j_to = const_cast<CArtiBodyNode*>(artiPair[1])->GetJoint();
 		bool has_parent_0 = (NULL != artiPair[0]->GetParent());
 		bool has_parent_1 = (NULL != artiPair[1]->GetParent());
 		bool has_parent = (has_parent_0 || has_parent_1);
@@ -47,18 +46,16 @@ private:
 		{
 			if (cross == tm_type)
 			{
-				Transform_TRS from2world, world2to;
-				artiPair[0]->GetTransformLocal2World(from2world);
-				artiPair[1]->GetTransformWorld2Local(world2to);
-				pair->from2to = world2to.Linear() * f2t_w * from2world.Linear();
+				const Transform* from2world = artiPair[0]->GetTransformLocal2World();
+				const Transform* world2to = artiPair[1]->GetTransformWorld2Local();
+				pair->from2to = world2to->getLinear() * f2t_w * from2world->getLinear();
 				pair->to2from = pair->from2to.inverse();
 			}
 			else if(homo == tm_type)
 			{
-				Transform_TRS bound_from, bound_to_inv;
-				artiPair[0]->GetTransformLocal2Parent(bound_from);
-				artiPair[1]->GetTransformParent2Local(bound_to_inv);
-				pair->from2to = bound_to_inv.Linear() * bound_from.Linear();
+				const Transform* bound_from = artiPair[0]->GetTransformLocal2Parent();
+				const Transform* bound_to_inv = artiPair[1]->GetTransformParent2Local();
+				pair->from2to = bound_to_inv->getLinear() * bound_from->getLinear();
 				// pair->to2from = pair->from2to.inverse(); to2from is not used for homo transformation
 			}
 		}
@@ -145,34 +142,36 @@ public:
 	{
 		for (JointPair* pair : m_jointPairs)
 		{
-			CJoint* j_from = pair->j_from;
-			CJoint* j_to = pair->j_to;
-			Transform_TRS delta_from;
-			j_from->GetJointTransform(delta_from);
-			Transform_TRS delta_to;
+			const IJoint* j_from = pair->j_from;
+			IJoint* j_to = pair->j_to;
+			const Transform* delta_from = j_from->GetTransform();
+			Eigen::Matrix3r linear;
+			Eigen::Vector3r tt;
 			switch (m_tmType)
 			{
-			 	case cross:
+				case cross:
 				{
-					Eigen::Matrix3r linear =  pair->from2to
-											* delta_from.Linear()
-											* pair->to2from;
-					Eigen::Vector3r tt = pair->from2to * delta_from.Translation();
-					delta_to.Initialize(linear, tt);
+					linear =  pair->from2to
+							* delta_from->getLinear()
+							* pair->to2from;
+					tt = pair->from2to * delta_from->getTranslation();
 					break;
 				}
-			 	case homo:
-			 		// delta_to = pair->from2to * delta_from;
-			 		Eigen::Matrix3r linear = pair->from2to * delta_from.Linear();
-			 		Eigen::Vector3r tt = pair->from2to * delta_from.Translation();
-			 		delta_to.Initialize(linear, tt);
-			 		break;
+				case homo:
+					// delta_to = pair->from2to * delta_from;
+					linear = pair->from2to * delta_from->getLinear();
+					tt = pair->from2to * delta_from->getTranslation();
+					break;
 			}
-			j_to->SetJointTransform(delta_to);
+			j_to->SetLinear(linear);
+			j_to->SetTranslation(tt);
 
 			std::stringstream logInfo;
-			logInfo << "\n\t" << TM_TYPE_STR[m_tmType] << j_from->GetName_c() <<":" << delta_from.ToString().c_str() << "\n"
-					<<   "\t" << TM_TYPE_STR[m_tmType] << j_to->GetName_c() << ":" <<  delta_to.ToString().c_str() << "\n";
+			logInfo << "\n\t" << TM_TYPE_STR[m_tmType] << ":" << j_from->GetName_c() << ":" << delta_from->ToString().c_str()
+				<< "\n\t" << pair->from2to.ToString().c_str()
+				<< "\n\t" << TM_TYPE_STR[m_tmType] << ":" << j_to->GetName_c() << ":" << j_to->GetTransform()->ToString().c_str()
+				<< "\n\t" << "Local2world: " << j_to->GetTransformLocal2World()->ToString().c_str();
+
 			LOGIK(logInfo.str().c_str());
 		}
 		CArtiBodyTree::FK_Update(m_hostee);
