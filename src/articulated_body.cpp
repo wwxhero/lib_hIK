@@ -15,34 +15,44 @@ float ik_test(float theta)
 	return ++ theta;
 }
 
-HBODY create_anim_body_node_w(const wchar_t* name
+HBODY create_fbx_body_node_w(const wchar_t* name
 						, const _TRANSFORM* t_rest_local)
 {
 	CArtiBodyNode* body = CArtiBodyTree::CreateAnimNode(name, t_rest_local);
 	return CAST_2HBODY(body);
 }
 
-HBODY create_anim_body_node_c(const char* name
+HBODY create_fbx_body_node_c(const char* name
 						, const _TRANSFORM* t_rest_local)
 {
 	CArtiBodyNode* body = CArtiBodyTree::CreateAnimNode(name, t_rest_local);
 	return CAST_2HBODY(body);
 }
 
-HBODY create_sim_body_node_w(const wchar_t* name
+HBODY create_bvh_body_node_w(const wchar_t* name
 						, const _TRANSFORM* t_rest_local
 						, TM_TYPE jtm)
 {
-	CArtiBodyNode* body = CArtiBodyTree::CreateSimNode(name, t_rest_local, jtm);
+	CArtiBodyNode* body = CArtiBodyTree::CreateSimNode(name, t_rest_local, bvh, jtm);
 	return CAST_2HBODY(body);
 }
 
-HBODY create_sim_body_node_c(const char* name
+HBODY create_bvh_body_node_c(const char* name
 						, const _TRANSFORM* t_rest_local
 						, TM_TYPE jtm)
 {
-	CArtiBodyNode* body = CArtiBodyTree::CreateSimNode(name, t_rest_local, jtm);
+	CArtiBodyNode* body = CArtiBodyTree::CreateSimNode(name, t_rest_local, bvh, jtm);
 	return CAST_2HBODY(body);
+}
+
+bool clone_body(HBODY hSrc, BODY_TYPE nodetype, HBODY* hDst)
+{
+	CArtiBodyNode* body_src = CAST_2PBODY(hSrc);
+	CArtiBodyNode* body_dst = NULL;
+	bool ret = CArtiBodyTree::Clone(body_src, nodetype, &body_dst);
+	if (ret)
+		*hDst = CAST_2HBODY(body_dst);
+	return ret;
 }
 
 void destroy_tree_body_node(HBODY hBody)

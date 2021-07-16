@@ -18,6 +18,12 @@ void destroy_tree_motion_node(HMOTIONNODE node)
 	delete mo;
 }
 
+void destroy_tree_motion(HMOTIONNODE tree)
+{
+	CMoNode* mo = CAST_2PMONODE(tree);
+	CMoTree::Destroy(mo);
+}
+
 bool motion_sync_cnn_homo(HMOTIONNODE from, HMOTIONNODE to, CNN type)
 {
 	//todo: connection to motion nodes as a homo-space map

@@ -27,7 +27,7 @@ const double epsilon = 1e-4;
 typedef std::shared_ptr<const bvh11::Joint> Joint_bvh_ptr;
 typedef std::pair<Joint_bvh_ptr, HBODY> Bound;
 
-HBODY create_arti_body(bvh11::BvhObject& bvh, Joint_bvh_ptr j_bvh, int frame)
+HBODY create_arti_body(bvh11::BvhObject& bvh, Joint_bvh_ptr j_bvh, int frame = -1)
 {
 	auto name = j_bvh->name().c_str();
 	auto tm_bvh = bvh.GetTransformationRelativeToParent(j_bvh, frame);
@@ -51,7 +51,7 @@ HBODY create_arti_body(bvh11::BvhObject& bvh, Joint_bvh_ptr j_bvh, int frame)
 		{rq.w(), rq.x(), rq.y(), rq.z()},
 		{tt.x(), tt.y(), tt.z()}
 	};
-	auto b_hik = create_sim_body_node_c(name, &tm_hik, jtm);
+	auto b_hik = create_bvh_body_node_c(name, &tm_hik, jtm);
 
 	assert(nullptr != j_bvh->parent()
 		|| tt.norm() < epsilon);
@@ -85,7 +85,7 @@ HBODY create_arti_body_as_rest_bvh_pose(bvh11::BvhObject& bvh, Joint_bvh_ptr j_b
 		{1, 0, 0, 0},
 		{tt.x(), tt.y(), tt.z()}
 	};
-	auto b_hik = create_sim_body_node_c(name, &tm_hik, jtm);
+	auto b_hik = create_bvh_body_node_c(name, &tm_hik, jtm);
 	assert(nullptr != j_parent_bvh
 		|| tt.norm() < epsilon);
 	return b_hik;
@@ -96,7 +96,6 @@ HBODY createArticulatedBody(bvh11::BvhObject& bvh, int frame, bool asRestBvhPose
 {
 	//traverse the bvh herachical structure
 	//	to create an articulated body with the given posture
-	bool reset_posture = (frame < 0);
 	std::queue<Bound> queBFS;
 	auto root_j_bvh = bvh.root_joint();
 	auto root_b_hik = asRestBvhPose
@@ -119,6 +118,45 @@ HBODY createArticulatedBody(bvh11::BvhObject& bvh, int frame, bool asRestBvhPose
 			auto b_hik_child = asRestBvhPose
 				? create_arti_body_as_rest_bvh_pose(bvh, j_bvh_child, frame)
 				: create_arti_body(bvh, j_bvh_child, frame);
+			Bound child = std::make_pair(
+				j_bvh_child,
+				b_hik_child
+			);
+			queBFS.push(child);
+			auto& rb_next = b_hik_child;
+			cnn_arti_body(rb_this, rb_next, cnn);
+			cnn = NEXTSIB;
+			rb_this = rb_next;
+		}
+		queBFS.pop();
+	}
+	initialize_kina(root_b_hik);
+	update_fk(root_b_hik);
+	return root_b_hik;
+}
+
+HBODY CreateBVHArticulatedBody(bvh11::BvhObject& bvh)
+{
+	//traverse the bvh herachical structure
+	//	to create an articulated body with the given posture
+	std::queue<Bound> queBFS;
+	auto root_j_bvh = bvh.root_joint();
+	auto root_b_hik = create_arti_body(bvh, root_j_bvh);
+	Bound root = std::make_pair(
+		root_j_bvh,
+		root_b_hik
+	);
+	queBFS.push(root);
+	while (!queBFS.empty())
+	{
+		auto pair = queBFS.front();
+		auto j_bvh = pair.first;
+		auto b_hik = pair.second;
+		CNN cnn = FIRSTCHD;
+		auto& rb_this = b_hik;
+		for (auto j_bvh_child : j_bvh->children())
+		{
+			auto b_hik_child = create_arti_body(bvh, j_bvh_child);
 			Bound child = std::make_pair(
 				j_bvh_child,
 				b_hik_child
@@ -390,47 +428,6 @@ inline bool verify_bound(Bound b_this, bool enter, const bvh11::BvhObject& bvh, 
 	return verified;
 }
 
-void pose(HBODY body_root, const bvh11::BvhObject& bvh, int i_frame)
-{
-	{
-		auto lam_onEnter = [&bvh = std::as_const(bvh), i_frame](Bound b_this) -> void
-		{
-			Joint_bvh_ptr joint_bvh = b_this.first;
-			HBODY body_hik = b_this.second;
-			Eigen::Affine3d delta_l = bvh.GetLocalDeltaTM(joint_bvh, i_frame);
-			Eigen::Quaterniond r(delta_l.linear());
-			Eigen::Vector3d tt(delta_l.translation());
-			_TRANSFORM delta_l_tm = {
-				{1, 1, 1}, //scale is trivial
-				{r.w(), r.x(), r.y(), r.z()}, //rotation
-				{tt.x(), tt.y(), tt.z()}, //trivial
-			};
-			set_joint_transform(body_hik, &delta_l_tm);
-		};
-		auto lam_onLeave = [&bvh = std::as_const(bvh), i_frame](Bound b_this) -> void
-		{
-		};
-		Bound root = std::make_pair(bvh.root_joint(), body_root);
-		TraverseDFS_boundtree_recur(root, lam_onEnter, lam_onLeave);
-	}
-	update_fk(body_root);
-#if defined _DEBUG
-	{
-		//pose the articulated body with the posture for frame i_frame
-		//	the articulated body should have same rest posture as bvh
-		auto lam_onEnter = [&bvh = std::as_const(bvh), i_frame](Bound b_this) -> void
-		{
-			verify_bound(b_this, true, bvh, i_frame);
-		};
-		auto lam_onLeave = [&bvh = std::as_const(bvh), i_frame](Bound b_this) -> void
-		{
-			verify_bound(b_this, false, bvh, i_frame);
-		};
-		Bound root = std::make_pair(bvh.root_joint(), body_root);
-		TraverseDFS_boundtree_recur(root, lam_onEnter, lam_onLeave);
-	}
-#endif
-}
 
 template<typename LAMaccessEnter, typename LAMaccessLeave>
 inline void TraverseBFS_boundtree_norecur(Bound root, LAMaccessEnter OnEnterBound, LAMaccessLeave OnLeaveBound)
@@ -461,7 +458,7 @@ inline void TraverseBFS_boundtree_norecur(Bound root, LAMaccessEnter OnEnterBoun
 	}
 }
 // pose articulated body with the bvh and the frame
-void pose_nonrecur(HBODY body_root, const bvh11::BvhObject& bvh, int i_frame, bool header_resetted)
+void pose_nonrecur(HBODY body_root, const bvh11::BvhObject& bvh, int i_frame, bool verify)
 {
 	auto onEnterBound_pose = [&bvh, i_frame](Bound b_this)
 	{
@@ -484,7 +481,7 @@ void pose_nonrecur(HBODY body_root, const bvh11::BvhObject& bvh, int i_frame, bo
 
 	update_fk(body_root);
 
-	if (!header_resetted)
+	if (verify)
 	{
 		auto onEnterBound_verify = [](Bound b_this)
 		{
@@ -499,7 +496,7 @@ void pose_nonrecur(HBODY body_root, const bvh11::BvhObject& bvh, int i_frame, bo
 	}
 }
 
-void updateBVHAnim(HBODY body_root, bvh11::BvhObject& bvh, int i_frame, bool header_resetted)
+void updateBVHAnim(HBODY body_root, bvh11::BvhObject& bvh, int i_frame, bool verify)
 {
 	auto onEnterBound_pose = [&bvh, i_frame](Bound b_this)
 	{
@@ -530,7 +527,7 @@ void updateBVHAnim(HBODY body_root, bvh11::BvhObject& bvh, int i_frame, bool hea
 
 	update_fk(body_root);
 
-	if (header_resetted)
+	if (verify)
 	{
 		auto onEnterBound_verify = [](Bound b_this)
 		{
@@ -550,10 +547,16 @@ bool ResetRestPose(bvh11::BvhObject& bvh, int t)
 {
 	int n_frames = bvh.frames();
 	bool in_range = (-1 < t
-		&& t < n_frames);
+					&& t < n_frames);
 	if (!in_range)
 		return false;
-	HBODY h_driver = createArticulatedBody(bvh, -1, false); //t = -1: the rest posture in BVH file
+	HBODY h_driver = H_INVALID;
+	HBODY h_driveeProxy = H_INVALID;
+	HBODY h_drivee = H_INVALID;
+	bool resetted = true;
+	// HBODY h_driver = createArticulatedBody(bvh, -1, false); //t = -1: the rest posture in BVH file
+	h_driver = CreateBVHArticulatedBody(bvh);
+	resetted = VALID_HANDLE(h_driver);
 #if defined _DEBUG
 	{
 		std::cout << "Bounds:" << std::endl;
@@ -571,7 +574,12 @@ bool ResetRestPose(bvh11::BvhObject& bvh, int t)
 		TraverseDFS_boundtree_recur(root, lam_onEnter, lam_onLeave);
 	}
 #endif
-	HBODY h_driveeProxy = createArticulatedBody(bvh, t, false);
+	if (resetted)
+	{
+		pose_nonrecur(h_driver, bvh, t, true);
+		resetted = clone_body(h_driver, BODY_TYPE::fbx, &h_driveeProxy); // reset = false
+	}
+
 #if 0 //defined _DEBUG
 	{
 		std::cout << "Bounds:" << std::endl;
@@ -590,8 +598,11 @@ bool ResetRestPose(bvh11::BvhObject& bvh, int t)
 		TraverseDFS_boundtree_recur(root, lam_onEnter, lam_onLeave);
 	}
 #endif
-	HBODY h_drivee = createArticulatedBody(bvh, t, true);
+	if (resetted)
+		resetted = clone_body(h_driveeProxy, BODY_TYPE::bvh, &h_drivee);
+
 #if defined _DEBUG
+	if (resetted)
 	{
 		std::cout << "Bounds:" << std::endl;
 		int n_indent = 1;
@@ -608,57 +619,56 @@ bool ResetRestPose(bvh11::BvhObject& bvh, int t)
 		TraverseDFS_boundtree_recur(root, lam_onEnter, lam_onLeave);
 	}
 #endif
-	HMOTIONNODE h_motion_driver = create_tree_motion_node(h_driver);
-	HMOTIONNODE h_motion_driveeProxy = create_tree_motion_node(h_driveeProxy);
-	bool sync_created = motion_sync_cnn_homo(h_motion_driver, h_motion_driveeProxy, FIRSTCHD);
-	assert(sync_created && "homo sync should be created for 2 same-header-BVHs");
-
-	HMOTIONNODE h_motion_drivee = create_tree_motion_node(h_drivee);
-	sync_created = motion_sync_cnn_cross_c(h_motion_driveeProxy, h_motion_drivee, FIRSTCHD, NULL, 0, NULL);
-	assert(sync_created && "cross sync should be created for 2 algined postures");
-
-	bool pre_reset_header = true;
-
-	bool header_resetted = false;
-	if (pre_reset_header)
+	if (resetted)
 	{
-		updateHeader(bvh, h_drivee);
-		header_resetted = true;
+		HMOTIONNODE h_motion_driver = create_tree_motion_node(h_driver);
+		HMOTIONNODE h_motion_driveeProxy = create_tree_motion_node(h_driveeProxy);
+		bool sync_created = motion_sync_cnn_homo(h_motion_driver, h_motion_driveeProxy, FIRSTCHD);
+		assert(sync_created && "homo sync should be created for 2 same-header-BVHs");
+
+		HMOTIONNODE h_motion_drivee = create_tree_motion_node(h_drivee);
+		sync_created = motion_sync_cnn_cross_c(h_motion_driveeProxy, h_motion_drivee, FIRSTCHD, NULL, 0, NULL);
+		assert(sync_created && "cross sync should be created for 2 algined postures");
+
+		bool pre_reset_header = true;
+
+		bool header_resetted = false;
+		if (pre_reset_header)
+		{
+			updateHeader(bvh, h_drivee);
+			header_resetted = true;
+		}
+
+		for (int i_frame = 0
+			; i_frame < n_frames
+			; i_frame++)
+		{
+			pose_nonrecur(h_driver, bvh, i_frame, !header_resetted);
+			motion_sync(h_motion_driver);
+			updateBVHAnim(h_drivee, bvh, i_frame, header_resetted);
+		}
+
+		if (!pre_reset_header)
+			updateHeader(bvh, h_drivee);
+
+		HMOTIONNODE h_motions[] = {h_motion_driver, h_motion_driveeProxy, h_motion_drivee};
+		const int n_motions = sizeof(h_motions)/sizeof(HMOTIONNODE);
+		for (int i_motion = 0; i_motion < n_motions; i_motion++)
+			destroy_tree_motion_node(h_motions[i_motion]);
+
 	}
 
-	for (int i_frame = 0
-		; i_frame < n_frames
-		; i_frame++)
+
+	HBODY bodies[] = {h_driver, h_driveeProxy, h_drivee};
+	const int n_body = sizeof(bodies)/sizeof(HBODY);
+	for (int i_body = 0; i_body < n_body; i_body ++)
 	{
-		pose_nonrecur(h_driver, bvh, i_frame, header_resetted);
-		motion_sync(h_motion_driver);
-		updateBVHAnim(h_drivee, bvh, i_frame, header_resetted);
+		if (VALID_HANDLE(bodies[i_body]))
+			destroy_tree_body(bodies[i_body]);
 	}
 
-	if (!pre_reset_header)
-		updateHeader(bvh, h_drivee);
+	return resetted;
 
-	auto lam_onMoEnter = [](HMOTIONNODE node)
-	{
-	};
-	auto lam_onMoLeave = [](HMOTIONNODE node)
-	{
-		destroy_tree_motion_node(node);
-	};
-	TraverseDFS_motree_nonrecur(h_motion_driver, lam_onMoEnter, lam_onMoLeave);
-
-	auto lam_onBoEnter = [](HBODY node)
-	{
-	};
-	auto lam_onBoLeave = [](HBODY node)
-	{
-		destroy_tree_body_node(node);
-	};
-	TraverseDFS_botree_nonrecur(h_driver, lam_onBoEnter, lam_onBoLeave);
-	TraverseDFS_botree_nonrecur(h_driveeProxy, lam_onBoEnter, lam_onBoLeave);
-	TraverseDFS_botree_nonrecur(h_drivee, lam_onBoEnter, lam_onBoLeave);
-
-	return true;
 }
 
 HBODY create_tree_body_bvh_file(const wchar_t* path_src)

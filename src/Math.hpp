@@ -40,3 +40,5 @@ typedef Transform<Real,3,Affine> Affine3r;
 } // end namespace Eigen
 
 #pragma pop_macro("new")
+
+void vec_roll_to_mat3_normalized(const Eigen::Vector3r& nor, const Real roll, Eigen::Matrix3r& rotm);

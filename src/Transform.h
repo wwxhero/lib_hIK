@@ -202,6 +202,12 @@ public:
 		m_rotq = tm0.m_rotq * delta.m_rotq;
 		m_tt = tm0.m_rotq*delta.m_tt + tm0.m_tt;
 	}
+
+	bool Valid() const
+	{
+		auto abs_rotq = m_rotq.norm();
+		return 1 - c_epsilon < abs_rotq && abs_rotq < 1 + c_epsilon;
+	}
 private:
 	Eigen::Vector3r m_tt;
 };
