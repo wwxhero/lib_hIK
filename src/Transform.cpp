@@ -96,7 +96,7 @@ Eigen::Matrix3r Transform_R::getLinear() const
 
 void Transform_R::setLinear(const Eigen::Matrix3r& tm_l)
 {
-	assert(tm_l.isUnitary(0.005));
+	assert(tm_l.isUnitary((Real)0.005));
 	m_rotq = tm_l;
 }
 
