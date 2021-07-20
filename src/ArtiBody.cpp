@@ -4,9 +4,7 @@
 #include "articulated_body.h"
 #include "ArtiBody.h"
 #include "ik_logger.h"
-
-
-
+#include <sstream>
 
 CArtiBodyNode* CArtiBodyTree::CreateAnimNode(const wchar_t* name, const _TRANSFORM* tm)
 {
@@ -18,24 +16,257 @@ CArtiBodyNode* CArtiBodyTree::CreateAnimNode(const char* name, const _TRANSFORM*
 	return CreateAnimNodeInternal(name, tm);
 }
 
-CArtiBodyNode* CArtiBodyTree::CreateSimNode(const wchar_t* name, const _TRANSFORM* tm, TM_TYPE jtm)
+CArtiBodyNode* CArtiBodyTree::CreateSimNode(const wchar_t* name, const _TRANSFORM* tm, BODY_TYPE type, TM_TYPE jtm, bool local)
 {
-	return CreateSimNodeInternal(name, tm, jtm);
+	return CreateSimNodeInternal(name, tm, type, jtm, local);
 }
 
-CArtiBodyNode* CArtiBodyTree::CreateSimNode(const char* name, const _TRANSFORM* tm, TM_TYPE jtm)
+CArtiBodyNode* CArtiBodyTree::CreateSimNode(const char* name, const _TRANSFORM* tm, BODY_TYPE type, TM_TYPE jtm, bool local)
 {
-	return CreateSimNodeInternal(name, tm, jtm);
+	return CreateSimNodeInternal(name, tm, type, jtm, local);
+}
+
+bool CArtiBodyTree::CloneNode_fbx(const CArtiBodyNode* src, CArtiBodyNode** dst)
+{
+	*dst = NULL;
+	const Transform* l2p_tm = src->GetTransformLocal2Parent();
+	_TRANSFORM l2p_0_tm;
+	l2p_tm->CopyTo(l2p_0_tm);
+
+	CArtiBodyNode* src_parent = src->GetParent();
+	bool is_root = (NULL == src_parent);
+	if (is_root)
+		l2p_0_tm.tt.x = l2p_0_tm.tt.y = l2p_0_tm.tt.z = 0;
+
+	*dst = CreateAnimNode(src->GetName_w(), &l2p_0_tm);
+	return NULL != *dst;
+}
+
+bool CArtiBodyTree::CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst)
+{
+	*dst = NULL;
+	CArtiBodyNode* src_parent = src->GetParent();
+	bool is_root = (NULL == src_parent);
+	if (is_root)
+	{
+		_TRANSFORM l2p_0_tm = {
+			{1, 1, 1},
+			{1, 0, 0, 0},
+			{0, 0, 0}
+		};
+		*dst = CreateSimNode(src->GetName_w(), &l2p_0_tm, bvh, t_tr, true);
+	}
+	else
+	{
+		const Transform* l2w_parent = src_parent->GetTransformLocal2World();
+		const Transform* l2w_this = src->GetTransformLocal2World();
+		auto offset = l2w_this->getTranslation() - l2w_parent->getTranslation();
+		_TRANSFORM l2p_0_tm = {
+			{1, 1, 1},
+			{1, 0, 0, 0},
+			{offset.x(), offset.y(), offset.z()}
+		};
+		*dst = CreateSimNode(src->GetName_w(), &l2p_0_tm, bvh, t_r, true);
+	}
+	return NULL != *dst;
+}
+
+
+
+bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst)
+{
+	// if (0 == strcmp(src->GetName_c(), "LeftHand"))
+	//  	DebugBreak(); //a zero length bone
+	// if (0 == strcmp(src->GetName_c(), "LeftForeArm"))
+	//  	DebugBreak(); //a zero length bone
+	const CArtiBodyNode* child_src = src->GetFirstChild();
+	const CArtiBodyNode* parent_src = src->GetParent();
+	bool is_root = (NULL == parent_src);
+	bool is_leaf = (NULL == child_src);
+	bool single_node = (is_leaf && is_root);
+	*dst = NULL;
+	if (single_node)
+		return CloneNode_bvh(src, dst);
+	else // (!single_node)
+	{
+		bool valid_nor = false;
+		Eigen::Vector3r nor = Eigen::Vector3r::Zero();
+
+		Eigen::Vector3r tt_l2p;
+		const Transform* tm_this = src->GetTransformLocal2World();
+		const Eigen::Vector3r& tt_this = tm_this->getTranslation();
+
+		auto GetDir = [](const Eigen::Vector3r &tt_from, const Eigen::Vector3r &tt_to, Eigen::Vector3r& dir) -> bool
+			{
+				auto vec = tt_to - tt_from;
+				auto abs_vec = vec.norm();
+				bool valid_dir = (abs_vec > 0.01); //no neighboring joints are closer than 1 cm
+				if (valid_dir)
+				{
+					auto abs_vec_inv = 1 / abs_vec;
+					dir.x() = vec.x() * abs_vec_inv;
+					dir.y() = vec.y() * abs_vec_inv;
+					dir.z() = vec.z() * abs_vec_inv;
+				}
+				return valid_dir;
+			};
+
+		auto onSearchBody = [&nor, tt_this, GetDir](const CArtiBodyNode* node) -> bool
+			{
+				Eigen::Vector3r tt_other = node->GetTransformLocal2World()->getTranslation();
+				bool valid_dir = GetDir(tt_this, tt_other, nor);
+				return valid_dir;
+			};
+
+		if (!(valid_nor = Tree<CArtiBodyNode>::SearchBFS_botree_nonrecur(src, onSearchBody)))
+		{
+			while (!valid_nor
+				&& (NULL != parent_src))
+			{
+				Eigen::Vector3r tt_other = parent_src->GetTransformLocal2World()->getTranslation();
+				valid_nor = GetDir(tt_other, tt_this, nor);
+				parent_src = parent_src->GetParent();
+			}
+		}
+
+		Eigen::Quaternionr rot_q;
+		if (valid_nor)
+		{
+			Eigen::Matrix3r rot_m;
+			vec_roll_to_mat3_normalized(nor, 0, rot_m);
+			rot_q = rot_m;
+#ifdef _DEBUG
+			Eigen::Vector3r nor_prime = rot_m * Eigen::Vector3r::UnitY();
+			Eigen::Vector3r err_v = nor-nor_prime;
+			Real err_norm = err_v.norm();
+			bool matrix_corr = (err_norm < c_epsilon);
+			IKAssert(matrix_corr);
+			if (!matrix_corr)
+			{
+				std::stringstream msg;
+				msg << src->GetName_c() << ":" << std::endl
+										 << "\tnor = \n" << nor << std::endl
+										 << "\trot_m = \n"<< rot_m << std::endl;
+				LOGIK(msg.str().c_str());
+			}
+#endif
+		}
+		else
+			rot_q = Eigen::Quaternionr::Identity();
+
+		_TRANSFORM tm = {
+			{1, 1, 1},
+			{rot_q.w(), rot_q.x(), rot_q.y(), rot_q.z()},
+			{tt_this.x(), tt_this.y(), tt_this.z()}
+		};
+		TM_TYPE tm_type = (is_root? t_tr : t_r);
+		*dst = CreateSimNode(src->GetName_w(), &tm, htr, tm_type, false);
+
+		return NULL != *dst;
+	}
+
+
+
+
+}
+
+bool CArtiBodyTree::CloneNode(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst)
+{
+	bool ret = false;
+	switch(type)
+	{
+		case fbx:
+		{
+			ret = CloneNode_fbx(src, dst);
+			break;
+		}
+		case bvh:
+		{
+			ret = CloneNode_bvh(src, dst);
+			break;
+		}
+		case htr:
+		{
+			ret = CloneNode_htr(src, dst);
+			break;
+		}
+	}
+	return ret;
+}
+
+bool CArtiBodyTree::Clone(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst)
+{
+	typedef std::pair<const CArtiBodyNode*, CArtiBodyNode*> Bound;
+	//traverse the bvh herachical structure
+	//	to create an articulated body with the given posture
+
+	std::queue<Bound> queBFS;
+	const CArtiBodyNode* root_src = src;
+	CArtiBodyNode* root_dst = NULL;
+	bool cloned = CArtiBodyTree::CloneNode(root_src, type, &root_dst);
+	if (cloned)
+	{
+		Bound root = std::make_pair(
+			root_src,
+			root_dst
+		);
+		queBFS.push(root);
+		while (!queBFS.empty()
+			&& cloned)
+		{
+			Bound pair = queBFS.front();
+			const CArtiBodyNode* body_src = pair.first;
+			CArtiBodyNode* body_dst = pair.second;
+			CNN cnn = FIRSTCHD;
+			CArtiBodyNode* b_this = body_dst;
+			for (const CArtiBodyNode* child_body_src = body_src->GetFirstChild()
+				; NULL != child_body_src && cloned
+				; child_body_src = child_body_src->GetNextSibling())
+			{
+				CArtiBodyNode* child_body_dst = NULL;
+				cloned = CArtiBodyTree::CloneNode(child_body_src, type, &child_body_dst);
+				if (cloned)
+				{
+					Bound child = std::make_pair(
+						child_body_src,
+						child_body_dst
+					);
+					queBFS.push(child);
+					CArtiBodyNode* b_next = child_body_dst;
+					CArtiBodyTree::Connect(b_this, b_next, cnn);
+					cnn = NEXTSIB;
+					b_this = b_next;
+				}
+			}
+			queBFS.pop();
+		}
+	}
+
+	if (cloned)
+	{
+		KINA_Initialize(root_dst);
+		FK_Update(root_dst);
+		*dst = root_dst;
+	}
+	else
+	{
+		if (NULL != root_dst)
+			Destroy(root_dst);
+	}
+
+	return cloned;
+
 }
 
 void CArtiBodyTree::FK_Update(CArtiBodyNode* root)
 {
-	if (anim == root->c_type)
+	bool is_an_anim = (root->c_type&anim);
+	if (is_an_anim)
 	{
 		for (auto body : root->m_kinalst)
 			static_cast<CArtiBodyNode_anim*>(body)->FK_UpdateNode();
 	}
-	else // sim == root->c_type
+	else // not an anim
 	{
 		for (auto body : root->m_kinalst)
 		{
@@ -72,6 +303,7 @@ void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 												child_kinalst.begin(),
 												child_kinalst.end());
 						}
+						node_this->OnKINA_Initialize();
 					};
 
 	Tree<CArtiBodyNode>::TraverseDFS_botree_nonrecur(root, onEnterBody, onLeaveBody);
@@ -99,7 +331,7 @@ void CArtiBodyTree::Connect(CArtiBodyNode* from, CArtiBodyNode* to, CNN type)
 }
 #endif
 
-CArtiBodyNode::CArtiBodyNode(const wchar_t *name, NODETYPE type, TM_TYPE jtmflag)
+CArtiBodyNode::CArtiBodyNode(const wchar_t *name, BODY_TYPE type, TM_TYPE jtmflag)
 					: TreeNode<CArtiBodyNode>()
 					, c_type(type)
 					, c_jtmflag(jtmflag)
@@ -109,7 +341,7 @@ CArtiBodyNode::CArtiBodyNode(const wchar_t *name, NODETYPE type, TM_TYPE jtmflag
 	m_namec = converter.to_bytes(m_namew);
 }
 
-CArtiBodyNode::CArtiBodyNode(const char *name, NODETYPE type, TM_TYPE jtmflag)
+CArtiBodyNode::CArtiBodyNode(const char *name, BODY_TYPE type, TM_TYPE jtmflag)
 					: TreeNode<CArtiBodyNode>()
 					, c_type(type)
 					, c_jtmflag(jtmflag)

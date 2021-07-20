@@ -7,10 +7,13 @@ enum CNN
 	NEXTSIB
 };
 
-enum NODETYPE
+enum BODY_TYPE
 {
-	anim,
-	sim
+	fbx = 0x00000001,
+	bvh = 0x00000002,
+	htr = 0x00000004,
+	anim = fbx,
+	sim = bvh|htr,
 };
 
 struct _SCALE
@@ -52,10 +55,11 @@ extern "C" {
 #endif
 
 HIKLIB(float,			ik_test)(float theta);
-HIKLIB(HBODY,			create_anim_body_node_w)(const wchar_t* name, const _TRANSFORM* tm_l2p);
-HIKLIB(HBODY,			create_anim_body_node_c)(const char* name, const _TRANSFORM* tm_l2p);
-HIKLIB(HBODY,			create_sim_body_node_w)(const wchar_t* name, const _TRANSFORM* tm_l2p, TM_TYPE jtm);
-HIKLIB(HBODY,			create_sim_body_node_c)(const char* name, const _TRANSFORM* tm_l2p, TM_TYPE jtm);
+HIKLIB(HBODY,			create_fbx_body_node_w)(const wchar_t* name, const _TRANSFORM* tm_l2p);
+HIKLIB(HBODY,			create_fbx_body_node_c)(const char* name, const _TRANSFORM* tm_l2p);
+HIKLIB(HBODY,			create_bvh_body_node_w)(const wchar_t* name, const _TRANSFORM* tm_l2p, TM_TYPE jtm);
+HIKLIB(HBODY,			create_bvh_body_node_c)(const char* name, const _TRANSFORM*  tm_l2p, TM_TYPE jtm);
+HIKLIB(bool,			clone_body)(HBODY src, BODY_TYPE nodetype, HBODY* dst);
 HIKLIB(void,			destroy_tree_body_node)(HBODY hBody);
 HIKLIB(void,			destroy_tree_body)(HBODY hBody);
 HIKLIB(void,			cnn_arti_body)(HBODY from, HBODY to, enum CNN);

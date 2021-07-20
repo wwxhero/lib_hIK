@@ -35,7 +35,7 @@ private:
 		else
 			f2t_w.setData(mf2t_w);
 
-		pair->j_from = artiPair[0]->GetJoint(); 
+		pair->j_from = artiPair[0]->GetJoint();
 		pair->j_to = const_cast<CArtiBodyNode*>(artiPair[1])->GetJoint();
 		bool has_parent_0 = (NULL != artiPair[0]->GetParent());
 		bool has_parent_1 = (NULL != artiPair[1]->GetParent());
@@ -53,8 +53,8 @@ private:
 			}
 			else if(homo == tm_type)
 			{
-				const Transform* bound_from = artiPair[0]->GetTransformLocal2Parent();
-				const Transform* bound_to_inv = artiPair[1]->GetTransformParent2Local();
+				const Transform* bound_from = artiPair[0]->GetTransformLocal2Parent0();
+				const Transform* bound_to_inv = artiPair[1]->GetTransformParent2Local0();
 				pair->from2to = bound_to_inv->getLinear() * bound_from->getLinear();
 				// pair->to2from = pair->from2to.inverse(); to2from is not used for homo transformation
 			}
@@ -190,4 +190,5 @@ public:
 	static bool Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const wchar_t* pairs[][2], int n_pairs, Real p2c_w[3][3]);
 	static bool Connect_homo(CMoNode* from, CMoNode* to, CNN cnn_type);
 	static void Motion_sync(CMoNode* root);
+	static void Destroy(CMoNode* root);
 };

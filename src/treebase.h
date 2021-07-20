@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stack>
+#include <queue>
 #include "articulated_body.h"
 
 template <typename This>
@@ -70,6 +71,25 @@ public:
 				edge.body_child = body_nextchild;
 			}
 		}
+	}
+
+	template<typename LAMaccess>
+	static bool SearchBFS_botree_nonrecur(const NodeType* root, LAMaccess OnSearchBody)
+	{
+		bool hit = false;
+		std::queue<const NodeType*> bfs_q;
+		bfs_q.push(root);
+		while (!bfs_q.empty() && !hit)
+		{
+			const NodeType* node = bfs_q.front();
+			bfs_q.pop();
+			hit = OnSearchBody(node);
+			for (auto child = node->GetFirstChild()
+				; NULL != child && !hit
+				; child = child->GetNextSibling())
+				bfs_q.push(child);
+		}
+		return hit;
 	}
 
 
