@@ -124,6 +124,12 @@ public:
 				};
 				ok = InitJointPair(pair, artiPair, tm_type, f2t_w);
 			}
+			else
+			{
+				std::stringstream ss;
+				ss << "can not find pair: [" << name_from.c_str() << ", " << name_to.c_str() << "]";
+				LOGIK(ss.str().c_str());
+			}
 		}
 		if (!ok)
 		{

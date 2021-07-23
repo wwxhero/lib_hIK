@@ -43,3 +43,15 @@ T CAST_2H(F* p)
 
 #define CAST_2PBVH(hBVH)\
 	CAST_2P<HBVH, bvh11::BvhObject>(hBVH)
+
+#define CAST_2HCONF(pDOC)\
+	CAST_2H<TiXmlDocument, HCONF>(pDOC)
+
+#define CAST_2PCONF(hConf)\
+	CAST_2P<HCONF, TiXmlDocument>(hConf)
+
+#define CAST_2HCONFFKRC(pConfFKRC)\
+	CAST_2H<CConfFKRC, HCONFFKRC>(pConfFKRC)
+
+#define CAST_2PCONFFKRC(hConfFKRC)\
+	CAST_2P<HCONFFKRC, CConfFKRC>(hConfFKRC)

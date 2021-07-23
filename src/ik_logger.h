@@ -17,6 +17,7 @@ void LogInfo(const char *file, unsigned int line, const char *info);
 void LogInfoInt(const char *file, unsigned int line, const char *token, int v);
 void LogInfoBool(const char *file, unsigned int line, const char *token, bool v);
 void LogInfoFloat(const char *file, unsigned int line, const char *token, float v);
+void LogInfoFloat3x3_m(const char *file, unsigned int line, const char *token, const float m[3][3]);
 void LogInfoDouble3x3(const char *file, unsigned int line, const char *token, const double *m);
 void LogInfoDouble1x3(const char *file, unsigned int line, const char *token, const double *v);
 
