@@ -21,6 +21,8 @@ extern "C" {
 	HIKLIB(bool,			get_mopipe_mtx)(HCONFFKRC conf, Real m[3][3]);
 	HIKLIB(int,				load_mopipe_pairs)(HCONFFKRC conf, const wchar_t* (**match)[2]);
 	HIKLIB(void,			free_mopipe_pairs)(const wchar_t* (*match)[2], int n_match);
+	HIKLIB(int,				load_target_names)(HCONFFKRC conf, const wchar_t *** names);
+	HIKLIB(void,			free_target_names)(const wchar_t** names, int n_names);
 
 
 

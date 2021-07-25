@@ -75,6 +75,29 @@ private:
 		const std::string m_to;
 	};
 
+	class Name
+	{
+	public:
+		Name(const char* name)
+		{
+			std::string strname_c(name);
+			std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+			m_str = converter.from_bytes(strname_c);
+		}
+		void AllocCopyTo(const wchar_t* *a_name)
+		{
+			wchar_t* name = new wchar_t[m_str.length() + 1];
+			wcscpy(name, m_str.c_str());
+			*a_name = name;
+		}
+		static void FreeCopy(const wchar_t* a_name)
+		{
+			delete [] a_name;
+		}
+	private:
+		std::wstring m_str;
+	};
+
 private:
 
 	CConfFKRC()
@@ -140,6 +163,26 @@ public:
 		free(match);
 	}
 
+	int AllocTargetNames(const wchar_t * **a_names)
+	{
+		int n_targets = (int)m_lsttargetnames.size();
+		const wchar_t** names = (const wchar_t **)malloc(sizeof(const wchar_t*) * n_targets);
+		int i_name = 0;
+		for (auto name : m_lsttargetnames)
+		{
+			name.AllocCopyTo(&names[i_name ++]);
+		}
+		*a_names = names;
+		return n_targets;
+	}
+
+	static void FreeTargetNames(const wchar_t* *a_names, int n_names)
+	{
+		for (int i_name = 0; i_name < n_names; i_name ++)
+			Name::FreeCopy(a_names[i_name]);
+		free(a_names);
+	}
+
 	void AddScale(const char* name, float x, float y, float z)
 	{
 		B_ScaleEx scale(name, x, y, z);
@@ -155,6 +198,12 @@ public:
 	{
 		PairNames pair(j_from, j_to);
 		m_lstPairs.push_back(std::move(pair));
+	}
+
+	void AddTarget(const char* target_name)
+	{
+		Name name(target_name);
+		m_lsttargetnames.push_back(std::move(name));
 	}
 
 	static CConfFKRC* load(const TiXmlDocument* doc);
@@ -183,6 +232,7 @@ private:
 	std::list<B_ScaleEx> m_lstScales;
 	Real m_mtxf2t[3][3];
 	std::list<PairNames> m_lstPairs;
+	std::list<Name> m_lsttargetnames;
 };
 
 CConfFKRC* CConfFKRC::load(const TiXmlDocument* doc)
@@ -253,6 +303,15 @@ CConfFKRC* CConfFKRC::load(const TiXmlDocument* doc)
 					ret = valid_pair;
 					if (valid_pair)
 						pConfFKRC->AddPair(j_from, j_to);
+				}
+				else if("target" == name)
+				{
+					const char* target_name = ele->Attribute("name");
+					bool valid_target = (NULL != target_name);
+					IKAssert(valid_target);
+					ret = valid_target;
+					if (valid_target)
+						pConfFKRC->AddTarget(target_name);
 				}
 			}
 			return ret;
@@ -326,4 +385,18 @@ int load_mopipe_pairs(HCONFFKRC conf, const wchar_t* (**match)[2])
 void free_mopipe_pairs(const wchar_t* (*match)[2], int n_match)
 {
 	CConfFKRC::FreeMOPIPEPairs(match, n_match);
+}
+
+int load_target_names(HCONFFKRC conf, const wchar_t *** names)
+{
+	CConfFKRC* conf_fkrc_loader = CAST_2PCONFFKRC(conf);
+		if (NULL != conf_fkrc_loader)
+		return conf_fkrc_loader->AllocTargetNames(names);
+	else
+		return -1;
+}
+
+void free_target_names(const wchar_t** names, int n_names)
+{
+	CConfFKRC::FreeTargetNames(names, n_names);
 }
