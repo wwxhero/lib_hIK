@@ -27,116 +27,42 @@ const double epsilon = 1e-4;
 typedef std::shared_ptr<const bvh11::Joint> Joint_bvh_ptr;
 typedef std::pair<Joint_bvh_ptr, HBODY> Bound;
 
-HBODY create_arti_body(bvh11::BvhObject& bvh, Joint_bvh_ptr j_bvh, int frame = -1)
-{
-	auto name = j_bvh->name().c_str();
-	auto tm_bvh = bvh.GetTransformationRelativeToParent(j_bvh, frame);
-	Eigen::Quaterniond rq(tm_bvh.linear());
-	Eigen::Vector3d tt;
-	TM_TYPE jtm;
-	bool is_root = (nullptr == j_bvh->parent());
-	if (is_root)
-	{
-		tt = Eigen::Vector3d::Zero();
-		jtm = t_tr; //translation and rotation joint
-	}
-	else
-	{
-		tt = tm_bvh.translation();
-		jtm = t_r; //rotation joint
-	}
-
-	_TRANSFORM tm_hik = {
-		{1, 1, 1},
-		{rq.w(), rq.x(), rq.y(), rq.z()},
-		{tt.x(), tt.y(), tt.z()}
-	};
-	auto b_hik = create_bvh_body_node_c(name, &tm_hik, jtm);
-
-	assert(nullptr != j_bvh->parent()
-		|| tt.norm() < epsilon);
-
-	return b_hik;
-}
-
-HBODY create_arti_body_as_rest_bvh_pose(bvh11::BvhObject& bvh, Joint_bvh_ptr j_bvh, int frame)
-{
-	auto name = j_bvh->name().c_str();
-	auto tm_bvh = bvh.GetTransformation(j_bvh, frame);
-	Eigen::Affine3d tm_parent_bvh;
-	auto j_parent_bvh = j_bvh->parent();
-	TM_TYPE jtm;
-	bool is_root = (nullptr == j_parent_bvh);
-	if (is_root)
-	{
-		tm_parent_bvh.linear() = Eigen::Matrix3d::Identity();
-		tm_parent_bvh.translation() = tm_bvh.translation();
-		jtm = t_tr;
-	}
-	else
-	{
-		tm_parent_bvh = bvh.GetTransformation(j_parent_bvh, frame);
-		jtm = t_r;
-	}
-
-	Eigen::Vector3d tt = tm_bvh.translation() - tm_parent_bvh.translation();
-	_TRANSFORM tm_hik = {
-		{1, 1, 1},
-		{1, 0, 0, 0},
-		{tt.x(), tt.y(), tt.z()}
-	};
-	auto b_hik = create_bvh_body_node_c(name, &tm_hik, jtm);
-	assert(nullptr != j_parent_bvh
-		|| tt.norm() < epsilon);
-	return b_hik;
-}
-
-
-HBODY createArticulatedBody(bvh11::BvhObject& bvh, int frame, bool asRestBvhPose)
-{
-	//traverse the bvh herachical structure
-	//	to create an articulated body with the given posture
-	std::queue<Bound> queBFS;
-	auto root_j_bvh = bvh.root_joint();
-	auto root_b_hik = asRestBvhPose
-		? create_arti_body_as_rest_bvh_pose(bvh, root_j_bvh, frame)
-		: create_arti_body(bvh, root_j_bvh, frame);
-	Bound root = std::make_pair(
-		root_j_bvh,
-		root_b_hik
-	);
-	queBFS.push(root);
-	while (!queBFS.empty())
-	{
-		auto pair = queBFS.front();
-		auto j_bvh = pair.first;
-		auto b_hik = pair.second;
-		CNN cnn = FIRSTCHD;
-		auto& rb_this = b_hik;
-		for (auto j_bvh_child : j_bvh->children())
-		{
-			auto b_hik_child = asRestBvhPose
-				? create_arti_body_as_rest_bvh_pose(bvh, j_bvh_child, frame)
-				: create_arti_body(bvh, j_bvh_child, frame);
-			Bound child = std::make_pair(
-				j_bvh_child,
-				b_hik_child
-			);
-			queBFS.push(child);
-			auto& rb_next = b_hik_child;
-			cnn_arti_body(rb_this, rb_next, cnn);
-			cnn = NEXTSIB;
-			rb_this = rb_next;
-		}
-		queBFS.pop();
-	}
-	initialize_kina(root_b_hik);
-	update_fk(root_b_hik);
-	return root_b_hik;
-}
 
 HBODY CreateBVHArticulatedBody(bvh11::BvhObject& bvh)
 {
+	HBODY (*create_arti_body)(bvh11::BvhObject& bvh, Joint_bvh_ptr j_bvh)
+	 = [] (bvh11::BvhObject& bvh, Joint_bvh_ptr j_bvh) -> HBODY
+		{
+			auto name = j_bvh->name().c_str();
+			auto tm_bvh = bvh.GetTransformationRelativeToParent(j_bvh, -1);
+			Eigen::Quaterniond rq(tm_bvh.linear());
+			Eigen::Vector3d tt;
+			TM_TYPE jtm;
+			bool is_root = (nullptr == j_bvh->parent());
+			if (is_root)
+			{
+				tt = Eigen::Vector3d::Zero();
+				jtm = t_tr; //translation and rotation joint
+			}
+			else
+			{
+				tt = tm_bvh.translation();
+				jtm = t_r; //rotation joint
+			}
+
+			_TRANSFORM tm_hik = {
+				{1, 1, 1},
+				{rq.w(), rq.x(), rq.y(), rq.z()},
+				{tt.x(), tt.y(), tt.z()}
+			};
+			auto b_hik = create_bvh_body_node_c(name, &tm_hik, jtm);
+
+			assert(nullptr != j_bvh->parent()
+				|| tt.norm() < epsilon);
+
+			return b_hik;
+		};
+
 	//traverse the bvh herachical structure
 	//	to create an articulated body with the given posture
 	std::queue<Bound> queBFS;
@@ -676,14 +602,14 @@ HBODY create_tree_body_bvh_file(const wchar_t* path_src)
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 	auto path_src_c = converter.to_bytes(path_src);
 	bvh11::BvhObject bvh(path_src_c);
-	HBODY h_root = createArticulatedBody(bvh, -1, false);
+	HBODY h_root = CreateBVHArticulatedBody(bvh);
 	return h_root;
 }
 
 HBODY create_tree_body_bvh(HBVH hBvh)
 {
 	bvh11::BvhObject* bvh = CAST_2PBVH(hBvh);
-	HBODY h_root = createArticulatedBody(*bvh, -1, false);
+	HBODY h_root = CreateBVHArticulatedBody(*bvh);
 	return h_root;
 }
 
