@@ -112,6 +112,35 @@ void LogInfoFloat(const char* file, unsigned int line, const char* token, float 
 #endif
 }
 
+template<typename TValue>
+void LogInfo3x3_m(const char* file, unsigned int line, const char* token, const TValue m[3][3])
+{
+#ifndef SMOOTH_LOGGING
+	fprintf(stdout
+		, "[%s:%d] %s = [%.8f\t%.8f\t%.8f;\t%.8f\t%.8f\t%.8f;\t%.8f\t%.8f\t%.8f]\n"
+		, file_short(file)
+		, line
+		, token
+		, m[0][0], m[0][1], m[0][2]
+		, m[1][0], m[1][1], m[1][2]
+		, m[2][0], m[2][1], m[2][2]);
+	fflush(stdout);
+#else
+	g_LoggerFast.OutFmt("[%s:%d] %s = [%.8f\t%.8f\t%.8f;\t%.8f\t%.8f\t%.8f;\t%.8f\t%.8f\t%.8f]\n"
+						, file_short(file)
+						, line
+						, token
+						, m[0][0], m[0][1], m[0][2]
+						, m[1][0], m[1][1], m[1][2]
+						, m[2][0], m[2][1], m[2][2]);
+#endif
+}
+
+void LogInfoFloat3x3_m(const char* file, unsigned int line, const char* token, const float m[3][3])
+{
+	LogInfo3x3_m<float>(file, line, token, m);
+}
+
 void LogInfoDouble3x3(const char* file, unsigned int line, const char* token, const double* m)
 {
 #ifndef SMOOTH_LOGGING

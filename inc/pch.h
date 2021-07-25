@@ -23,7 +23,7 @@
 //		https://docs.microsoft.com/en-us/cpp/build/exporting-from-a-dll-using-declspec-dllexport?view=msvc-160
 // calling convention:
 //		https://en.wikipedia.org/wiki/X86_calling_conventions#Microsoft_x64_calling_convention
-#ifdef UTRECORDPARSER_EXPORTS
+#ifdef LIB_HIK_EXPORTS
 #define HIKLIB(rtype, func)\
 	__declspec(dllexport) rtype __stdcall func
 #else
@@ -52,6 +52,16 @@ typedef struct _HBVH
 	void* p;
 } HBVH;
 
+typedef struct _HCONF
+{
+	void* p;
+} HCONF;
+
+typedef struct _HCONFFKRC
+{
+	void* p;
+} HCONFFKRC;
+
 #define VALID_HANDLE(h)\
 	((h).p != NULL)
 
@@ -61,6 +71,9 @@ typedef struct _HBVH
 typedef void* HBODY;
 typedef void* HMOTIONNODE;
 typedef void* HBVH;
+typedef void* HCONF;
+typedef void* HCONFFKRC;
+
 #define VALID_HANDLE(h)\
 	((h) != NULL)
 
