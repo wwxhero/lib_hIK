@@ -63,7 +63,7 @@
     <ClInclude Include="..\..\inc\conf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\fk_drv_conf.h">
+    <ClInclude Include="..\..\inc\conf_mopipe.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -113,7 +113,7 @@
     <ClCompile Include="..\..\src\conf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\fk_drv_conf.cpp">
+    <ClCompile Include="..\..\src\conf_mopipe.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

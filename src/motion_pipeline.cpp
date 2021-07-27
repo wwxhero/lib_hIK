@@ -37,7 +37,7 @@ bool motion_sync_cnn_cross_c(HMOTIONNODE from
 							, CNN type
 							, const char* pairs[][2]
 							, int n_pairs
-							, Real p2c_w[3][3])
+							, const Real p2c_w[3][3])
 {
 	//todo: connection to motion nodes as a cross-space map
 	CMoNode* mo_from = CAST_2PMONODE(from);
@@ -50,7 +50,7 @@ bool motion_sync_cnn_cross_w(HMOTIONNODE from
 							, CNN type
 							, const wchar_t* pairs[][2]
 							, int n_pairs
-							, Real p2c_w[3][3])
+							, const Real p2c_w[3][3])
 {
 	//todo: connection to motion nodes as a cross-space map
 	CMoNode* mo_from = CAST_2PMONODE(from);
