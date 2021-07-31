@@ -1,13 +1,13 @@
 #include "pch.h"
 #include <queue>
 #include <list>
-#include "fk_drv_conf.h"
+#include "conf_mopipe.h"
 #include "tinyxml.h"
 #include "handle_helper.hpp"
 #include "ik_logger.h"
 #include <sstream>
 
-class CConfFKRC
+class CConfMoPipe
 {
 private:
 	class B_ScaleEx : public B_Scale
@@ -78,6 +78,7 @@ private:
 	class Name
 	{
 	public:
+		Name() {}
 		Name(const char* name)
 		{
 			std::string strname_c(name);
@@ -100,10 +101,10 @@ private:
 
 private:
 
-	CConfFKRC()
+	CConfMoPipe()
 	{
 	}
-	~CConfFKRC()
+	~CConfMoPipe()
 	{
 	}
 
@@ -119,24 +120,34 @@ private:
 	}
 public:
 
-	int AllocRCScale(B_Scale** bscales)
+	bool AllocRCScale(B_Scale* bscales[2], int n_scales[2])
 	{
-		int n_scales = (int)m_lstScales.size();
-		auto arr_scales = new B_Scale[n_scales];
-		int i_scale = 0;
-		for (auto scale_i : m_lstScales)
+		for (int idx = 0; idx < 2; idx ++)
 		{
-			scale_i.AllocCopyTo(&arr_scales[i_scale ++]);
+			int n_scales_i = (int)m_lstScales[idx].size();
+			auto arr_scales_i = new B_Scale[n_scales_i];
+			int i_scale = 0;
+			for (auto scale_i : m_lstScales[idx])
+			{
+				scale_i.AllocCopyTo(&arr_scales_i[i_scale ++]);
+			}
+			bscales[idx] = arr_scales_i;
+			n_scales[idx] = n_scales_i;
 		}
-		*bscales = arr_scales;
-		return n_scales;
+		return true;
 	}
 
-	static void FreeRCScale(B_Scale* bscales, int n_scales)
+	static void FreeRCScale(B_Scale* bscales[2], int n_scales[2])
 	{
-		for (int i_scale = 0; i_scale < n_scales; i_scale ++)
-			B_ScaleEx::FreeCopy(bscales[i_scale]);
-		delete [] bscales;
+		for (int idx = 0; idx < 2; idx ++)
+		{
+			auto bscales_i = bscales[idx];
+			auto n_scales_i = n_scales[idx];
+			for (int i_scale = 0; i_scale < n_scales_i; i_scale ++)
+				B_ScaleEx::FreeCopy(bscales_i[i_scale]);
+			delete [] bscales_i;
+		}
+
 	}
 
 	bool GetPipeMTX(Real m[3][3])
@@ -163,30 +174,55 @@ public:
 		free(match);
 	}
 
-	int AllocTargetNames(const wchar_t * **a_names)
+	bool AllocENDEFFNames(const wchar_t * *a_names[2], int n_names[2])
 	{
-		int n_targets = (int)m_lsttargetnames.size();
-		const wchar_t** names = (const wchar_t **)malloc(sizeof(const wchar_t*) * n_targets);
-		int i_name = 0;
-		for (auto name : m_lsttargetnames)
+		for (int idx = 0; idx < 2; idx ++)
 		{
-			name.AllocCopyTo(&names[i_name ++]);
+			int n_targets = (int)m_lsttargetnames[idx].size();
+			const wchar_t** names_i = (const wchar_t **)malloc(sizeof(const wchar_t*) * n_targets);
+			int i_name = 0;
+			for (auto name : m_lsttargetnames[idx])
+			{
+				name.AllocCopyTo(&names_i[i_name ++]);
+			}
+			a_names[idx] = names_i;
+			n_names[idx] = n_targets;
 		}
-		*a_names = names;
-		return n_targets;
+		return true;
 	}
 
-	static void FreeTargetNames(const wchar_t* *a_names, int n_names)
+	static void FreeEndEFFNames(const wchar_t* *a_names[2], int n_names[2])
 	{
-		for (int i_name = 0; i_name < n_names; i_name ++)
-			Name::FreeCopy(a_names[i_name]);
-		free(a_names);
+		for (int idx = 0; idx < 2; idx ++)
+		{
+			const wchar_t** names_i = a_names[idx];
+			int n_names_i = n_names[idx];
+			for (int i_name = 0; i_name < n_names_i; i_name ++)
+				Name::FreeCopy(names_i[i_name]);
+			free(names_i);
+		}
 	}
 
-	void AddScale(const char* name, float x, float y, float z)
+	bool AllocFileNames(const wchar_t* filenames[2])
+	{
+		m_filenames[0].AllocCopyTo(&filenames[0]);
+		m_filenames[1].AllocCopyTo(&filenames[1]);
+		return true;
+	}
+
+	static void FreeFileNames(const wchar_t* filenames[2])
+	{
+		Name::FreeCopy(filenames[0]);
+		Name::FreeCopy(filenames[1]);
+	}
+
+// for internal use functions:
+
+	void AddScale(const char* name, float x, float y, float z, bool is_src)
 	{
 		B_ScaleEx scale(name, x, y, z);
-		m_lstScales.push_back(std::move(scale));
+		int idx = (is_src ? 0 : 1);
+		m_lstScales[idx].push_back(std::move(scale));
 	}
 
 	void UpdateMTX(const float m[3][3])
@@ -200,14 +236,22 @@ public:
 		m_lstPairs.push_back(std::move(pair));
 	}
 
-	void AddTarget(const char* target_name)
+	void AddEndEFF(const char* target_name, bool is_src)
 	{
 		Name name(target_name);
-		m_lsttargetnames.push_back(std::move(name));
+		int idx = (is_src ? 0 : 1);
+		m_lsttargetnames[idx].push_back(std::move(name));
 	}
 
-	static CConfFKRC* load(const TiXmlDocument* doc);
-	static void unload(CConfFKRC* loader);
+	void SetFileName(const char* file_name, bool is_src)
+	{
+		Name name(file_name);
+		int idx = (is_src ? 0 : 1);
+		m_filenames[idx] = name;
+	}
+
+	static CConfMoPipe* load(const TiXmlDocument* doc);
+	static void unload(CConfMoPipe* loader);
 private:
 	template<typename LAMaccess>
 	static bool TraverseBFS_XML_tree(const TiXmlNode* root, LAMaccess OnXmlNode)
@@ -229,19 +273,31 @@ private:
 	}
 
 private:
-	std::list<B_ScaleEx> m_lstScales;
+	std::list<B_ScaleEx> m_lstScales[2];
 	Real m_mtxf2t[3][3];
 	std::list<PairNames> m_lstPairs;
-	std::list<Name> m_lsttargetnames;
+	std::list<Name> m_lsttargetnames[2];
+	Name m_filenames[2];
 };
 
-CConfFKRC* CConfFKRC::load(const TiXmlDocument* doc)
+CConfMoPipe* CConfMoPipe::load(const TiXmlDocument* doc)
 {
 	assert(doc->Type() == TiXmlNode::DOCUMENT);
-	CConfFKRC* pConfFKRC = new CConfFKRC();
-	auto OnTraverXmlNode = [pConfFKRC] (const TiXmlNode* node) -> bool
+	CConfMoPipe* pConf = new CConfMoPipe();
+	auto Is_in_Source = [] (const TiXmlNode* node) -> bool
+		{
+			auto node_m = node->Parent();
+			assert(NULL != node_m);
+			bool is_src = ("Source" == node_m->ValueStr());
+			bool is_dst = ("Destination" == node_m->ValueStr());
+			assert(is_src || is_dst);
+			return is_src;
+		};
+	auto OnTraverXmlNode = [pConf, Is_in_Source] (const TiXmlNode* node) -> bool
 		{
 			bool ret = true;
+			bool is_a_source = false;
+			bool is_a_desti = false;
 			if (TiXmlNode::ELEMENT == node->Type())
 			{
 				auto name = node->ValueStr();
@@ -264,7 +320,7 @@ CConfFKRC* CConfFKRC::load(const TiXmlDocument* doc)
 					IKAssert(valid_z_scale);
 					if (ret)
 					{
-						pConfFKRC->AddScale(b_name, x, y, z);
+						pConf->AddScale(b_name, x, y, z, Is_in_Source(node));
 					}
 				}
 				else if("MotionPipe" == name)
@@ -287,7 +343,7 @@ CConfFKRC* CConfFKRC::load(const TiXmlDocument* doc)
 					IKAssert(all_entry_ij);
 					if (ret)
 					{
-						pConfFKRC->UpdateMTX(m_value);
+						pConf->UpdateMTX(m_value);
 					}
 					else
 					{
@@ -302,80 +358,86 @@ CConfFKRC* CConfFKRC::load(const TiXmlDocument* doc)
 					IKAssert(valid_pair);
 					ret = valid_pair;
 					if (valid_pair)
-						pConfFKRC->AddPair(j_from, j_to);
+						pConf->AddPair(j_from, j_to);
 				}
-				else if("target" == name)
+				else if("EndEFF" == name)
 				{
-					const char* target_name = ele->Attribute("name");
+					const char* target_name = ele->Attribute("b_name");
 					bool valid_target = (NULL != target_name);
 					IKAssert(valid_target);
 					ret = valid_target;
 					if (valid_target)
-						pConfFKRC->AddTarget(target_name);
+						pConf->AddEndEFF(target_name, Is_in_Source(node));
+				}
+				else if((is_a_source = ("Source" == name))
+					|| (is_a_desti = ("Destination" == name)))
+				{
+					const char* filename = ele->Attribute("file");
+					pConf->SetFileName(filename, is_a_source);
 				}
 			}
 			return ret;
 		};
 
 	if (TraverseBFS_XML_tree(doc, OnTraverXmlNode))
-		return pConfFKRC;
+		return pConf;
 	else
 	{
-		delete pConfFKRC;
+		delete pConf;
 		return NULL;
 	}
 }
 
-void CConfFKRC::unload(CConfFKRC* loader)
+void CConfMoPipe::unload(CConfMoPipe* loader)
 {
 	delete loader;
 }
 
 
-HCONFFKRC init_fkrc(HCONF conf)
+HCONFMOPIPE init_conf_mopipe(HCONF conf)
 {
 	TiXmlDocument* doc = CAST_2PCONF(conf);
 	if (NULL != doc)
 	{
-		CConfFKRC* conf_fkrc_loader = CConfFKRC::load(doc);
+		CConfMoPipe* conf_fkrc_loader = CConfMoPipe::load(doc);
 		return CAST_2HCONFFKRC(conf_fkrc_loader);
 	}
 	else
 		return H_INVALID;
 }
 
-void uninit_fkrc(HCONFFKRC conf)
+void uninit_conf_mopipe(HCONFMOPIPE conf)
 {
-	CConfFKRC* conf_fkrc_loader = CAST_2PCONFFKRC(conf);
-	CConfFKRC::unload(conf_fkrc_loader);
+	CConfMoPipe* conf_fkrc_loader = CAST_2PCONFFKRC(conf);
+	CConfMoPipe::unload(conf_fkrc_loader);
 }
 
-int	load_rc_scale(HCONFFKRC conf, B_Scale** bscales)
+bool load_scale(HCONFMOPIPE conf, B_Scale* bscales[2], int n_scales[2])
 {
-	CConfFKRC* conf_fkrc_loader = CAST_2PCONFFKRC(conf);
+	CConfMoPipe* conf_fkrc_loader = CAST_2PCONFFKRC(conf);
 	if (NULL != conf_fkrc_loader)
-		return conf_fkrc_loader->AllocRCScale(bscales);
+		return conf_fkrc_loader->AllocRCScale(bscales, n_scales);
 	else
-		return -1;
+		return false;
 }
 
-void free_rc_scale(B_Scale* bscales, int n_scales)
+void free_scale(B_Scale* bscales[2], int n_scales[2])
 {
-	CConfFKRC::FreeRCScale(bscales, n_scales);
+	CConfMoPipe::FreeRCScale(bscales, n_scales);
 }
 
-bool get_mopipe_mtx(HCONFFKRC conf, Real m[3][3])
+bool get_mopipe_mtx(HCONFMOPIPE conf, Real m[3][3])
 {
-	CConfFKRC* conf_fkrc_loader = CAST_2PCONFFKRC(conf);
+	CConfMoPipe* conf_fkrc_loader = CAST_2PCONFFKRC(conf);
 	if (NULL != conf_fkrc_loader)
 		return conf_fkrc_loader->GetPipeMTX(m);
 	else
 		return false;
 }
 
-int load_mopipe_pairs(HCONFFKRC conf, const wchar_t* (**match)[2])
+int load_mopipe_pairs(HCONFMOPIPE conf, const wchar_t* (**match)[2])
 {
-	CConfFKRC* conf_fkrc_loader = CAST_2PCONFFKRC(conf);
+	CConfMoPipe* conf_fkrc_loader = CAST_2PCONFFKRC(conf);
 	if (NULL != conf_fkrc_loader)
 		return conf_fkrc_loader->AllocMOPIPEPairs(match);
 	else
@@ -384,19 +446,33 @@ int load_mopipe_pairs(HCONFFKRC conf, const wchar_t* (**match)[2])
 
 void free_mopipe_pairs(const wchar_t* (*match)[2], int n_match)
 {
-	CConfFKRC::FreeMOPIPEPairs(match, n_match);
+	CConfMoPipe::FreeMOPIPEPairs(match, n_match);
 }
 
-int load_target_names(HCONFFKRC conf, const wchar_t *** names)
+bool load_endeff_names(HCONFMOPIPE conf, const wchar_t ** names[2], int n_names[2])
 {
-	CConfFKRC* conf_fkrc_loader = CAST_2PCONFFKRC(conf);
-		if (NULL != conf_fkrc_loader)
-		return conf_fkrc_loader->AllocTargetNames(names);
+	CConfMoPipe* conf_fkrc_loader = CAST_2PCONFFKRC(conf);
+	if (NULL != conf_fkrc_loader)
+		return conf_fkrc_loader->AllocENDEFFNames(names, n_names);
 	else
-		return -1;
+		return false;
 }
 
-void free_target_names(const wchar_t** names, int n_names)
+void free_endeff_names(const wchar_t** names[2], int n_names[2])
 {
-	CConfFKRC::FreeTargetNames(names, n_names);
+	CConfMoPipe::FreeEndEFFNames(names, n_names);
+}
+
+bool load_file_names(HCONFMOPIPE conf, const wchar_t* filenames[2])
+{
+	CConfMoPipe* conf_fkrc_loader = CAST_2PCONFFKRC(conf);
+	if (NULL != conf_fkrc_loader)
+		return conf_fkrc_loader->AllocFileNames(filenames);
+	else
+		return false;
+}
+
+void free_file_names(const wchar_t* filenames[2])
+{
+	CConfMoPipe::FreeFileNames(filenames);
 }

@@ -22,7 +22,7 @@ CMoNode::~CMoNode()
 
 
 
-bool CMoNode::MoCNN_Initialize(TM_TYPE tm_type, Real p2c_w[3][3])
+bool CMoNode::MoCNN_Initialize(TM_TYPE tm_type, const Real p2c_w[3][3])
 {
 	m_tmType = tm_type;
 	assert(NULL != m_parent
@@ -61,7 +61,7 @@ bool CMoNode::MoCNN_Initialize(TM_TYPE tm_type, Real p2c_w[3][3])
 
 
 
-bool CMoTree::Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const wchar_t* pairs[][2], int n_pairs, Real p2c_w[3][3])
+bool CMoTree::Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const wchar_t* pairs[][2], int n_pairs, const Real p2c_w[3][3])
 {
 	Tree<CMoNode>::Connect(from, to, cnn_type);
 	bool connected = false;
@@ -78,7 +78,7 @@ bool CMoTree::Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const wcha
 	return connected;
 }
 
-bool CMoTree::Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const char* pairs[][2], int n_pairs, Real p2c_w[3][3])
+bool CMoTree::Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const char* pairs[][2], int n_pairs, const Real p2c_w[3][3])
 {
 	Tree<CMoNode>::Connect(from, to, cnn_type);
 	bool connected = false;

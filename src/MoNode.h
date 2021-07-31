@@ -19,7 +19,7 @@ private:
 		Matrix3 to2from;
 	};
 
-	inline bool InitJointPair(JointPair* pair, const CArtiBodyNode* artiPair[2], TM_TYPE tm_type, Real mf2t_w[3][3])
+	inline bool InitJointPair(JointPair* pair, const CArtiBodyNode* artiPair[2], TM_TYPE tm_type, const Real mf2t_w[3][3])
 	{
 		// static Real s_f2t[3][3] = {
 		// 	{1,	0,	0,	0},
@@ -80,9 +80,9 @@ public:
 	~CMoNode();
 
 
-	bool MoCNN_Initialize(TM_TYPE tm_type, Real p2c_w[3][3]);
+	bool MoCNN_Initialize(TM_TYPE tm_type, const Real p2c_w[3][3]);
 	template<typename CHAR, typename LAMBDA_name>
-	bool MoCNN_Initialize(TM_TYPE tm_type, const CHAR* name_pairs[][2], int n_pairs, LAMBDA_name GetName, Real f2t_w[3][3])
+	bool MoCNN_Initialize(TM_TYPE tm_type, const CHAR* name_pairs[][2], int n_pairs, LAMBDA_name GetName, const Real f2t_w[3][3])
 	{
 		assert(n_pairs > 0);
 		m_tmType = tm_type;
@@ -192,8 +192,8 @@ private:
 class CMoTree : public Tree<CMoNode>
 {
 public:
-	static bool Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const char* pairs[][2], int n_pairs, Real p2c_w[3][3]);
-	static bool Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const wchar_t* pairs[][2], int n_pairs, Real p2c_w[3][3]);
+	static bool Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const char* pairs[][2], int n_pairs, const Real p2c_w[3][3]);
+	static bool Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const wchar_t* pairs[][2], int n_pairs, const Real p2c_w[3][3]);
 	static bool Connect_homo(CMoNode* from, CMoNode* to, CNN cnn_type);
 	static void Motion_sync(CMoNode* root);
 	static void Destroy(CMoNode* root);

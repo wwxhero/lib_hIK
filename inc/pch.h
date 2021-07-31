@@ -60,7 +60,7 @@ typedef struct _HCONF
 typedef struct _HCONFFKRC
 {
 	void* p;
-} HCONFFKRC;
+} HCONFMOPIPE;
 
 #define VALID_HANDLE(h)\
 	((h).p != NULL)
@@ -72,7 +72,7 @@ typedef void* HBODY;
 typedef void* HMOTIONNODE;
 typedef void* HBVH;
 typedef void* HCONF;
-typedef void* HCONFFKRC;
+typedef void* HCONFMOPIPE;
 
 #define VALID_HANDLE(h)\
 	((h) != NULL)
