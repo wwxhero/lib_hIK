@@ -216,6 +216,8 @@ public:
 		Name::FreeCopy(filenames[1]);
 	}
 
+// for internal use functions:
+
 	void AddScale(const char* name, float x, float y, float z, bool is_src)
 	{
 		B_ScaleEx scale(name, x, y, z);
@@ -281,7 +283,7 @@ private:
 CConfMoPipe* CConfMoPipe::load(const TiXmlDocument* doc)
 {
 	assert(doc->Type() == TiXmlNode::DOCUMENT);
-	CConfMoPipe* pConfFKRC = new CConfMoPipe();
+	CConfMoPipe* pConf = new CConfMoPipe();
 	auto Is_in_Source = [] (const TiXmlNode* node) -> bool
 		{
 			auto node_m = node->Parent();
@@ -291,7 +293,7 @@ CConfMoPipe* CConfMoPipe::load(const TiXmlDocument* doc)
 			assert(is_src || is_dst);
 			return is_src;
 		};
-	auto OnTraverXmlNode = [pConfFKRC, Is_in_Source] (const TiXmlNode* node) -> bool
+	auto OnTraverXmlNode = [pConf, Is_in_Source] (const TiXmlNode* node) -> bool
 		{
 			bool ret = true;
 			bool is_a_source = false;
@@ -318,7 +320,7 @@ CConfMoPipe* CConfMoPipe::load(const TiXmlDocument* doc)
 					IKAssert(valid_z_scale);
 					if (ret)
 					{
-						pConfFKRC->AddScale(b_name, x, y, z, Is_in_Source(node));
+						pConf->AddScale(b_name, x, y, z, Is_in_Source(node));
 					}
 				}
 				else if("MotionPipe" == name)
@@ -341,7 +343,7 @@ CConfMoPipe* CConfMoPipe::load(const TiXmlDocument* doc)
 					IKAssert(all_entry_ij);
 					if (ret)
 					{
-						pConfFKRC->UpdateMTX(m_value);
+						pConf->UpdateMTX(m_value);
 					}
 					else
 					{
@@ -356,7 +358,7 @@ CConfMoPipe* CConfMoPipe::load(const TiXmlDocument* doc)
 					IKAssert(valid_pair);
 					ret = valid_pair;
 					if (valid_pair)
-						pConfFKRC->AddPair(j_from, j_to);
+						pConf->AddPair(j_from, j_to);
 				}
 				else if("EndEFF" == name)
 				{
@@ -365,24 +367,23 @@ CConfMoPipe* CConfMoPipe::load(const TiXmlDocument* doc)
 					IKAssert(valid_target);
 					ret = valid_target;
 					if (valid_target)
-						pConfFKRC->AddEndEFF(target_name, Is_in_Source(node));
+						pConf->AddEndEFF(target_name, Is_in_Source(node));
 				}
 				else if((is_a_source = ("Source" == name))
 					|| (is_a_desti = ("Destination" == name)))
 				{
-					assert(is_a_source != is_a_desti);
 					const char* filename = ele->Attribute("file");
-					pConfFKRC->SetFileName(filename, is_a_source);
+					pConf->SetFileName(filename, is_a_source);
 				}
 			}
 			return ret;
 		};
 
 	if (TraverseBFS_XML_tree(doc, OnTraverXmlNode))
-		return pConfFKRC;
+		return pConf;
 	else
 	{
-		delete pConfFKRC;
+		delete pConf;
 		return NULL;
 	}
 }
