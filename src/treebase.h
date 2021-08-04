@@ -73,6 +73,42 @@ public:
 		}
 	}
 
+	template<typename LAMaccessEnter, typename LAMaccessLeave>
+	static bool TraverseDFS_botree_nonrecur(const NodeType* root, LAMaccessEnter OnEnterBody, LAMaccessLeave OnLeaveBody)
+	{
+		assert(NULL != root);
+		typedef struct _EDGE
+		{
+			const NodeType* body_this;
+			const NodeType* body_child;
+		} EDGE;
+		std::stack<EDGE> stkDFS;
+		stkDFS.push({ root, root->GetFirstChild() });
+		//printArtName(body_name_w(root), 0);
+		bool walking = OnEnterBody(root);
+		while (!stkDFS.empty()
+			&& walking)
+		{
+			EDGE &edge = stkDFS.top();
+			// size_t n_indent = stkDFS.size();
+			if (NULL == edge.body_child)
+			{
+				stkDFS.pop();
+				walking = OnLeaveBody(edge.body_this);
+			}
+			else
+			{
+				//printArtName(body_name_w(edge.body_child), n_indent);
+				walking = OnEnterBody(edge.body_child);
+				const NodeType* body_grandchild = edge.body_child->GetFirstChild();
+				const NodeType* body_nextchild = edge.body_child->GetNextSibling();
+				stkDFS.push({ edge.body_child, body_grandchild });
+				edge.body_child = body_nextchild;
+			}
+		}
+		return walking;
+	}
+
 	template<typename LAMaccess>
 	static bool SearchBFS_botree_nonrecur(const NodeType* root, LAMaccess OnSearchBody)
 	{
@@ -100,6 +136,7 @@ public:
 		NodeType*	target[total] = {NULL};
 		if (CNN::FIRSTCHD == type)
 		{
+			body_to->m_nextSibling = body_from->m_firstChild;
 			hook[forward] = &body_from->m_firstChild;
 			target[forward] = body_to;
 			hook[inverse] = &body_to->m_parent;
@@ -115,5 +152,32 @@ public:
 
 		*hook[forward] = target[forward];
 		*hook[inverse] = target[inverse];
+	}
+
+	static void Connect2(NodeType* body_from, NodeType* body_to, CNN type)
+	{
+		enum {forward = 0, inverse, total};
+		NodeType** hook[total] = {NULL};
+		NodeType*	target[total] = {NULL};
+
+		if (CNN::FIRSTCHD == type)
+		{
+			body_to->m_nextSibling = body_from->m_firstChild;
+			hook[forward] = &body_from->m_firstChild;
+			target[forward] = body_to;
+			hook[inverse] = &body_to->m_parent;
+			target[inverse] = body_from;
+		}
+		else
+		{
+			hook[forward] = &body_from->m_nextSibling;
+			target[forward] = body_to;
+			hook[inverse] = &body_to->m_parent;
+			target[inverse] = body_from->m_parent;
+		}
+
+		*hook[forward] = target[forward];
+		*hook[inverse] = target[inverse];
+
 	}
 };

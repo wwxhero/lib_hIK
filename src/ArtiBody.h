@@ -338,16 +338,17 @@ private:
 		assert(NULL != ret);
 		return ret;
 	}
-	static bool CloneNode(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst);
-	static bool CloneNode_fbx(const CArtiBodyNode* src, CArtiBodyNode** dst);
-	static bool CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst);
-	static bool CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst);
+	static bool CloneNode(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL);
+	static bool CloneNode_fbx(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL);
+	static bool CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL);
+	static bool CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL);
 
 public:
 	static CArtiBodyNode* CreateAnimNode(const wchar_t* name, const _TRANSFORM* tm);
 	static CArtiBodyNode* CreateAnimNode(const char* name, const _TRANSFORM* tm);
 	static CArtiBodyNode* CreateSimNode(const wchar_t* name, const _TRANSFORM* tm, BODY_TYPE type, TM_TYPE jtm, bool local = true);
 	static CArtiBodyNode* CreateSimNode(const char* name, const _TRANSFORM* tm, BODY_TYPE type, TM_TYPE jtm, bool local = true);
+	static bool Clone(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst, const wchar_t* (*matches)[2], int n_matches, bool src_on_match0);
 	static bool Clone(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst);
 	static void KINA_Initialize(CArtiBodyNode* root);
 	static void FK_Update(CArtiBodyNode* root);

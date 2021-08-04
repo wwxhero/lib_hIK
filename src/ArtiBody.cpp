@@ -1,10 +1,12 @@
 #include "pch.h"
 #include <queue>
 #include <stack>
+#include <map>
 #include "articulated_body.h"
 #include "ArtiBody.h"
 #include "ik_logger.h"
 #include <sstream>
+
 
 CArtiBodyNode* CArtiBodyTree::CreateAnimNode(const wchar_t* name, const _TRANSFORM* tm)
 {
@@ -26,7 +28,7 @@ CArtiBodyNode* CArtiBodyTree::CreateSimNode(const char* name, const _TRANSFORM* 
 	return CreateSimNodeInternal(name, tm, type, jtm, local);
 }
 
-bool CArtiBodyTree::CloneNode_fbx(const CArtiBodyNode* src, CArtiBodyNode** dst)
+bool CArtiBodyTree::CloneNode_fbx(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt)
 {
 	*dst = NULL;
 	const Transform* l2p_tm = src->GetTransformLocal2Parent();
@@ -38,14 +40,17 @@ bool CArtiBodyTree::CloneNode_fbx(const CArtiBodyNode* src, CArtiBodyNode** dst)
 	if (is_root)
 		l2p_0_tm.tt.x = l2p_0_tm.tt.y = l2p_0_tm.tt.z = 0;
 
-	*dst = CreateAnimNode(src->GetName_w(), &l2p_0_tm);
+	const wchar_t* name_dst = (NULL == name_dst_opt ? src->GetName_w() : name_dst_opt);
+
+	*dst = CreateAnimNode(name_dst, &l2p_0_tm);
 	return NULL != *dst;
 }
 
-bool CArtiBodyTree::CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst)
+bool CArtiBodyTree::CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt)
 {
 	*dst = NULL;
 	CArtiBodyNode* src_parent = src->GetParent();
+	const wchar_t* name_dst = (NULL == name_dst_opt ? src->GetName_w() : name_dst_opt);
 	bool is_root = (NULL == src_parent);
 	if (is_root)
 	{
@@ -54,7 +59,7 @@ bool CArtiBodyTree::CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst)
 			{1, 0, 0, 0},
 			{0, 0, 0}
 		};
-		*dst = CreateSimNode(src->GetName_w(), &l2p_0_tm, bvh, t_tr, true);
+		*dst = CreateSimNode(name_dst, &l2p_0_tm, bvh, t_tr, true);
 	}
 	else
 	{
@@ -66,14 +71,14 @@ bool CArtiBodyTree::CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst)
 			{1, 0, 0, 0},
 			{offset.x(), offset.y(), offset.z()}
 		};
-		*dst = CreateSimNode(src->GetName_w(), &l2p_0_tm, bvh, t_r, true);
+		*dst = CreateSimNode(name_dst, &l2p_0_tm, bvh, t_r, true);
 	}
 	return NULL != *dst;
 }
 
 
 
-bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst)
+bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt)
 {
 	// if (0 == strcmp(src->GetName_c(), "LeftHand"))
 	//  	DebugBreak(); //a zero length bone
@@ -86,7 +91,7 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst)
 	bool single_node = (is_leaf && is_root);
 	*dst = NULL;
 	if (single_node)
-		return CloneNode_bvh(src, dst);
+		return CloneNode_bvh(src, dst, name_dst_opt);
 	else // (!single_node)
 	{
 		bool valid_nor = false;
@@ -160,38 +165,94 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst)
 			{tt_this.x(), tt_this.y(), tt_this.z()}
 		};
 		TM_TYPE tm_type = (is_root? t_tr : t_r);
-		*dst = CreateSimNode(src->GetName_w(), &tm, htr, tm_type, false);
+		const wchar_t* name_dst = (NULL == name_dst_opt ? src->GetName_w() : name_dst_opt);
+		*dst = CreateSimNode(name_dst, &tm, htr, tm_type, false);
 
 		return NULL != *dst;
 	}
 
-
-
-
 }
 
-bool CArtiBodyTree::CloneNode(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst)
+bool CArtiBodyTree::CloneNode(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst, const wchar_t* name_dst)
 {
 	bool ret = false;
 	switch(type)
 	{
 		case fbx:
 		{
-			ret = CloneNode_fbx(src, dst);
+			ret = CloneNode_fbx(src, dst, name_dst);
 			break;
 		}
 		case bvh:
 		{
-			ret = CloneNode_bvh(src, dst);
+			ret = CloneNode_bvh(src, dst, name_dst);
 			break;
 		}
 		case htr:
 		{
-			ret = CloneNode_htr(src, dst);
+			ret = CloneNode_htr(src, dst, name_dst);
 			break;
 		}
 	}
 	return ret;
+}
+
+bool CArtiBodyTree::Clone(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst, const wchar_t* (*a_matches)[2], int n_matches, bool src_on_match0)
+{
+	std::map<std::wstring, std::wstring> matches;
+
+	int i_src = src_on_match0 ? 0 : 1;
+	int i_dst = (!i_src);
+	for (int i_match = 0; i_match < n_matches; i_match++)
+	{
+		std::wstring name_src(a_matches[i_match][i_src]);
+		std::wstring name_dst(a_matches[i_match][i_dst]);
+		matches[name_src] = name_dst;
+	}
+
+	std::stack<CArtiBodyNode*> dstSTK;
+	CArtiBodyNode* dst_root = NULL;
+	const CArtiBodyNode* src_root = src;
+	auto it = matches.find(src_root->GetName_w());
+
+	const wchar_t* dst_root_name = ((it == matches.end()) ? NULL : it->second.c_str());
+	bool cloned_root = CArtiBodyTree::CloneNode(src_root, type, &dst_root, dst_root_name);
+
+	dstSTK.push(dst_root); //root node is unconditionally a interest
+
+	auto onEnterBody = [&dstSTK, type, &matches](const CArtiBodyNode* node_src) -> bool
+					{
+						auto it = matches.find(node_src->GetName_w());
+						bool interest = (it != matches.end());
+						CArtiBodyNode* node_dst = NULL;
+						bool cloned = false;
+						if ( interest
+						  && (cloned = CArtiBodyTree::CloneNode(node_src, type, &node_dst, it->second.c_str())))
+						{
+							CArtiBodyNode* node_dst_parent = dstSTK.top();
+							CArtiBodyTree::Connect2(node_dst_parent, node_dst, FIRSTCHD);
+							dstSTK.push(node_dst);
+						}
+						return !interest
+							|| cloned;
+					};
+
+	auto onLeaveBody = [&dstSTK, &matches](const CArtiBodyNode* node_src) -> bool
+					{
+						auto it = matches.find(node_src->GetName_w());
+						bool interest = (matches.end() != it);
+						assert(!interest || (it->second == (dstSTK.top()->GetName_w())));
+						if (interest)
+							dstSTK.pop();
+						return true;
+					};
+
+	bool cloned_tree = (cloned_root && Tree<CArtiBodyNode>::TraverseDFS_botree_nonrecur(src_root, onEnterBody, onLeaveBody));
+	if (cloned_tree)
+		*dst = dst_root;
+	else
+		*dst = NULL;
+	return cloned_tree;
 }
 
 bool CArtiBodyTree::Clone(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst)
@@ -199,7 +260,6 @@ bool CArtiBodyTree::Clone(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNod
 	typedef std::pair<const CArtiBodyNode*, CArtiBodyNode*> Bound;
 	//traverse the bvh herachical structure
 	//	to create an articulated body with the given posture
-
 	std::queue<Bound> queBFS;
 	const CArtiBodyNode* root_src = src;
 	CArtiBodyNode* root_dst = NULL;
