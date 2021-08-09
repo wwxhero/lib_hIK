@@ -55,16 +55,16 @@ bool clone_body(HBODY hSrc, BODY_TYPE nodetype, HBODY* hDst)
 	return ret;
 }
 
-bool clone_body_interests(HBODY hSrc, BODY_TYPE nodetype, HBODY* hDst, const wchar_t* (*matches)[2], int n_matches, bool src_on_match0)
+bool clone_body_interests(HBODY hSrc, HBODY* hDst, const wchar_t* (*matches)[2], int n_matches, bool src_on_match0)
 {
 	CArtiBodyNode* body_src = CAST_2PBODY(hSrc);
 	CArtiBodyNode* body_dst = NULL;
 	bool matches_not_specified = (NULL == matches || n_matches < 1);
 	bool ret = false;
 	if (matches_not_specified)
-		ret = CArtiBodyTree::Clone(body_src, nodetype, &body_dst);
+		ret = CArtiBodyTree::Clone(body_src, htr, &body_dst);
 	else
-		ret = CArtiBodyTree::Clone(body_src, nodetype, &body_dst, matches, n_matches, src_on_match0);
+		ret = CArtiBodyTree::Clone(body_src, &body_dst, matches, n_matches, src_on_match0);
 	if (ret)
 		*hDst = CAST_2HBODY(body_dst);
 	return ret;
