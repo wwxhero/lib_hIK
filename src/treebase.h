@@ -154,30 +154,4 @@ public:
 		*hook[inverse] = target[inverse];
 	}
 
-	static void Connect2(NodeType* body_from, NodeType* body_to, CNN type)
-	{
-		enum {forward = 0, inverse, total};
-		NodeType** hook[total] = {NULL};
-		NodeType*	target[total] = {NULL};
-
-		if (CNN::FIRSTCHD == type)
-		{
-			body_to->m_nextSibling = body_from->m_firstChild;
-			hook[forward] = &body_from->m_firstChild;
-			target[forward] = body_to;
-			hook[inverse] = &body_to->m_parent;
-			target[inverse] = body_from;
-		}
-		else
-		{
-			hook[forward] = &body_from->m_nextSibling;
-			target[forward] = body_to;
-			hook[inverse] = &body_to->m_parent;
-			target[inverse] = body_from->m_parent;
-		}
-
-		*hook[forward] = target[forward];
-		*hook[inverse] = target[inverse];
-
-	}
 };

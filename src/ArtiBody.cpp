@@ -217,14 +217,14 @@ bool CArtiBodyTree::Clone(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNod
 	}
 
 	std::stack<CArtiBodyNode*> dstSTK;
-	CArtiBodyNode* dst_root = NULL;
-	const CArtiBodyNode* src_root = src;
-	auto it = matches.find(src_root->GetName_w());
+	CArtiBodyNode* root_dst = NULL;
+	const CArtiBodyNode* root_src = src;
+	auto it = matches.find(root_src->GetName_w());
 
 	IKAssert(it != matches.end());
-	bool cloned_root = CArtiBodyTree::CloneNode(src_root, type, &dst_root, it->second.c_str());
+	bool cloned_root = CArtiBodyTree::CloneNode(root_src, type, &root_dst, it->second.c_str());
 
-	dstSTK.push(dst_root); //root node is unconditionally a interest
+	dstSTK.push(root_dst); //root node is unconditionally a interest
 
 	auto onEnterBody = [&dstSTK, type, &matches](const CArtiBodyNode* node_src) -> bool
 					{
@@ -236,7 +236,7 @@ bool CArtiBodyTree::Clone(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNod
 						  && (cloned = CArtiBodyTree::CloneNode(node_src, type, &node_dst, it->second.c_str())))
 						{
 							CArtiBodyNode* node_dst_parent = dstSTK.top();
-							CArtiBodyTree::Connect2(node_dst_parent, node_dst, FIRSTCHD);
+							CArtiBodyTree::Connect(node_dst_parent, node_dst, FIRSTCHD);
 							dstSTK.push(node_dst);
 						}
 						return !interest
@@ -255,16 +255,16 @@ bool CArtiBodyTree::Clone(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNod
 
 	bool cloned_tree = cloned_root;
 
-	for (const CArtiBodyNode* sub_root = src_root->GetFirstChild()
+	for (const CArtiBodyNode* sub_root = root_src->GetFirstChild()
 		; cloned_tree && NULL != sub_root
 		; sub_root = sub_root->GetNextSibling())
 		cloned_tree = (Tree<CArtiBodyNode>::TraverseDFS_botree_nonrecur(sub_root, onEnterBody, onLeaveBody));
 
 	if (cloned_tree)
 	{
-		KINA_Initialize(dst_root);
-		FK_Update(dst_root);
-		*dst = dst_root;
+		KINA_Initialize(root_dst);
+		FK_Update(root_dst);
+		*dst = root_dst;
 	}
 	else
 		*dst = NULL;
