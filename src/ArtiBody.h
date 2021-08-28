@@ -149,8 +149,8 @@ private:
 	{
 		m_local2parent_cached = m_local2parent0 * m_joint.m_tm;
 		m_parent2local_cached = m_local2parent_cached.inverse();
-
-		bool is_root = (NULL == m_parent);
+		CArtiBodyNode_anim* parent = static_cast<CArtiBodyNode_anim*>(GetParent());
+		bool is_root = (NULL == parent);
 
 		if (is_root)
 		{
@@ -159,8 +159,8 @@ private:
 		}
 		else
 		{
-			m_local2world_cached = static_cast<CArtiBodyNode_anim*>(m_parent)->m_local2world_cached * m_local2parent_cached;
-			m_world2local_cached = m_parent2local_cached * static_cast<CArtiBodyNode_anim*>(m_parent)->m_world2local_cached;
+			m_local2world_cached = parent->m_local2world_cached * m_local2parent_cached;
+			m_world2local_cached = m_parent2local_cached * parent->m_world2local_cached;
 		}
 
 	}
@@ -195,8 +195,8 @@ private:
 		// this function is performance sensitive
 		this->m_local2parent_cached.Update(this->m_local2parent0, this->m_joint.m_tm);
 		this->m_parent2local_cached = this->m_local2parent_cached.inverse();
-
-		bool is_root = (NULL == this->m_parent);
+		CArtiBodyNode* parent0 = this->GetParent();
+		bool is_root = (NULL == parent0);
 		if (is_root)
 		{
 			this->m_local2world_cached = this->m_local2parent_cached;
@@ -207,18 +207,18 @@ private:
 			// this is ugly, but in perspective of performance, it is better than using virtual functions
 			Transform_TR* world2parent = NULL;
 			Transform_TR* parent2world = NULL;
-			switch (this->m_parent->c_jtmflag)
+			switch (parent0->c_jtmflag)
 			{
 				case t_r:
 				{
-					CArtiBodyNode_sim_r* parent = static_cast<CArtiBodyNode_sim_r*>(this->m_parent);
+					CArtiBodyNode_sim_r* parent = static_cast<CArtiBodyNode_sim_r*>(parent0);
 					world2parent = &(parent->m_world2local_cached);
 					parent2world = &(parent->m_local2world_cached);
 					break;
 				}
 				case t_tr:
 				{
-					CArtiBodyNode_sim_tr* parent = static_cast<CArtiBodyNode_sim_tr*>(this->m_parent);
+					CArtiBodyNode_sim_tr* parent = static_cast<CArtiBodyNode_sim_tr*>(parent0);
 					world2parent = &(parent->m_world2local_cached);
 					parent2world = &(parent->m_local2world_cached);
 					break;

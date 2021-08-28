@@ -25,9 +25,10 @@ CMoNode::~CMoNode()
 bool CMoNode::MoCNN_Initialize(TM_TYPE tm_type, const Real p2c_w[3][3])
 {
 	m_tmType = tm_type;
-	assert(NULL != m_parent
-		&& NULL != m_parent->m_hostee); //root motion node is not supposed to run this function
-	const auto& bodies_from = m_parent->m_hostee->m_kinalst;
+	CMoNode* parent = GetParent();
+	assert(NULL != parent
+		&& NULL != parent->m_hostee); //root motion node is not supposed to run this function
+	const auto& bodies_from = parent->m_hostee->m_kinalst;
 	const auto& bodies_to = m_hostee->m_kinalst;
 	std::size_t n_pairs = bodies_from.size();
 	bool ok = (n_pairs == bodies_to.size());

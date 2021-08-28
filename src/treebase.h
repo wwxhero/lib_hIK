@@ -4,11 +4,13 @@
 #include <queue>
 #include "articulated_body.h"
 
+template<typename TNode> class Tree;
+
 template <typename This>
 class TreeNode
 {
 	template<typename TNode>
-	friend class Tree;
+	friend void Tree<TNode>::Connect(TNode* body_from, TNode* body_to, CNN type);
 protected:
 	TreeNode()
 		: m_parent(NULL)
@@ -29,7 +31,7 @@ public:
 		return m_parent;
 	}
 
-protected:
+private:
 	This* m_parent;
 	This* m_firstChild;
 	This* m_nextSibling;

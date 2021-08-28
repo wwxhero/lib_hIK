@@ -89,9 +89,11 @@ public:
 		typedef std::basic_string<CHAR> STR;
 		std::map<STR, const CArtiBodyNode*>	bodies_from;
 		std::map<STR, CArtiBodyNode*>		bodies_to;
-		assert(NULL != m_parent
-			&& NULL != m_parent->m_hostee); //root motion node is not supposed to run this function
-		CArtiBodyNode* body_from = (m_parent->m_hostee);
+
+		CMoNode* parent = GetParent();
+		assert(NULL != parent
+			&& NULL != parent->m_hostee); //root motion node is not supposed to run this function
+		CArtiBodyNode* body_from = (parent->m_hostee);
 		for (CArtiBodyNode* kina : body_from->m_kinalst)
 			bodies_from[GetName(kina)] = kina;
 

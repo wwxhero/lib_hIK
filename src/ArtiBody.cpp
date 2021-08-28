@@ -429,8 +429,5 @@ CArtiBodyNode::CArtiBodyNode(const char *name, BODY_TYPE type, TM_TYPE jtmflag)
 
 CArtiBodyNode::~CArtiBodyNode()
 {
-	m_parent = NULL;
-	m_firstChild = NULL;
-	m_nextSibling = NULL;
 }
 
