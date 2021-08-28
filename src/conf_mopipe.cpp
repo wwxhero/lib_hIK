@@ -360,7 +360,7 @@ CConfMoPipe* CConfMoPipe::load(const TiXmlDocument* doc)
 					if (valid_pair)
 						pConf->AddPair(j_from, j_to);
 				}
-				else if("EndEFF" == name)
+				else if("EndEEF" == name)
 				{
 					const char* target_name = ele->Attribute("b_name");
 					bool valid_target = (NULL != target_name);
