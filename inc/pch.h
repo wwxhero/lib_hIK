@@ -80,9 +80,6 @@ typedef void* HCONFMOPIPE;
 
 #endif
 
-
-
-
 const Real c_epsilon = 1e-5f;
 
 #include <crtdbg.h>
@@ -91,5 +88,9 @@ const Real c_epsilon = 1e-5f;
 #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #define new DEBUG_NEW
 #endif
+
+
+#define HIKLIB_CB(rtype, func)\
+		rtype (__stdcall *func)
 
 #endif //PCH_H

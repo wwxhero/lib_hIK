@@ -3,6 +3,14 @@
 #include "MoNode.h"
 #include "handle_helper.hpp"
 
+void reset_mopipe(MotionPipe* mopipe)
+{
+	mopipe->bodies[0] = H_INVALID;
+	mopipe->bodies[1] = H_INVALID;
+	mopipe->mo_nodes[0] = H_INVALID;
+	mopipe->mo_nodes[1] = H_INVALID;
+}
+
 HMOTIONNODE	create_tree_motion_node(HBODY mo_src)
 {
 	//todo: create a tree node that represents motions of the articulated body mo_src
