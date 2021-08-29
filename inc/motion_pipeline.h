@@ -14,9 +14,9 @@ typedef HIKLIB_CB(HBODY, FuncBodyInit)(void* paramProc, HCONF conf);
 typedef HIKLIB_CB(void, FuncBodyUnInit)(void* paramProc, HBODY body);
 
 
-HIKLIB(void,			reset_mopipe)(MotionPipe* mopipe);
-HIKLIB(bool,			init_mopipe)(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInitBodyProc[2], void* paramProc);
-HIKLIB(bool,			uninit_mopipe)(MotionPipe* mopipe, FuncBodyUnInit onUnInitBodyProc[2], void* paramProc);
+HIKLIB(void,			init_mopipe)(MotionPipe* mopipe);
+HIKLIB(bool,			load_mopipe)(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInitBodyProc[2], void* paramProc);
+HIKLIB(void,			unload_mopipe)(MotionPipe* mopipe);
 
 
 HIKLIB(HMOTIONNODE,		create_tree_motion_node)(HBODY mo_src);

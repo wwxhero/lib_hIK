@@ -3,12 +3,28 @@
 #include "MoNode.h"
 #include "handle_helper.hpp"
 
-void reset_mopipe(MotionPipe* mopipe)
+void init_mopipe(MotionPipe* mopipe)
 {
 	mopipe->bodies[0] = H_INVALID;
 	mopipe->bodies[1] = H_INVALID;
 	mopipe->mo_nodes[0] = H_INVALID;
 	mopipe->mo_nodes[1] = H_INVALID;
+}
+
+void unload_mopipe(MotionPipe* mopipe)
+{
+	for (int i_retar = 0; i_retar < 2; i_retar ++)
+	{
+		auto& moNode_i = mopipe->mo_nodes[i_retar];
+		if (VALID_HANDLE(moNode_i))
+			destroy_tree_motion_node(moNode_i);
+		moNode_i = H_INVALID;
+
+		auto& body_i = mopipe->bodies[i_retar];
+		if (VALID_HANDLE(body_i))
+			destroy_tree_body(body_i);
+		body_i = H_INVALID;
+	}
 }
 
 HMOTIONNODE	create_tree_motion_node(HBODY mo_src)
