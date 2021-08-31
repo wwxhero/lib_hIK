@@ -53,6 +53,65 @@ void LogInfo(const char* file, unsigned int line, const char *info)
 #endif
 }
 
+void LogInfoWCharPtr(const char *file, unsigned int line, const char *token, const wchar_t* v)
+{
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	std::wstring strV_w(v);
+	std::string strV_c = converter.to_bytes(strV_w);
+#ifndef SMOOTH_LOGGING
+	fprintf(stdout
+		, "[%s:%d] %s = %s\n"
+		, file_short(file)
+		, line
+		, token
+		, strV_c.c_str());
+	fflush(stdout);
+#else
+	g_LoggerFast.OutFmt("[%s:%d] %s = %s\n"
+						, file_short(file)
+						, line
+						, token
+						, strV_c.c_str());
+#endif
+}
+
+void LogInfoCharPtr(const char *file, unsigned int line, const char *token, const char* v)
+{
+#ifndef SMOOTH_LOGGING
+	fprintf(stdout
+		, "[%s:%d] %s = %s\n"
+		, file_short(file)
+		, line
+		, token
+		, v);
+	fflush(stdout);
+#else
+	g_LoggerFast.OutFmt("[%s:%d] %s = %s\n"
+						, file_short(file)
+						, line
+						, token
+						, v);
+#endif
+}
+
+void LogInfoPtr(const char* file, unsigned int line, const char* token, const void* v)
+{
+#ifndef SMOOTH_LOGGING
+	fprintf("[%s:%d] %s = %p\n"
+			, file_short(file)
+			, line
+			, token
+			, v);
+	fflush(stdout);
+#else
+	g_LoggerFast.OutFmt("[%s:%d] %s = %p\n"
+			, file_short(file)
+			, line
+			, token
+			, v);
+#endif
+}
+
 void LogInfoInt(const char* file, unsigned int line, const char* token, int v)
 {
 #ifndef SMOOTH_LOGGING

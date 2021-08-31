@@ -91,6 +91,6 @@ const Real c_epsilon = 1e-5f;
 
 
 #define HIKLIB_CB(rtype, func)\
-		rtype (__stdcall *func)
+		rtype (__stdcall func)
 
 #endif //PCH_H

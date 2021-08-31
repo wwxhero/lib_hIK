@@ -393,6 +393,7 @@
     <ClInclude Include="..\..\src\loggerSrv_i.h" />
     <ClInclude Include="..\..\src\matrix3.h" />
     <ClInclude Include="..\..\src\MoNode.h" />
+    <ClInclude Include="..\..\src\MotionPipeConf.hpp" />
     <ClInclude Include="..\..\src\Transform.h" />
     <ClInclude Include="..\..\src\treebase.h" />
   </ItemGroup>
@@ -412,6 +413,7 @@
     </ClCompile>
     <ClCompile Include="..\..\src\Math.cpp" />
     <ClCompile Include="..\..\src\MoNode.cpp" />
+    <ClCompile Include="..\..\src\MotionPipeConf.cpp" />
     <ClCompile Include="..\..\src\motion_pipeline.cpp" />
     <ClCompile Include="..\..\src\Transform.cpp" />
     <ClCompile Include="dllmain.cpp" />

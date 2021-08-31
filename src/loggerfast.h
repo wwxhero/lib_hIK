@@ -12,6 +12,7 @@ public:
 	~LoggerFast();
 	int __cdecl OutFmt(const char* fmt, ...);
 	int Out(const char* fmt, va_list _ArgList);
+	void Flush();
 private:
 	ILogger* m_pLogger;
 	const unsigned int c_fmtBuffSz;

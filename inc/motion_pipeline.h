@@ -1,5 +1,6 @@
 #pragma once
 #include "articulated_body.h"
+#include "conf_mopipe.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -8,11 +9,18 @@ struct MotionPipe
 {
 	HBODY bodies[2];
 	HMOTIONNODE mo_nodes[2];
+	Real src2dst_w[3][3];
+	unsigned int n_frames; // number of frames for FK or 0 for HIK
 };
 
-typedef HIKLIB_CB(HBODY, FuncBodyInit)(void* paramProc, HCONF conf);
-typedef HIKLIB_CB(void, FuncBodyUnInit)(void* paramProc, HBODY body);
-
+typedef HIKLIB_CB(HBODY, *FuncBodyInit)(void* paramProc
+									, const wchar_t* filePath
+									, const wchar_t* namesOnPair[]
+									, int n_pairs
+									, const B_Scale scales[]
+									, int n_scales
+									, const wchar_t* namesEEFs[]
+									, int n_eef);
 
 HIKLIB(void,			init_mopipe)(MotionPipe* mopipe);
 HIKLIB(bool,			load_mopipe)(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInitBodyProc[2], void* paramProc);
