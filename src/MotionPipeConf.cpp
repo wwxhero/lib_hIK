@@ -278,6 +278,9 @@ namespace CONF
 				}
 				else if ("MotionPipe" == name)
 				{
+					const char* sync_type = ele->Attribute("sync");
+					sync = CMoNode::to_TM_TYPE(sync_type);
+
 					const char* m_name[3][3] = {
 						{"m11", "m12", "m13"},
 						{"m21", "m22", "m23"},

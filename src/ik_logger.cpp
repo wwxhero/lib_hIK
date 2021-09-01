@@ -349,6 +349,7 @@ ENUM_START(LogInfoEnum_TM_TYPE)
 	ENUM_ITEM(CMoNode::homo)
 	ENUM_ITEM(CMoNode::cross)
 	ENUM_ITEM(CMoNode::identity)
+	ENUM_ITEM(CMoNode::unknown)
 ENUM_END
 
 #undef ENUM_START

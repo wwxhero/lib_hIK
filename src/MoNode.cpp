@@ -3,7 +3,23 @@
 
 
 
-const char* CMoNode::TM_TYPE_STR[] = {"homo", "cross", "identity"};
+const char* CMoNode::TM_TYPE_STR[] = {"homo", "cross", "identity", "unknown"};
+
+CMoNode::TM_TYPE CMoNode::to_TM_TYPE(const char* type_str)
+{
+	if (NULL == type_str)
+		return identity;
+	else
+	{
+		int n_types = sizeof(TM_TYPE_STR)/sizeof(const char*);
+		for (int i_type = 0; i_type < n_types; i_type ++)
+		{
+			if (0 == strcmp(type_str, TM_TYPE_STR[i_type]))
+				return (TM_TYPE)i_type;
+		}
+		return unknown;
+	}
+}
 
 CMoNode::CMoNode(CArtiBodyNode* body)
 	: m_tmType(identity)
