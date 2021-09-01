@@ -4,6 +4,8 @@
 #include "handle_helper.hpp"
 #include "MotionPipeConf.hpp"
 
+using namespace CONF;
+
 void init_mopipe(MotionPipe* mopipe)
 {
 	mopipe->bodies[0] = H_INVALID;
@@ -44,13 +46,13 @@ bool load_mopipe(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInit
 				auto* bodies_conf_i = bodies_conf[i_bodyConf];
 
 				const wchar_t** namesOnPair = NULL;
-				int n_pairs = mp_conf->Pair.Data(i_bodyConf, namesOnPair);
+				int n_pairs = mp_conf->Pair.Data_alloc(i_bodyConf, namesOnPair);
 
 				B_Scale* scales = NULL;
-				int n_scales = bodies_conf_i->Scale(scales);
+				int n_scales = bodies_conf_i->Scale_alloc(scales);
 
 				const wchar_t** namesEEFs = NULL;
-				int n_eefs = bodies_conf_i->EndEEF(namesEEFs);
+				int n_eefs = bodies_conf_i->EndEEF_alloc(namesEEFs);
 
 				mopipe->bodies[i_bodyConf] = InitBody_External_i(paramProc
 														, bodies_conf_i->file()
@@ -60,6 +62,10 @@ bool load_mopipe(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInit
 														, n_scales
 														, namesEEFs
 														, n_eefs);
+
+				CPairsConf::Data_free(namesOnPair, n_pairs);
+				CBodyConf::Scale_free(scales, n_scales);
+				CBodyConf::EndEEF_free(namesEEFs, n_eefs);
 			}
 			else
 			{
@@ -89,7 +95,7 @@ bool load_mopipe(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInit
 		 	auto moDrivee = create_tree_motion_node(mopipe->bodies[1]);
 		 	bool mo_bvh_created = VALID_HANDLE(moDriver);
 		 	bool mo_drv_created = VALID_HANDLE(moDrivee);
-		 	bool sync_cross = (mp_conf->sync == CMotionPipeConf::cross);
+		 	bool sync_cross = (mp_conf->sync == CMoNode::cross);
 		 	bool cnn_bvh2htr = false;
 
 		 	if (mo_bvh_created && mo_drv_created)
@@ -97,8 +103,9 @@ bool load_mopipe(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInit
 		 		if (sync_cross)
 		 		{
 		 			const wchar_t* (*matches)[2] = NULL;
-		 			int n_match = mp_conf->Pair.Data(&matches);
+		 			int n_match = mp_conf->Pair.Data_alloc(&matches);
 		 			cnn_bvh2htr = motion_sync_cnn_cross_w(moDriver, moDrivee, FIRSTCHD, matches, n_match, mopipe->src2dst_w);
+		 			CPairsConf::Data_free(matches, n_match);
 		 		}
 		 		else
 		 			cnn_bvh2htr = motion_sync_cnn_homo(moDrivee, moDrivee, FIRSTCHD);
