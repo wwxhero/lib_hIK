@@ -14,6 +14,9 @@ const char *file_short(const char *file_f);
 
 void LogInfo(const char *file, unsigned int line, const char *info);
 
+void LogInfoWCharPtr(const char *file, unsigned int line, const char *token, const wchar_t* v);
+void LogInfoCharPtr(const char *file, unsigned int line, const char *token, const char* v);
+void LogInfoPtr(const char *file, unsigned int line, const char *token, const void* v);
 void LogInfoInt(const char *file, unsigned int line, const char *token, int v);
 void LogInfoBool(const char *file, unsigned int line, const char *token, bool v);
 void LogInfoFloat(const char *file, unsigned int line, const char *token, float v);
@@ -78,9 +81,9 @@ void AssertionFail(const char *file, unsigned int line);
 
 int __cdecl LoggerFast_OutFmt(const char *fmt, ...);
 
-DECLARE_FLAGLOG(LogInfoFlag_con)
-DECLARE_ENUMLOG(LogInfoEnum_contype)
-DECLARE_FLAGLOG(LogInfoFlag_bone)
+// DECLARE_FLAGLOG(LogInfoFlag_con)
+DECLARE_ENUMLOG(LogInfoEnum_TM_TYPE)
+// DECLARE_FLAGLOG(LogInfoFlag_bone)
 
 #  ifdef __cplusplus
 }

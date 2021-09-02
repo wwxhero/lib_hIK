@@ -60,10 +60,7 @@
     <ClInclude Include="..\..\src\matrix3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\conf.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\inc\conf_mopipe.h">
+    <ClInclude Include="..\..\src\MotionPipeConf.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -110,10 +107,7 @@
     <ClCompile Include="..\..\src\Math.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\conf.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\conf_mopipe.cpp">
+    <ClCompile Include="..\..\src\MotionPipeConf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

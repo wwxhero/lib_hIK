@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "ik_logger.h"
 #include "loggerfast.h"
+#include "MoNode.h"
 
 const char *file_short(const char *file_f)
 {
@@ -50,6 +51,66 @@ void LogInfo(const char* file, unsigned int line, const char *info)
 						, file_short(file)
 						, line
 						, info);
+#endif
+}
+
+void LogInfoWCharPtr(const char *file, unsigned int line, const char *token, const wchar_t* v)
+{
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	std::wstring strV_w(v);
+	std::string strV_c = converter.to_bytes(strV_w);
+#ifndef SMOOTH_LOGGING
+	fprintf(stdout
+		, "[%s:%d] %s = %s\n"
+		, file_short(file)
+		, line
+		, token
+		, strV_c.c_str());
+	fflush(stdout);
+#else
+	g_LoggerFast.OutFmt("[%s:%d] %s = %s\n"
+						, file_short(file)
+						, line
+						, token
+						, strV_c.c_str());
+#endif
+}
+
+void LogInfoCharPtr(const char *file, unsigned int line, const char *token, const char* v)
+{
+#ifndef SMOOTH_LOGGING
+	fprintf(stdout
+		, "[%s:%d] %s = %s\n"
+		, file_short(file)
+		, line
+		, token
+		, v);
+	fflush(stdout);
+#else
+	g_LoggerFast.OutFmt("[%s:%d] %s = %s\n"
+						, file_short(file)
+						, line
+						, token
+						, v);
+#endif
+}
+
+void LogInfoPtr(const char* file, unsigned int line, const char* token, const void* v)
+{
+#ifndef SMOOTH_LOGGING
+	fprintf(stdout
+			, "[%s:%d] %s = %p\n"
+			, file_short(file)
+			, line
+			, token
+			, v);
+	fflush(stdout);
+#else
+	g_LoggerFast.OutFmt("[%s:%d] %s = %p\n"
+			, file_short(file)
+			, line
+			, token
+			, v);
 #endif
 }
 
@@ -270,6 +331,83 @@ void LogInfoEnum(short flag, EnumText* dfns, unsigned short n_dfn, const char* f
 						, str_flags);
 #endif
 }
+
+//#define DECLARE_TYPELOG(func)\
+//	void func(const char* file, unsigned int line, const char* token, short type);
+#define ENUM_START(LogInfoEnum_x)\
+	void LogInfoEnum_x(const char* file, unsigned int line, const char* token, short type)\
+	{\
+		EnumText flagsDfn [] = {
+#define ENUM_END\
+		};\
+		LogInfoEnum(type, flagsDfn, sizeof(flagsDfn)/sizeof(EnumText), file, line, token);\
+	}
+#define ENUM_ITEM(type)\
+	{type, #type} ,
+
+
+ENUM_START(LogInfoEnum_TM_TYPE)
+	ENUM_ITEM(CMoNode::homo)
+	ENUM_ITEM(CMoNode::cross)
+	ENUM_ITEM(CMoNode::unknown)
+ENUM_END
+
+#undef ENUM_START
+#undef ENUM_END
+#undef ENUM_ITEM
+
+// //#define DECLARE_FLAGLOG(func)\
+// //	void func(const char* file, unsigned int line, const char* token, short flag);
+// #define FLAG_START(LogInfoFlag_x)\
+// 	void LogInfoFlag_x(const char* file, unsigned int line, const char* token, short flag)\
+// 	{\
+// 		FlagText flagsDfn [] = {
+// #define FLAG_END\
+// 		};\
+// 		LogInfoFlag(flag, flagsDfn, sizeof(flagsDfn)/sizeof(FlagText), file, line, token);\
+// 	}
+// #define FLAG_ENTRY(flag)\
+// 	{flag, #flag} ,
+
+// FLAG_START(LogInfoFlag_con)
+// 	FLAG_ENTRY(CONSTRAINT_IK_TIP)
+// 	FLAG_ENTRY(CONSTRAINT_IK_ROT)
+// 	/* targetless */
+// 	FLAG_ENTRY(CONSTRAINT_IK_AUTO)
+// 	/* autoik */
+// 	FLAG_ENTRY(CONSTRAINT_IK_TEMP)
+// 	FLAG_ENTRY(CONSTRAINT_IK_STRETCH)
+// 	FLAG_ENTRY(CONSTRAINT_IK_POS)
+// 	FLAG_ENTRY(CONSTRAINT_IK_SETANGLE)
+// 	FLAG_ENTRY(CONSTRAINT_IK_GETANGLE)
+// 	/* limit axis */
+// 	FLAG_ENTRY(CONSTRAINT_IK_NO_POS_X)
+// 	FLAG_ENTRY(CONSTRAINT_IK_NO_POS_Y)
+// 	FLAG_ENTRY(CONSTRAINT_IK_NO_POS_Z)
+// 	FLAG_ENTRY(CONSTRAINT_IK_NO_ROT_X)
+// 	FLAG_ENTRY(CONSTRAINT_IK_NO_ROT_Y)
+// 	FLAG_ENTRY(CONSTRAINT_IK_NO_ROT_Z)
+// 	/* axis relative to target */
+// 	FLAG_ENTRY(CONSTRAINT_IK_TARGETAXIS)
+// FLAG_END
+
+// FLAG_START(LogInfoFlag_bone)
+// 	FLAG_ENTRY(BONE_IK_NO_XDOF)
+// 	FLAG_ENTRY(BONE_IK_NO_YDOF)
+// 	FLAG_ENTRY(BONE_IK_NO_ZDOF)
+// 	FLAG_ENTRY(BONE_IK_XLIMIT)
+// 	FLAG_ENTRY(BONE_IK_YLIMIT)
+// 	FLAG_ENTRY(BONE_IK_ZLIMIT)
+// 	FLAG_ENTRY(BONE_IK_ROTCTL)
+// 	FLAG_ENTRY(BONE_IK_LINCTL)
+// 	FLAG_ENTRY(BONE_IK_NO_XDOF_TEMP)
+// 	FLAG_ENTRY(BONE_IK_NO_YDOF_TEMP)
+// 	FLAG_ENTRY(BONE_IK_NO_ZDOF_TEMP)
+// FLAG_END
+
+// #undef FLAG_START
+// #undef FLAG_END
+// #undef FLAG_ENTRY
 
 int __cdecl LoggerFast_OutFmt(const char* _Format, ...)
 {
