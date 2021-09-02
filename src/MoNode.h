@@ -8,7 +8,7 @@
 class CMoNode : public TreeNode<CMoNode>
 {
 public:
-	enum TM_TYPE { homo = 0, cross, identity, unknown };
+	enum TM_TYPE { homo = 0, cross, unknown };
 	static const char* TM_TYPE_STR[];
 	static TM_TYPE to_TM_TYPE(const char* type_str);
 private:

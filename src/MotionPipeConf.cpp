@@ -262,7 +262,7 @@ namespace CONF
 	}
 
 	CMotionPipeConf::CMotionPipeConf()
-		: sync(CMoNode::identity)
+		: sync(CMoNode::unknown)
 	{
 
 	}
