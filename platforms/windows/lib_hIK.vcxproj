@@ -321,7 +321,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;LIB_HIK_EXPORTS;_CRT_SECURE_NO_WARNINGS;_WINDOWS;_USRDLL;_USE_MATH_DEFINES;WIN32;TIXML_USE_TICPP;TIXML_USE_STL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;LIB_HIK_EXPORTS;_CRT_SECURE_NO_WARNINGS;_WINDOWS;_USRDLL;_USE_MATH_DEFINES;WIN32;TIXML_USE_TICPP;TIXML_USE_STL;SMOOTH_LOGGING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC)</AdditionalIncludeDirectories>
@@ -380,8 +380,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\inc\articulated_body.h" />
     <ClInclude Include="..\..\inc\bvh.h" />
-    <ClInclude Include="..\..\inc\conf.h" />
-    <ClInclude Include="..\..\inc\conf_mopipe.h" />
     <ClInclude Include="..\..\inc\fk_joint.h" />
     <ClInclude Include="..\..\inc\motion_pipeline.h" />
     <ClInclude Include="..\..\inc\pch.h" />
@@ -402,8 +400,6 @@
     <ClCompile Include="..\..\src\articulated_body.cpp" />
     <ClCompile Include="..\..\src\bvh.cpp" />
     <ClCompile Include="..\..\src\bvh11_helper.cpp" />
-    <ClCompile Include="..\..\src\conf.cpp" />
-    <ClCompile Include="..\..\src\conf_mopipe.cpp" />
     <ClCompile Include="..\..\src\Joint.cpp" />
     <ClCompile Include="..\..\src\ik_logger.cpp" />
     <ClCompile Include="..\..\src\loggerfast_win.cpp" />

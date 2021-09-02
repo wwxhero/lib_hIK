@@ -1,8 +1,10 @@
 #pragma once
 #include <queue>
 #include "tinyxml.h"
-#include "conf_mopipe.h"
 #include "MoNode.h"
+#include "motion_pipeline.h"
+
+
 namespace CONF
 {
 	class B_ScaleEx : public B_Scale

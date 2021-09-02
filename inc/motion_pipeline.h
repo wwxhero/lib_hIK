@@ -1,6 +1,5 @@
 #pragma once
 #include "articulated_body.h"
-#include "conf_mopipe.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,6 +12,14 @@ struct MotionPipe
 	unsigned int n_frames; // number of frames for FK or 0 for HIK
 	HBVH bvh;
 };
+
+typedef struct _B_Scale
+{
+	const wchar_t* bone_name;
+	float scaleX;
+	float scaleY;
+	float scaleZ;
+} B_Scale;
 
 typedef HIKLIB_CB(HBODY, *FuncBodyInit)(void* paramProc
 									, const wchar_t* filePath
