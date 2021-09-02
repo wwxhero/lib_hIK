@@ -98,7 +98,8 @@ void LogInfoCharPtr(const char *file, unsigned int line, const char *token, cons
 void LogInfoPtr(const char* file, unsigned int line, const char* token, const void* v)
 {
 #ifndef SMOOTH_LOGGING
-	fprintf("[%s:%d] %s = %p\n"
+	fprintf(stdout
+			, "[%s:%d] %s = %p\n"
 			, file_short(file)
 			, line
 			, token

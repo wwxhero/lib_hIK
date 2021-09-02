@@ -78,7 +78,7 @@ bool InitBody_Internal(HBODY bodySrc
 
 		case BODY_TYPE::fbx:
 		{
-			assert(0); // fbx parsing is not supported by HIK 
+			assert(0); // fbx parsing is not supported by HIK
 			break;
 		}
 
@@ -197,8 +197,7 @@ bool load_mopipe(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInit
 			mopipe->mo_nodes[1] = moDrivee;
 		}
 		CMotionPipeConf::UnLoad(mp_conf);
-		// return ok;
-		return false;
+		return ok;
 	}
 	else
 		return false;
