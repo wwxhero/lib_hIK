@@ -9,6 +9,7 @@ enum CNN
 
 enum BODY_TYPE
 {
+	undef = 0,
 	fbx = 0x00000001,
 	bvh = 0x00000002,
 	htr = 0x00000004,

@@ -73,11 +73,15 @@ namespace CONF
 		static void Scale_free(B_Scale* scales, int n_scale);
 		int EndEEF_alloc(const wchar_t ** &namesEEFs) const;
 		static void EndEEF_free(const wchar_t** namesEEFs, int n_eefs);
-		const wchar_t* file() const;
+		const wchar_t* file_w() const;
+		const char* file_c() const;
 
 		void AddScale(const char* name, Real x, Real y, Real z);
 		void AddEEF(const char* name);
 		void SetFileName(const char* fileName);
+
+		BODY_TYPE type() const;
+
 
 #ifdef _DEBUG
 		void Dump_Dbg() const;
@@ -86,7 +90,8 @@ namespace CONF
 	public:
 		std::vector<B_ScaleEx> m_scales;
 		std::vector<Name> m_eefs;
-		std::wstring m_fileName;
+		std::wstring m_fileName_w;
+		std::string m_fileName_c;
 	};
 
 	class CPairsConf

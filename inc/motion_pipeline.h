@@ -11,6 +11,7 @@ struct MotionPipe
 	HMOTIONNODE mo_nodes[2];
 	Real src2dst_w[3][3];
 	unsigned int n_frames; // number of frames for FK or 0 for HIK
+	HBVH bvh;
 };
 
 typedef HIKLIB_CB(HBODY, *FuncBodyInit)(void* paramProc

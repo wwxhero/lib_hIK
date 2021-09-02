@@ -12,7 +12,6 @@ HIKLIB(void,			unload_bvh)(HBVH bvh);
 HIKLIB(HBODY,			create_tree_body_bvh)(HBVH bvh);
 HIKLIB(void,			pose_body)(HBVH bvh, HBODY body, int i_frame);
 HIKLIB(unsigned int,	channels)(HBVH bvh);
-HIKLIB(unsigned int,	frames)(HBVH bvh);
 HIKLIB(double,			frame_time)(HBVH bvh);
 HIKLIB(void,			PrintJointHierarchy)(HBVH hBVH);
 HIKLIB(void,			WriteBvhFile)(HBVH hBVH, const char* path_dst);

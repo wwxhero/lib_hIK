@@ -675,11 +675,7 @@ unsigned int channels(HBVH hBvh)
 	return (unsigned int)pBVH->channels().size();
 }
 
-unsigned int frames(HBVH hBvh)
-{
-	bvh11::BvhObject* pBVH = CAST_2PBVH(hBvh);
-	return pBVH->frames();
-}
+
 
 double frame_time(HBVH hBvh)
 {

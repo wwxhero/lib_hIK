@@ -1,11 +1,31 @@
 #include "pch.h"
 #include <utility>
+#include <filesystem>
 #include "ik_logger.h"
 #include "MotionPipeConf.hpp"
 #include "tinyxml.h"
 
+extern HMODULE g_Module;
+
 namespace CONF
 {
+	std::wstring GetModuleDir()
+	{
+	    unsigned int n_path_spec = MAX_PATH;
+	    wchar_t* path = (wchar_t*)malloc(n_path_spec * sizeof(wchar_t));
+	    unsigned int n_path = 0;
+	    while ( (n_path = GetModuleFileNameW(g_Module, path, n_path_spec)) > n_path_spec )
+	    {
+	        n_path_spec = n_path;
+	        realloc(path, n_path_spec * sizeof(wchar_t));
+	    }
+	    std::experimental::filesystem::path fullPath(path);
+	    std::wstring dir = fullPath.parent_path().c_str();
+	    free(path);
+	    LOGIKVar(LogInfoWCharPtr, dir.c_str());
+	    return dir;
+	}
+
 	////////////////////////////////////////////////////////////////////////////////////////////
 	//CBodyConf:
 
@@ -63,21 +83,27 @@ namespace CONF
 		m_eefs.push_back(eef);
 	}
 
-	const wchar_t* CBodyConf::file() const
+	const wchar_t* CBodyConf::file_w() const
 	{
-		return m_fileName.c_str();
+		return m_fileName_w.c_str();
+	}
+
+	const char* CBodyConf::file_c() const
+	{
+		return m_fileName_c.c_str();
 	}
 
 	void CBodyConf::SetFileName(const char* filename)
 	{
+		m_fileName_c = filename;
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-		m_fileName = converter.from_bytes(filename);
+		m_fileName_w = converter.from_bytes(filename);
 	}
 
 #ifdef _DEBUG
 	void CBodyConf::Dump_Dbg() const
 	{
-		LOGIKVar(LogInfoWCharPtr, m_fileName.c_str());
+		LOGIKVar(LogInfoWCharPtr, m_fileName_w.c_str());
 
 		B_Scale* scales = NULL;
 		int n_scales = Scale_alloc(scales);
@@ -100,6 +126,29 @@ namespace CONF
 		CBodyConf::EndEEF_free(namesEEFs, n_eefs);
 	}
 #endif
+
+	BODY_TYPE CBodyConf::type() const
+	{
+		std::experimental::filesystem::path relpath(file_w());
+		std::wstring ext = relpath.extension().c_str();
+		const wchar_t* body_types_str[] = {
+			L".fbx",	L".bvh",	L".htr"
+		};
+
+		const BODY_TYPE body_types[] = {
+			fbx, bvh, htr
+		};
+
+		for (int i_body_type = 0
+			; i_body_type < sizeof(body_types_str)/sizeof(const wchar_t*)
+			; i_body_type ++)
+		{
+			if (ext == body_types_str[i_body_type])
+				return (BODY_TYPE)body_types[i_body_type];
+		}
+
+		return undef;
+	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// CPairsConf:

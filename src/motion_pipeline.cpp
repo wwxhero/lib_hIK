@@ -1,8 +1,11 @@
 #include "pch.h"
+#include <filesystem>
 #include "motion_pipeline.h"
 #include "MoNode.h"
 #include "handle_helper.hpp"
 #include "MotionPipeConf.hpp"
+#include "bvh.h"
+
 
 using namespace CONF;
 
@@ -12,12 +15,76 @@ void init_mopipe(MotionPipe* mopipe)
 	mopipe->bodies[1] = H_INVALID;
 	mopipe->mo_nodes[0] = H_INVALID;
 	mopipe->mo_nodes[1] = H_INVALID;
+	mopipe->n_frames = 0;
+	mopipe->bvh = H_INVALID;
 }
 
-HBODY InitBody_Internal(HBODY bodySrc, const CMotionPipeConf& mp_conf, int i_body, unsigned int &frames)
+bool InitBody_Internal(HBODY bodySrc
+					, const wchar_t* rootConfDir
+					, const CMotionPipeConf& mp_conf
+					, int i_body
+					, HBODY& hBody
+					, unsigned int &frames
+					, HBVH& hBVH)
 {
-	//fixme: to initiailize a body
-	return H_INVALID;
+	const CBodyConf* body_confs[] = {&mp_conf.Source, &mp_conf.Destination};
+	const CBodyConf* body_conf_i = body_confs[i_body];
+	bool initialized = false;
+	switch(body_conf_i->type())
+	{
+		case BODY_TYPE::bvh:
+		{
+			std::experimental::filesystem::path fullPath(rootConfDir);
+			std::experimental::filesystem::path relpath(body_conf_i->file_w());
+			fullPath.append(relpath);
+			hBVH = load_bvh_w(fullPath.c_str());
+			IKAssert(VALID_HANDLE(hBVH));
+			bool bvh_load = (VALID_HANDLE(hBVH)
+			 			&& VALID_HANDLE(hBody = create_tree_body_bvh(hBVH)));
+		 	LOGIKVar(LogInfoBool, bvh_load);
+		 	if (bvh_load)
+		 		frames = get_n_frames(hBVH);
+		 	initialized = bvh_load;
+		 	break;
+		}
+
+		case BODY_TYPE::htr:
+		{
+			IKAssert(VALID_HANDLE(bodySrc));
+			const wchar_t* (*matches)[2] = NULL;
+			int n_match = mp_conf.Pair.Data_alloc(&matches);
+			HBODY body_htr_1 = H_INVALID;
+			HBODY body_htr_2 = H_INVALID;
+			if (!(clone_body_interests(bodySrc, &body_htr_1, matches, n_match, false)  	// body_htr_1 is an intermediate body, orient bone with src bone information
+			 			&& clone_body(body_htr_1, htr, &body_htr_2))) 						    // body_htr_2 is the result, orient bone with the interest bone information
+			 		body_htr_2 = H_INVALID;
+
+			CPairsConf::Data_free(matches, n_match);
+
+			#if 0 // defined _DEBUG
+				UE_LOG(LogHIK, Display, TEXT("ArtiBody_SIM"));
+				DBG_printOutSkeletalHierachy(body_htr_1);
+				UE_LOG(LogHIK, Display, TEXT("ArtiBody_SIM2"));
+				DBG_printOutSkeletalHierachy(body_htr_2);
+			#endif
+
+			initialized = VALID_HANDLE(body_htr_1)
+						&& VALID_HANDLE(body_htr_2);
+			if (VALID_HANDLE(body_htr_1))
+			 		destroy_tree_body(body_htr_1);
+			hBody = body_htr_2;
+			break;
+		}
+
+		case BODY_TYPE::fbx:
+		{
+			assert(0); // fbx parsing is not supported by HIK 
+			break;
+		}
+
+	}
+
+	return initialized;
 }
 
 bool load_mopipe(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInitBodyProc[2], void* paramProc)
@@ -25,6 +92,7 @@ bool load_mopipe(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInit
 	LOGIKVar(LogInfoWCharPtr, confXML);
 	init_mopipe(mopipe);
 	CMotionPipeConf* mp_conf = CMotionPipeConf::Load(confXML);
+
 	if (NULL != mp_conf)
 	{
 #ifdef _DEBUG
@@ -55,7 +123,7 @@ bool load_mopipe(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInit
 				int n_eefs = bodies_conf_i->EndEEF_alloc(namesEEFs);
 
 				mopipe->bodies[i_bodyConf] = InitBody_External_i(paramProc
-														, bodies_conf_i->file()
+														, bodies_conf_i->file_w()
 														, namesOnPair
 														, n_pairs
 														, scales
@@ -69,7 +137,14 @@ bool load_mopipe(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInit
 			}
 			else
 			{
-				mopipe->bodies[i_bodyConf] = InitBody_Internal(body_ref, *mp_conf, i_bodyConf, mopipe->n_frames);
+				std::experimental::filesystem::path fullPath(confXML);
+				InitBody_Internal(body_ref
+								, fullPath.parent_path().c_str()
+								, *mp_conf
+								, i_bodyConf
+								, mopipe->bodies[i_bodyConf]
+								, mopipe->n_frames
+								, mopipe->bvh);
 			}
 			body_ref = mopipe->bodies[i_bodyConf];
 		}
@@ -142,6 +217,10 @@ void unload_mopipe(MotionPipe* mopipe)
 		if (VALID_HANDLE(body_i))
 			destroy_tree_body(body_i);
 		body_i = H_INVALID;
+
+		mopipe->n_frames = 0;
+		unload_bvh(mopipe->bvh);
+		mopipe->bvh = H_INVALID;
 	}
 }
 
