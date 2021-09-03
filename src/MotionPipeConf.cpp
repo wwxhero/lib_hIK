@@ -519,7 +519,7 @@ namespace CONF
 					Real weight_p = 0;
 					bool valid_weight_p = (TIXML_SUCCESS == ele->QueryFloatAttribute("weight_p", &weight_p));
 					Real weight_r = 0;
-					bool valid_weight_r = (TIXML_SUCCESS == ele->QueryFloatAttribute("weight_p", &weight_r));
+					bool valid_weight_r = (TIXML_SUCCESS == ele->QueryFloatAttribute("weight_r", &weight_r));
 
 					IKAssert(valid_len);
 					IKAssert(valid_algor);
@@ -532,14 +532,21 @@ namespace CONF
 
 					const char* P_Graph = ele->Attribute("P_Graph");
 
-					body_confs[I_Body(node)]->AddIKChain(eef_name, len, algor, weight_p, weight_r, n_iter, P_Graph);
+					body_confs[I_Body(node)]->AddIKChain(eef_name
+														, len
+														, algor
+														, weight_p
+														, weight_r
+														, n_iter
+														, NULL != P_Graph ? P_Graph : "");
 				}
 				else if("Joint" == name)
 				{
-					const char* name = ele->Attribute("name");
+					const char* name_j = ele->Attribute("name");
+					IKAssert(NULL != name_j);
 					CIKChainConf* chain_conf = P_Chain(node);
 					IKAssert(NULL != chain_conf);
-					chain_conf->AddJoint(name);
+					chain_conf->AddJoint(name_j);
 				}
 			}
 			return ret;
