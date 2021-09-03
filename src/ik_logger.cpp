@@ -2,6 +2,7 @@
 #include "ik_logger.h"
 #include "loggerfast.h"
 #include "MoNode.h"
+#include "MotionPipeConf.hpp"
 
 const char *file_short(const char *file_f)
 {
@@ -350,6 +351,12 @@ ENUM_START(LogInfoEnum_TM_TYPE)
 	ENUM_ITEM(CMoNode::homo)
 	ENUM_ITEM(CMoNode::cross)
 	ENUM_ITEM(CMoNode::unknown)
+ENUM_END
+
+ENUM_START(LogInfoEnum_IK_Algor)
+	ENUM_ITEM(CKinaGroup::Proj)
+	ENUM_ITEM(CKinaGroup::DLS)
+	ENUM_ITEM(CKinaGroup::SDLS)
 ENUM_END
 
 #undef ENUM_START

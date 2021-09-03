@@ -83,6 +83,7 @@ int __cdecl LoggerFast_OutFmt(const char *fmt, ...);
 
 // DECLARE_FLAGLOG(LogInfoFlag_con)
 DECLARE_ENUMLOG(LogInfoEnum_TM_TYPE)
+DECLARE_ENUMLOG(LogInfoEnum_IK_Algor)
 // DECLARE_FLAGLOG(LogInfoFlag_bone)
 
 #  ifdef __cplusplus

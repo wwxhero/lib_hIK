@@ -27,6 +27,37 @@ namespace CONF
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////
+	// CJointConf:
+
+#ifdef _DEBUG
+	void CJointConf::Dump_Dbg() const
+	{
+		LOGIKVar(LogInfoCharPtr, name.c_str());
+	}
+#endif
+
+	////////////////////////////////////////////////////////////////////////////////////////////
+	//CIKChainConf:
+
+#ifdef _DEBUG
+	void CIKChainConf::Dump_Dbg() const
+	{
+		LOGIKVar(LogInfoCharPtr, eef.c_str());
+		LOGIKVar(LogInfoInt, len);
+		LOGIKVar(LogInfoEnum_IK_Algor, algor);
+		LOGIKVar(LogInfoFloat, weight_p);
+		LOGIKVar(LogInfoFloat, weight_r);
+		LOGIKVar(LogInfoInt, n_iter);
+		LOGIKVar(LogInfoCharPtr, P_Graph.c_str());
+
+		for (const CJointConf& joint_conf : Joints)
+		{
+			joint_conf.Dump_Dbg();
+		}
+	}
+#endif
+
+	////////////////////////////////////////////////////////////////////////////////////////////
 	//CBodyConf:
 
 	int CBodyConf::Scale_alloc(B_Scale* &scales) const
@@ -124,6 +155,11 @@ namespace CONF
 			LOGIKVar(LogInfoWCharPtr, namesEEFs[i_eef]);
 		}
 		CBodyConf::EndEEF_free(namesEEFs, n_eefs);
+
+		for (const CIKChainConf& ikchain_conf : IK_Chains)
+		{
+			ikchain_conf.Dump_Dbg();
+		}
 	}
 #endif
 

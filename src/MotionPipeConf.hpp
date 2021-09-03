@@ -4,6 +4,16 @@
 #include "MoNode.h"
 #include "motion_pipeline.h"
 
+class CKinaGroup
+{
+public:
+	enum Algor
+	{
+		Proj = 0
+		, DLS
+		, SDLS
+	};
+};
 
 namespace CONF
 {
@@ -68,6 +78,32 @@ namespace CONF
 		std::wstring m_str;
 	};
 
+	class CJointConf
+	{
+	public:
+#ifdef _DEBUG
+		void Dump_Dbg() const;
+#endif
+		std::string name;
+	};
+
+	class CIKChainConf
+	{
+	public:
+#ifdef _DEBUG
+		void Dump_Dbg() const;
+#endif
+	private:
+		std::string eef;
+		int len;
+		CKinaGroup::Algor algor;
+		Real weight_p;
+		Real weight_r;
+		int n_iter;
+		std::string P_Graph;
+		std::vector<CJointConf> Joints;
+	};
+
 	class CBodyConf
 	{
 	public:
@@ -89,11 +125,13 @@ namespace CONF
 		void Dump_Dbg() const;
 #endif
 
-	public:
+	private:
 		std::vector<B_ScaleEx> m_scales;
 		std::vector<Name> m_eefs;
 		std::wstring m_fileName_w;
 		std::string m_fileName_c;
+
+		std::vector<CIKChainConf> IK_Chains;
 	};
 
 	class CPairsConf
@@ -115,8 +153,6 @@ namespace CONF
 
 	class CMotionPipeConf
 	{
-	public:
-
 	private:
 		CMotionPipeConf();
 		~CMotionPipeConf();
