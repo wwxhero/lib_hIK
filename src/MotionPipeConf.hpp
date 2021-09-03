@@ -12,7 +12,12 @@ public:
 		Proj = 0
 		, DLS
 		, SDLS
+		, Unknown
 	};
+
+	static const char* s_Algor_str[];
+	static Algor s_Algor_val[];
+	static Algor toAlgor(const char* algor_str);
 };
 
 namespace CONF
@@ -81,6 +86,7 @@ namespace CONF
 	class CJointConf
 	{
 	public:
+		CJointConf(const char* name);
 #ifdef _DEBUG
 		void Dump_Dbg() const;
 #endif
@@ -90,6 +96,14 @@ namespace CONF
 	class CIKChainConf
 	{
 	public:
+		CIKChainConf(const char* eef_name
+					, int len
+					, CKinaGroup::Algor algor
+					, Real weight_p
+					, Real weight_r
+					, int n_iter
+					, const char* P_Graph);
+		void AddJoint(const char* name);
 #ifdef _DEBUG
 		void Dump_Dbg() const;
 #endif
@@ -120,6 +134,14 @@ namespace CONF
 
 		BODY_TYPE type() const;
 
+		void AddIKChain(const char* eef_name
+						, int len
+						, CKinaGroup::Algor algor
+						, Real weight_p
+						, Real weight_r
+						, int n_iter
+						, const char* P_Graph);
+		CIKChainConf* GetIKChain(const char* eef_name);
 
 #ifdef _DEBUG
 		void Dump_Dbg() const;
@@ -132,6 +154,7 @@ namespace CONF
 		std::string m_fileName_c;
 
 		std::vector<CIKChainConf> IK_Chains;
+		std::map<std::string, int> m_name2chainIdx;
 	};
 
 	class CPairsConf
