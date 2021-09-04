@@ -325,30 +325,30 @@ void LogInfoEnum(short flag, EnumText* dfns, unsigned short n_dfn, const char* f
 #endif
 }
 
-//#define DECLARE_TYPELOG(func)\
-//	void func(const char* file, unsigned int line, const char* token, short type);
-#define ENUM_START(LogInfoEnum_x)\
-	void LogInfoEnum_x(const char* file, unsigned int line, const char* token, short type)\
-	{\
-		EnumText flagsDfn [] = {
-#define ENUM_END\
-		};\
-		LogInfoEnum(type, flagsDfn, sizeof(flagsDfn)/sizeof(EnumText), file, line, token);\
-	}
-#define ENUM_ITEM(type)\
-	{type, #type} ,
+// //#define DECLARE_TYPELOG(func)\
+// //	void func(const char* file, unsigned int line, const char* token, short type);
+// #define ENUM_START(LogInfoEnum_x)\
+// 	void LogInfoEnum_x(const char* file, unsigned int line, const char* token, short type)\
+// 	{\
+// 		EnumText flagsDfn [] = {
+// #define ENUM_END\
+// 		};\
+// 		LogInfoEnum(type, flagsDfn, sizeof(flagsDfn)/sizeof(EnumText), file, line, token);\
+// 	}
+// #define ENUM_ITEM(type)\
+// 	{type, #type} ,
 
 
-// ENUM_START(LogInfoEnum_TM_TYPE)
-// 	ENUM_ITEM(CMoNode::homo)
-// 	ENUM_ITEM(CMoNode::cross)
-// 	ENUM_ITEM(CMoNode::unknown)
-// ENUM_END
+// // ENUM_START(LogInfoEnum_TM_TYPE)
+// // 	ENUM_ITEM(CMoNode::homo)
+// // 	ENUM_ITEM(CMoNode::cross)
+// // 	ENUM_ITEM(CMoNode::unknown)
+// // ENUM_END
 
 
-#undef ENUM_START
-#undef ENUM_END
-#undef ENUM_ITEM
+// #undef ENUM_START
+// #undef ENUM_END
+// #undef ENUM_ITEM
 
 // //#define DECLARE_FLAGLOG(func)\
 // //	void func(const char* file, unsigned int line, const char* token, short flag);
