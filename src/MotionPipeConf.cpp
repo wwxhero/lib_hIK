@@ -7,45 +7,12 @@
 
 extern HMODULE g_Module;
 
-
-
-
-#define BEGIN_ENUM_STR(host, type)\
-	EnumText host##::s_##type##_val_str[] = {
-
-#define ENUM_ITEM(entry)\
-	{entry, #entry},
-
-#define END_ENUM_STR(host, type)\
-	};\
-	host##::##type host##::to_##type(const char* str)\
-	{\
-		int n = sizeof(s_##type##_val_str)/sizeof(EnumText);\
-		for (int i = 0; i < n; i ++)\
-		{\
-			if (0 == strcmp(str, s_##type##_val_str[i].text))\
-				return (host##::##type)s_##type##_val_str[i].value;\
-		}\
-		return (host##::##type)s_##type##_val_str[n-1].value;\
-	}\
-	const char* host##::from_##type(host##::##type algor)\
-	{\
-		for (int i = 0; i < sizeof(s_##type##_val_str)/sizeof(EnumText); i ++)\
-		{\
-			if (algor == s_##type##_val_str[i].value)\
-				return s_##type##_val_str[i].text;\
-		}\
-		return NULL;\
-	}
-
 BEGIN_ENUM_STR(CKinaGroup, Algor)
 	ENUM_ITEM(Proj)
 	ENUM_ITEM(DLS)
 	ENUM_ITEM(SDLS)
 	ENUM_ITEM(Unknown)
 END_ENUM_STR(CKinaGroup, Algor)
-
-
 
 
 namespace CONF
@@ -582,7 +549,7 @@ namespace CONF
 #ifdef _DEBUG
 	void CMotionPipeConf::Dump_Dbg() const
 	{
-		LOGIKVar(LogInfoEnum_TM_TYPE, sync);
+		LOGIKVar(LogInfoCharPtr, CMoNode::from_TM_TYPE(sync));
 		LOGIKVar(LogInfoFloat3x3_m, m);
 		Source.Dump_Dbg();
 		Destination.Dump_Dbg();

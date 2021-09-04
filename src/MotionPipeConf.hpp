@@ -1,23 +1,11 @@
 #pragma once
 #include "pch.h"
 #include <queue>
+#include "macro_helper.h"
 #include "tinyxml.h"
 #include "MoNode.h"
 #include "motion_pipeline.h"
 
-
-typedef struct
-{
-	short value;
-	const char* text;
-} FlagText;
-
-typedef FlagText EnumText;
-
-#define DECLARE_ENUM_STR(type)\
-		static type to_##type(const char* str);\
-		static const char* from_##type(type);\
-		static EnumText s_##type##_val_str[];
 
 class CKinaGroup
 {
