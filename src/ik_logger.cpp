@@ -246,14 +246,6 @@ void LogInfoDouble1x3(const char* file, unsigned int line, const char* token, co
 #endif
 }
 
-typedef struct
-{
-	short value;
-	const char* text;
-} FlagText;
-
-typedef FlagText EnumText;
-
 void LogInfoFlag(short flag, FlagText* dfns, unsigned short n_dfn, const char* file, unsigned int line, const char* token)
 {
 	char str_flags[1024] = {0};
@@ -353,11 +345,6 @@ ENUM_START(LogInfoEnum_TM_TYPE)
 	ENUM_ITEM(CMoNode::unknown)
 ENUM_END
 
-ENUM_START(LogInfoEnum_IK_Algor)
-	ENUM_ITEM(CKinaGroup::Proj)
-	ENUM_ITEM(CKinaGroup::DLS)
-	ENUM_ITEM(CKinaGroup::SDLS)
-ENUM_END
 
 #undef ENUM_START
 #undef ENUM_END

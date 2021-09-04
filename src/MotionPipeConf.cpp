@@ -7,21 +7,46 @@
 
 extern HMODULE g_Module;
 
-const char* CKinaGroup::s_Algor_str[] = {"Proj", "DLS", "SDLS", "Unknown"};
-CKinaGroup::Algor CKinaGroup::s_Algor_val[] = {CKinaGroup::Proj, CKinaGroup::DLS, CKinaGroup::SDLS, CKinaGroup::Unknown};
 
-CKinaGroup::Algor CKinaGroup::toAlgor(const char* algor_str)
-{
-	int n = sizeof(s_Algor_str)/sizeof(const char*);
-	for (int i = 0
-		; i < n
-		; i ++)
-	{
-		if (0 == strcmp(algor_str, s_Algor_str[i]))
-			return s_Algor_val[i];
+
+
+#define BEGIN_ENUM_STR(host, type)\
+	EnumText host##::s_##type##_val_str[] = {
+
+#define ENUM_ITEM(entry)\
+	{entry, #entry},
+
+#define END_ENUM_STR(host, type)\
+	};\
+	host##::##type host##::to_##type(const char* str)\
+	{\
+		int n = sizeof(s_##type##_val_str)/sizeof(EnumText);\
+		for (int i = 0; i < n; i ++)\
+		{\
+			if (0 == strcmp(str, s_##type##_val_str[i].text))\
+				return (host##::##type)s_##type##_val_str[i].value;\
+		}\
+		return (host##::##type)s_##type##_val_str[n-1].value;\
+	}\
+	const char* host##::from_##type(host##::##type algor)\
+	{\
+		for (int i = 0; i < sizeof(s_##type##_val_str)/sizeof(EnumText); i ++)\
+		{\
+			if (algor == s_##type##_val_str[i].value)\
+				return s_##type##_val_str[i].text;\
+		}\
+		return NULL;\
 	}
-	return s_Algor_val[n-1];
-}
+
+BEGIN_ENUM_STR(CKinaGroup, Algor)
+	ENUM_ITEM(Proj)
+	ENUM_ITEM(DLS)
+	ENUM_ITEM(SDLS)
+	ENUM_ITEM(Unknown)
+END_ENUM_STR(CKinaGroup, Algor)
+
+
+
 
 namespace CONF
 {
@@ -88,7 +113,7 @@ namespace CONF
 	{
 		LOGIKVar(LogInfoCharPtr, eef.c_str());
 		LOGIKVar(LogInfoInt, len);
-		LOGIKVar(LogInfoEnum_IK_Algor, algor);
+		LOGIKVar(LogInfoCharPtr, CKinaGroup::from_Algor(algor));
 		LOGIKVar(LogInfoFloat, weight_p);
 		LOGIKVar(LogInfoFloat, weight_r);
 		LOGIKVar(LogInfoInt, n_iter);
@@ -515,7 +540,7 @@ namespace CONF
 					CKinaGroup::Algor algor = CKinaGroup::Unknown;
 					const char* algor_str = NULL;
 					bool valid_algor = (NULL != (algor_str = ele->Attribute("algor"))
-									&& CKinaGroup::Unknown != (algor = CKinaGroup::toAlgor(algor_str)));
+									&& CKinaGroup::Unknown != (algor = CKinaGroup::to_Algor(algor_str)));
 					Real weight_p = 0;
 					bool valid_weight_p = (TIXML_SUCCESS == ele->QueryFloatAttribute("weight_p", &weight_p));
 					Real weight_r = 0;
