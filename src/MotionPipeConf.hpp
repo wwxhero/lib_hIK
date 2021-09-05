@@ -156,8 +156,9 @@ namespace CONF
 		std::vector<Name> m_eefs;
 		std::wstring m_fileName_w;
 		std::string m_fileName_c;
-
+	public:
 		std::vector<CIKChainConf> IK_Chains;
+	private:
 		std::map<std::string, int> m_name2chainIdx;
 	};
 

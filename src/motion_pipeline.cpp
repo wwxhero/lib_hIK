@@ -5,13 +5,11 @@
 #include "handle_helper.hpp"
 #include "MotionPipeConf.hpp"
 #include "bvh.h"
+#include "IKGroupTree.hpp"
 
 using namespace CONF;
 
-class CIKGroupNode
-{
 
-};
 
 struct MotionPipeInternal : public MotionPipe
 {
@@ -19,7 +17,7 @@ struct MotionPipeInternal : public MotionPipe
 	Type type;
 	union
 	{
-		HBVH bvh;		//fixme: replace this handle with the pointer
+		HBVH bvh;
 		CIKGroupNode* root_ik;
 	};
 };
@@ -90,6 +88,8 @@ bool InitBody_Internal(HBODY bodySrc
 			if (VALID_HANDLE(body_htr_1))
 			 		destroy_tree_body(body_htr_1);
 			hBody = body_htr_2;
+
+			root_ikGroup = CIKGroupTree::Generate(CAST_2PBODY(hBody), body_conf_i->IK_Chains);
 			break;
 		}
 
