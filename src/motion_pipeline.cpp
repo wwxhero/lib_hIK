@@ -6,17 +6,33 @@
 #include "MotionPipeConf.hpp"
 #include "bvh.h"
 
-
 using namespace CONF;
 
-void init_mopipe(MotionPipe* mopipe)
+class CIKGroupNode
+{
+
+};
+
+struct MotionPipeInternal : public MotionPipe
+{
+	enum Type {FK, IK};
+	Type type;
+	union
+	{
+		HBVH bvh;		//fixme: replace this handle with the pointer
+		CIKGroupNode* root_ik;
+	};
+};
+
+
+void init_mopipe(MotionPipeInternal* mopipe)
 {
 	mopipe->bodies[0] = H_INVALID;
 	mopipe->bodies[1] = H_INVALID;
 	mopipe->mo_nodes[0] = H_INVALID;
 	mopipe->mo_nodes[1] = H_INVALID;
 	mopipe->n_frames = 0;
-	mopipe->bvh = H_INVALID;
+	mopipe->root_ik = NULL;
 }
 
 bool InitBody_Internal(HBODY bodySrc
@@ -25,7 +41,8 @@ bool InitBody_Internal(HBODY bodySrc
 					, int i_body
 					, HBODY& hBody
 					, unsigned int &frames
-					, HBVH& hBVH)
+					, HBVH& hBVH
+					, CIKGroupNode* &root_ikGroup)
 {
 	const CBodyConf* body_confs[] = {&mp_conf.Source, &mp_conf.Destination};
 	const CBodyConf* body_conf_i = body_confs[i_body];
@@ -87,10 +104,9 @@ bool InitBody_Internal(HBODY bodySrc
 	return initialized;
 }
 
-bool load_mopipe(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInitBodyProc[2], void* paramProc)
+bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit onInitBodyProc[2], void* paramProc)
 {
 	LOGIKVar(LogInfoWCharPtr, confXML);
-	init_mopipe(mopipe);
 	CMotionPipeConf* mp_conf = CMotionPipeConf::Load(confXML);
 
 	if (NULL != mp_conf)
@@ -98,6 +114,9 @@ bool load_mopipe(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInit
 #ifdef _DEBUG
 		mp_conf->Dump_Dbg();
 #endif
+		MotionPipeInternal* mopipe = new MotionPipeInternal;
+		init_mopipe(mopipe);
+
 		const int c_idxFBX = 1;
 		const int c_idxSim = 0;
 
@@ -138,13 +157,27 @@ bool load_mopipe(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInit
 			else
 			{
 				std::experimental::filesystem::path fullPath(confXML);
+				HBVH bvh = H_INVALID;
+				CIKGroupNode* root_ik = NULL;
 				InitBody_Internal(body_ref
 								, fullPath.parent_path().c_str()
 								, *mp_conf
 								, i_bodyConf
 								, mopipe->bodies[i_bodyConf]
 								, mopipe->n_frames
-								, mopipe->bvh);
+								, bvh
+								, root_ik);
+				// IKAssert(VALID_HANDLE(bvh) == (NULL == root_ik));
+				if (VALID_HANDLE(bvh))
+				{
+					mopipe->bvh = bvh;
+					mopipe->type = MotionPipeInternal::FK;
+				}
+				else
+				{
+					mopipe->root_ik = root_ik;
+					mopipe->type = MotionPipeInternal::IK;
+				}
 			}
 			body_ref = mopipe->bodies[i_bodyConf];
 		}
@@ -195,7 +228,10 @@ bool load_mopipe(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInit
 
 			mopipe->mo_nodes[0] = moDriver;
 			mopipe->mo_nodes[1] = moDrivee;
+			*pp_mopipe = mopipe;
 		}
+		else
+			delete mopipe;
 		CMotionPipeConf::UnLoad(mp_conf);
 		return ok;
 	}
@@ -203,8 +239,9 @@ bool load_mopipe(MotionPipe* mopipe, const wchar_t* confXML, FuncBodyInit onInit
 		return false;
 }
 
-void unload_mopipe(MotionPipe* mopipe)
+void unload_mopipe(MotionPipe* a_mopipe)
 {
+	MotionPipeInternal* mopipe = static_cast<MotionPipeInternal*>(a_mopipe);
 	for (int i_retar = 0; i_retar < 2; i_retar ++)
 	{
 		auto& moNode_i = mopipe->mo_nodes[i_retar];
@@ -218,9 +255,26 @@ void unload_mopipe(MotionPipe* mopipe)
 		body_i = H_INVALID;
 
 		mopipe->n_frames = 0;
-		unload_bvh(mopipe->bvh);
-		mopipe->bvh = H_INVALID;
+		switch (mopipe->type)
+		{
+		case MotionPipeInternal::FK:
+			unload_bvh(mopipe->bvh);
+			mopipe->bvh = H_INVALID;
+			break;
+		case MotionPipeInternal::IK:
+			break;
+		}
 	}
+	delete mopipe;
+}
+
+void motion_sync_to(MotionPipe* a_mopipe, unsigned int i_frame)
+{
+	MotionPipeInternal* mopipe = static_cast<MotionPipeInternal*>(a_mopipe);
+	IKAssert(mopipe->type == MotionPipeInternal::FK);
+	const int c_idxSim = 0;
+	pose_body(mopipe->bvh, mopipe->bodies[c_idxSim], i_frame);
+	motion_sync(mopipe->mo_nodes[c_idxSim]);
 }
 
 HMOTIONNODE	create_tree_motion_node(HBODY mo_src)
