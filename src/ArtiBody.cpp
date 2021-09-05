@@ -273,61 +273,21 @@ bool CArtiBodyTree::Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, const w
 
 bool CArtiBodyTree::Clone(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst)
 {
-	typedef std::pair<const CArtiBodyNode*, CArtiBodyNode*> Bound;
-	//traverse the bvh herachical structure
-	//	to create an articulated body with the given posture
-	std::queue<Bound> queBFS;
-	const CArtiBodyNode* root_src = src;
-	CArtiBodyNode* root_dst = NULL;
-	bool cloned = CArtiBodyTree::CloneNode(root_src, type, &root_dst);
-	if (cloned)
-	{
-		Bound root = std::make_pair(
-			root_src,
-			root_dst
-		);
-		queBFS.push(root);
-		while (!queBFS.empty()
-			&& cloned)
-		{
-			Bound pair = queBFS.front();
-			const CArtiBodyNode* body_src = pair.first;
-			CArtiBodyNode* body_dst = pair.second;
-			CNN cnn = FIRSTCHD;
-			CArtiBodyNode* b_this = body_dst;
-			for (const CArtiBodyNode* child_body_src = body_src->GetFirstChild()
-				; NULL != child_body_src && cloned
-				; child_body_src = child_body_src->GetNextSibling())
-			{
-				CArtiBodyNode* child_body_dst = NULL;
-				cloned = CArtiBodyTree::CloneNode(child_body_src, type, &child_body_dst);
-				if (cloned)
-				{
-					Bound child = std::make_pair(
-						child_body_src,
-						child_body_dst
-					);
-					queBFS.push(child);
-					CArtiBodyNode* b_next = child_body_dst;
-					CArtiBodyTree::Connect(b_this, b_next, cnn);
-					cnn = NEXTSIB;
-					b_this = b_next;
-				}
-			}
-			queBFS.pop();
-		}
-	}
+	auto CloneNode = [type] (const CArtiBodyNode* src, CArtiBodyNode** dst) -> bool
+					{
+						return CArtiBodyTree::CloneNode(src, type, dst);
+					};
+
+	bool cloned = Construct(src, dst, CloneNode);
 
 	if (cloned)
 	{
-		KINA_Initialize(root_dst);
-		FK_Update(root_dst);
-		*dst = root_dst;
+		KINA_Initialize(*dst);
+		FK_Update(*dst);
 	}
 	else
 	{
-		if (NULL != root_dst)
-			Destroy(root_dst);
+		IKAssert(*dst == NULL);
 	}
 
 	return cloned;
