@@ -170,7 +170,7 @@ public:
 						);
 						queBFS.push(child);
 						TDst* b_next = child_body_dst;
-						CArtiBodyTree::Connect(b_this, b_next, cnn);
+						Connect(b_this, b_next, cnn);
 						cnn = NEXTSIB;
 						b_this = b_next;
 					}
