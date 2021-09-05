@@ -241,6 +241,8 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 
 void unload_mopipe(MotionPipe* a_mopipe)
 {
+	if (NULL == a_mopipe)
+		return;
 	MotionPipeInternal* mopipe = static_cast<MotionPipeInternal*>(a_mopipe);
 	for (int i_retar = 0; i_retar < 2; i_retar ++)
 	{
@@ -253,18 +255,21 @@ void unload_mopipe(MotionPipe* a_mopipe)
 		if (VALID_HANDLE(body_i))
 			destroy_tree_body(body_i);
 		body_i = H_INVALID;
-
-		mopipe->n_frames = 0;
-		switch (mopipe->type)
-		{
-		case MotionPipeInternal::FK:
-			unload_bvh(mopipe->bvh);
-			mopipe->bvh = H_INVALID;
-			break;
-		case MotionPipeInternal::IK:
-			break;
-		}
 	}
+
+	mopipe->n_frames = 0;
+
+	switch (mopipe->type)
+	{
+	case MotionPipeInternal::FK:
+		unload_bvh(mopipe->bvh);
+		mopipe->bvh = H_INVALID;
+		break;
+	case MotionPipeInternal::IK:
+		break;
+	}
+
+
 	delete mopipe;
 }
 
