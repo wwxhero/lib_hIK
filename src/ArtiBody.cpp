@@ -385,19 +385,6 @@ void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 	Tree<CArtiBodyNode>::TraverseDFS(root, onEnterBody, onLeaveBody);
 }
 
-void CArtiBodyTree::Destroy(CArtiBodyNode* root)
-{
-	auto onEnterBody = [](CArtiBodyNode* node_this)
-					{
-					};
-
-	auto onLeaveBody = [](CArtiBodyNode* node_this)
-					{
-						delete node_this;
-					};
-
-	Tree<CArtiBodyNode>::TraverseDFS(root, onEnterBody, onLeaveBody);
-}
 
 #ifdef _DEBUG
 void CArtiBodyTree::Connect(CArtiBodyNode* from, CArtiBodyNode* to, CNN type)

@@ -31,6 +31,10 @@ public:
 		return m_parent;
 	}
 
+	void Dump(int indent) const
+	{
+	}
+
 private:
 	This* m_parent;
 	This* m_firstChild;
@@ -165,6 +169,25 @@ public:
 		auto onLeaveBody = [](NodeType* node_this)
 						{
 							delete node_this;
+						};
+
+		Tree<NodeType>::TraverseDFS(root, onEnterBody, onLeaveBody);
+	}
+
+	static void Dump(const NodeType* root)
+	{
+		int indent = 0;
+		auto onEnterBody = [&indent](const NodeType* node_this) -> bool
+						{
+							indent ++;
+							node_this->Dump(indent);
+							return true;
+						};
+
+		auto onLeaveBody = [&indent](const NodeType* node_this) -> bool
+						{
+							indent --;
+							return true;
 						};
 
 		Tree<NodeType>::TraverseDFS(root, onEnterBody, onLeaveBody);
