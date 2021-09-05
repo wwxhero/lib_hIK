@@ -42,7 +42,7 @@ class Tree
 {
 public:
 	template<typename LAMaccessEnter, typename LAMaccessLeave>
-	static void TraverseDFS_botree_nonrecur(NodeType* root, LAMaccessEnter OnEnterBody, LAMaccessLeave OnLeaveBody)
+	static void TraverseDFS(NodeType* root, LAMaccessEnter OnEnterBody, LAMaccessLeave OnLeaveBody)
 	{
 		assert(NULL != root);
 		typedef struct _EDGE
@@ -76,7 +76,7 @@ public:
 	}
 
 	template<typename LAMaccessEnter, typename LAMaccessLeave>
-	static bool TraverseDFS_botree_nonrecur(const NodeType* root, LAMaccessEnter OnEnterBody, LAMaccessLeave OnLeaveBody)
+	static bool TraverseDFS(const NodeType* root, LAMaccessEnter OnEnterBody, LAMaccessLeave OnLeaveBody)
 	{
 		assert(NULL != root);
 		typedef struct _EDGE
@@ -112,7 +112,7 @@ public:
 	}
 
 	template<typename LAMaccess>
-	static bool SearchBFS_botree_nonrecur(const NodeType* root, LAMaccess OnSearchBody)
+	static bool SearchBFS(const NodeType* root, LAMaccess OnSearchBody)
 	{
 		bool hit = false;
 		std::queue<const NodeType*> bfs_q;

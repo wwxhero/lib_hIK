@@ -123,7 +123,7 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 				return valid_dir;
 			};
 
-		if (!(valid_nor = Tree<CArtiBodyNode>::SearchBFS_botree_nonrecur(src, onSearchBody)))
+		if (!(valid_nor = Tree<CArtiBodyNode>::SearchBFS(src, onSearchBody)))
 		{
 			while (!valid_nor
 				&& (NULL != parent_src))
@@ -258,7 +258,7 @@ bool CArtiBodyTree::Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, const w
 	for (const CArtiBodyNode* sub_root = root_src->GetFirstChild()
 		; cloned_tree && NULL != sub_root
 		; sub_root = sub_root->GetNextSibling())
-		cloned_tree = (Tree<CArtiBodyNode>::TraverseDFS_botree_nonrecur(sub_root, onEnterBody, onLeaveBody));
+		cloned_tree = (Tree<CArtiBodyNode>::TraverseDFS(sub_root, onEnterBody, onLeaveBody));
 
 	if (cloned_tree)
 	{
@@ -382,7 +382,7 @@ void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 						node_this->OnKINA_Initialize();
 					};
 
-	Tree<CArtiBodyNode>::TraverseDFS_botree_nonrecur(root, onEnterBody, onLeaveBody);
+	Tree<CArtiBodyNode>::TraverseDFS(root, onEnterBody, onLeaveBody);
 }
 
 void CArtiBodyTree::Destroy(CArtiBodyNode* root)
@@ -396,7 +396,7 @@ void CArtiBodyTree::Destroy(CArtiBodyNode* root)
 						delete node_this;
 					};
 
-	Tree<CArtiBodyNode>::TraverseDFS_botree_nonrecur(root, onEnterBody, onLeaveBody);
+	Tree<CArtiBodyNode>::TraverseDFS(root, onEnterBody, onLeaveBody);
 }
 
 #ifdef _DEBUG

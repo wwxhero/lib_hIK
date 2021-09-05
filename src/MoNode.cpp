@@ -123,7 +123,7 @@ void CMoTree::Motion_sync(CMoNode* root)
 					{
 
 					};
-	TraverseDFS_botree_nonrecur(root, onEnterNode, onLeaveNode);
+	TraverseDFS(root, onEnterNode, onLeaveNode);
 }
 
 void CMoTree::Destroy(CMoNode* root)
@@ -136,5 +136,5 @@ void CMoTree::Destroy(CMoNode* root)
 					{
 						delete n_this;
 					};
-	TraverseDFS_botree_nonrecur(root, onEnterNode, onLeaveNode);
+	TraverseDFS(root, onEnterNode, onLeaveNode);
 }
