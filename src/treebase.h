@@ -156,4 +156,18 @@ public:
 		*hook[inverse] = target[inverse];
 	}
 
+	static void Destroy(NodeType* root)
+	{
+		auto onEnterBody = [](NodeType* node_this)
+						{
+						};
+
+		auto onLeaveBody = [](NodeType* node_this)
+						{
+							delete node_this;
+						};
+
+		Tree<NodeType>::TraverseDFS(root, onEnterBody, onLeaveBody);
+	}
+
 };
