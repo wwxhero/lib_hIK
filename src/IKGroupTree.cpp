@@ -1,13 +1,15 @@
 #include "pch.h"
 #include "IKGroupTree.hpp"
 
+#define COLOR_BOTTOM -1
+
 class CArtiBodyClrNode 				// jTree
 	: public TreeNode<CArtiBodyClrNode>
 {
 public:
 	CArtiBodyClrNode(const CArtiBodyNode* body)
 		: c_body(body)
-		, m_clr(-1)
+		, m_clr(COLOR_BOTTOM)
 	{
 
 	}
@@ -28,6 +30,11 @@ public:
 	void SetColor(int clr)
 	{
 		m_clr = clr;
+	}
+
+	bool Colored() const
+	{
+		return m_clr > COLOR_BOTTOM;
 	}
 
 private:
@@ -71,6 +78,7 @@ class CArtiBodyClrTree
 public:
 	static CArtiBodyClrNode* Generate(const CArtiBodyNode* root);
 	static void ColorGid(CArtiBodyClrNode* root_clr, const CONF::CBodyConf& bodyConf);
+	static bool ValidClr(int clr);
 };
 
 CArtiBodyClrNode* CArtiBodyClrTree::Generate(const CArtiBodyNode* root)
@@ -86,6 +94,11 @@ CArtiBodyClrNode* CArtiBodyClrTree::Generate(const CArtiBodyNode* root)
 	LOGIKVar(LogInfoBool, constructed);
 	IKAssert(constructed || NULL == root_clr);
 	return root_clr;
+}
+
+bool CArtiBodyClrTree::ValidClr(int clr)
+{
+	return clr > COLOR_BOTTOM;
 }
 
 void CArtiBodyClrTree::ColorGid(CArtiBodyClrNode* root_clr, const CONF::CBodyConf& bodyConf)
@@ -127,7 +140,7 @@ void CArtiBodyClrTree::ColorGid(CArtiBodyClrNode* root_clr, const CONF::CBodyCon
 			; i ++, p_i_node = p_i_node->GetParent())
 		{
 			int clr_prime = p_i_node->GetColor();
-			if (clr_prime > -1)
+			if (CArtiBodyClrTree::ValidClr(clr_prime))
 				clr = clr_prime;
 		}
 
@@ -145,6 +158,15 @@ void CArtiBodyClrTree::ColorGid(CArtiBodyClrNode* root_clr, const CONF::CBodyCon
 class CIKGroupNodeGen 		// G
 	: public CIKGroupNode
 {
+public:
+	void Dump(int n_indents) const
+	{
+		std::stringstream logInfo;
+		for (int i_indent = 0; i_indent < n_indents; i_indent ++)
+			logInfo << "\t";
+		logInfo << m_jTree->c_body->GetName_c() << ":" << m_jTree->GetColor();
+		LOGIK(logInfo.str().c_str());
+	}
 private:
 	CArtiBodyClrNode* m_jTree;
 };
@@ -157,22 +179,27 @@ class CIKGroupTreeGen
 
 CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBodyConf& ikChainConf)
 {
-	CIKGroupNode* g_root = NULL;
+	CIKGroupNode* root_G = NULL;
 	CArtiBodyClrNode* root_clr = CArtiBodyClrTree::Generate(root);
 	if (NULL != root_clr)
 	{
 		CArtiBodyClrTree::ColorGid(root_clr, ikChainConf);
 #ifdef _DEBUG
-		CArtiBodyClrTree::Dump(root_clr);
+		CArtiBodyClrTree::Dump(root_clr);	// step 1
 #endif
-	// if (root_clr.Colored())
-	// {
-	// 	CIKGroupNodeGen* gen_root = CIKGroupTreeGen::Generate(root_clr);
-	// 	CIKGroupTreeGen::InitKChain(gen_root);
-	// 	g_root = CIKGroupTreeGen::Generate(gen_root);
-	// 	CIKGroupTreeGen::Destroy(gen_root);
-	// }
+		if (root_clr->Colored())
+		{
+// 			CIKGroupNodeGen* root_gen = CIKGroupTreeGen::Generate(root_clr);
+// #ifdef _DEBUG
+// 			CIKGroupTreeGen::Dump(root_gen);
+// #endif
+// 			// CIKGroupTreeGen::InitKChain(root_gen);
+// 			// root_G = CIKGroupTreeGen::Generate(root_gen);
+// 			CIKGroupTreeGen::Destroy(root_gen);
+		}
 		CArtiBodyClrTree::Destroy(root_clr);
 	}
-	return g_root;
+	return root_G;
 }
+
+#undef COLOR_BOTTOM
