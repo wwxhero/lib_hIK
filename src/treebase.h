@@ -140,46 +140,53 @@ public:
 		typedef std::pair<const TSrc*, TDst*> Bound;
 		std::queue<Bound> queBFS;
 		TDst* root_dst = NULL;
-		bool cloned = ConstructNode(root_src, &root_dst);
-		if (cloned)
+		bool root_constructed = ConstructNode(root_src, &root_dst);
+		if (root_constructed)
 		{
 			Bound root = std::make_pair(
 				root_src,
 				root_dst
 			);
 			queBFS.push(root);
-			while (!queBFS.empty()
-				&& cloned)
+			while (!queBFS.empty())
 			{
 				Bound pair = queBFS.front();
 				const TSrc* body_src = pair.first;
 				TDst* body_dst = pair.second;
 				CNN cnn = FIRSTCHD;
-				TDst* b_this = body_dst;
+				TDst* b_this_dst = body_dst;
 				for (const TSrc* child_body_src = body_src->GetFirstChild()
-					; NULL != child_body_src && cloned
+					; NULL != child_body_src
 					; child_body_src = child_body_src->GetNextSibling())
 				{
 					TDst* child_body_dst = NULL;
-					cloned = ConstructNode(child_body_src, &child_body_dst);
-					if (cloned)
+					bool constructed = ConstructNode(child_body_src, &child_body_dst);
+					if (constructed)
 					{
 						Bound child = std::make_pair(
 							child_body_src,
 							child_body_dst
 						);
 						queBFS.push(child);
-						TDst* b_next = child_body_dst;
-						Connect(b_this, b_next, cnn);
+						TDst* b_next_dst = child_body_dst;
+						Connect(b_this_dst, b_next_dst, cnn);
 						cnn = NEXTSIB;
-						b_this = b_next;
+						b_this_dst = b_next_dst;
+					}
+					else
+					{
+						Bound child = std::make_pair(
+							child_body_src,
+							body_dst
+						);
+						queBFS.push(child);
 					}
 				}
 				queBFS.pop();
 			}
 		}
 
-		if (cloned)
+		if (root_constructed)
 		{
 			*a_root_dst = root_dst;
 		}
@@ -189,7 +196,7 @@ public:
 				Destroy(root_dst);
 			*a_root_dst = NULL;
 		}
-		return cloned;
+		return root_constructed;
 	}
 
 
