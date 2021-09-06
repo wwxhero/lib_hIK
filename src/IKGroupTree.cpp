@@ -35,6 +35,30 @@ void CIKChain::Dump(std::stringstream& info) const
 	info << "}";
 }
 
+CIKGroupNode::CIKGroupNode()
+{
+}
+
+CIKGroupNode::CIKGroupNode(const CIKGroupNode& src)
+{
+	m_kChains = src.m_kChains;
+}
+
+void CIKGroupNode::Dump(int n_indents) const
+{
+	std::stringstream logInfo;
+	for (int i_indent = 0; i_indent < n_indents; i_indent ++)
+		logInfo << "\t";
+	logInfo << "{";
+		for (auto chain : m_kChains)
+		{
+			chain->Dump(logInfo);
+		}
+	logInfo << "}";
+	LOGIK(logInfo.str().c_str());
+}
+
+
 #define COLOR_BOTTOM -1
 
 class CArtiBodyClrNode 				// jTree
@@ -47,7 +71,7 @@ public:
 	{
 
 	}
-	virtual void Dump(int n_indents) const
+	virtual void Dump(int n_indents) const override
 	{
 		std::stringstream logInfo;
 		for (int i_indent = 0; i_indent < n_indents; i_indent ++)
@@ -218,7 +242,7 @@ public:
 		: c_jTree(jTree)
 	{
 	}
-	virtual void Dump(int n_indents) const
+	virtual void Dump(int n_indents) const override
 	{
 		std::stringstream logInfo;
 		for (int i_indent = 0; i_indent < n_indents; i_indent ++)
@@ -327,8 +351,18 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
 #ifdef _DEBUG
  				CIKGroupTreeGen::Dump(root_gen);
 #endif
-// 			// root_G = CIKGroupTreeGen::Generate(root_gen);
+				auto GenerateNode = [](const CIKGroupNodeGen* src, CIKGroupNode** dst) -> bool
+					{
+						*dst = new CIKGroupNode(*src);
+						return true;
+					};
+				bool constructed = CIKGroupTreeGen::Construct(root_gen, &root_G, GenerateNode);
+				LOGIKVar(LogInfoBool, constructed);
+				IKAssert(constructed || NULL == root_clr);
 	 			CIKGroupTreeGen::Destroy(root_gen);
+#ifdef _DEBUG
+	 			CIKGroupTree::Dump(root_G);
+#endif
 			}
 		}
 		CArtiBodyClrTree::Destroy(root_clr);

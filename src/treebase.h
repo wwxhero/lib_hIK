@@ -155,9 +155,9 @@ public:
 				TDst* body_dst = pair.second;
 				CNN cnn = FIRSTCHD;
 				TDst* b_this_dst = body_dst;
-				for (const TSrc* child_body_src = body_src->GetFirstChild()
+				for (const TSrc* child_body_src = (const TSrc*)body_src->GetFirstChild()
 					; NULL != child_body_src
-					; child_body_src = child_body_src->GetNextSibling())
+					; child_body_src = (const TSrc*)child_body_src->GetNextSibling())
 				{
 					TDst* child_body_dst = NULL;
 					bool constructed = ConstructNode(child_body_src, &child_body_dst);

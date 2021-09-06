@@ -15,10 +15,13 @@ private:
 class CIKGroupNode : public TreeNode<CIKGroupNode>
 {
 public:
+	CIKGroupNode();
+	CIKGroupNode(const CIKGroupNode& src);
 	void Joint(CIKChain* chain)
 	{
 		m_kChains.push_back(chain);
 	}
+	virtual void Dump(int indent) const override;
 protected:
 	std::vector<CIKChain*> m_kChains;
 };
