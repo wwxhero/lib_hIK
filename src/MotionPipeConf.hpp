@@ -111,7 +111,7 @@ namespace CONF
 #ifdef _DEBUG
 		void Dump_Dbg() const;
 #endif
-	private:
+	public:
 		std::string eef;
 		int len;
 		CKinaGroup::Algor algor;
@@ -146,7 +146,7 @@ namespace CONF
 						, int n_iter
 						, const char* P_Graph);
 		CIKChainConf* GetIKChain(const char* eef_name);
-
+		int Name2IKChainIdx(const char* eef_name) const;
 #ifdef _DEBUG
 		void Dump_Dbg() const;
 #endif

@@ -248,6 +248,17 @@ namespace CONF
 			return NULL;
 	}
 
+	int CBodyConf::Name2IKChainIdx(const char* eef_name) const
+	{
+		auto it = m_name2chainIdx.find(eef_name);
+		if (m_name2chainIdx.end() != it)
+		{
+			return it->second;
+		}
+		else
+			return -1;
+	}
+
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// CPairsConf:
 

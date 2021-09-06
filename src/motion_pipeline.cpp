@@ -89,7 +89,7 @@ bool InitBody_Internal(HBODY bodySrc
 			 		destroy_tree_body(body_htr_1);
 			hBody = body_htr_2;
 
-			root_ikGroup = CIKGroupTree::Generate(CAST_2PBODY(hBody), body_conf_i->IK_Chains);
+			root_ikGroup = CIKGroupTree::Generate(CAST_2PBODY(hBody), *body_conf_i);
 			break;
 		}
 

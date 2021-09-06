@@ -19,7 +19,7 @@ private:
 class CIKGroupTree : public Tree<CIKGroupNode>
 {
 public:
-	static CIKGroupNode* Generate(const CArtiBodyNode* root, const std::vector<CONF::CIKChainConf>& ikChainConf);
+	static CIKGroupNode* Generate(const CArtiBodyNode* root, const CONF::CBodyConf& ikChainConf);
 };
 
 
