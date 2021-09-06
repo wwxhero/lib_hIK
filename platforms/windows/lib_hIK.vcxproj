@@ -240,7 +240,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;LIB_HIK_EXPORTS;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;SMOOTH_LOGGING;WIN32;TIXML_USE_TICPP;TIXML_USE_STL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;LIB_HIK_EXPORTS;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;SMOOTH_LOGGING;WIN32;TIXML_USE_TICPP;TIXML_USE_STL;HARDASSERTION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC)</AdditionalIncludeDirectories>
@@ -386,6 +386,7 @@
     <ClInclude Include="..\..\src\ArtiBody.h" />
     <ClInclude Include="..\..\src\bvh11_helper.hpp" />
     <ClInclude Include="..\..\src\handle_helper.hpp" />
+    <ClInclude Include="..\..\src\IKGroupTree.hpp" />
     <ClInclude Include="..\..\src\Joint.h" />
     <ClInclude Include="..\..\src\ik_logger.h" />
     <ClInclude Include="..\..\src\loggerSrv_i.h" />
@@ -400,6 +401,7 @@
     <ClCompile Include="..\..\src\articulated_body.cpp" />
     <ClCompile Include="..\..\src\bvh.cpp" />
     <ClCompile Include="..\..\src\bvh11_helper.cpp" />
+    <ClCompile Include="..\..\src\IKGroupTree.cpp" />
     <ClCompile Include="..\..\src\Joint.cpp" />
     <ClCompile Include="..\..\src\ik_logger.cpp" />
     <ClCompile Include="..\..\src\loggerfast_win.cpp" />

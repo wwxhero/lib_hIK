@@ -1,9 +1,28 @@
 #pragma once
+#include "pch.h"
 #include <queue>
+#include "macro_helper.h"
 #include "tinyxml.h"
 #include "MoNode.h"
 #include "motion_pipeline.h"
 
+
+class CKinaGroup
+{
+public:
+	enum Algor
+	{
+		Proj = 0
+		, DLS
+		, SDLS
+		, Unknown
+	};
+
+	// static const char* s_Algor_str[];
+	// static Algor s_Algor_val[];
+	// static Algor toAlgor(const char* algor_str);
+	DECLARE_ENUM_STR(Algor)
+};
 
 namespace CONF
 {
@@ -68,6 +87,41 @@ namespace CONF
 		std::wstring m_str;
 	};
 
+	class CJointConf
+	{
+	public:
+		CJointConf(const char* name);
+#ifdef _DEBUG
+		void Dump_Dbg() const;
+#endif
+		std::string name;
+	};
+
+	class CIKChainConf
+	{
+	public:
+		CIKChainConf(const char* eef_name
+					, int len
+					, CKinaGroup::Algor algor
+					, Real weight_p
+					, Real weight_r
+					, int n_iter
+					, const char* P_Graph);
+		void AddJoint(const char* name);
+#ifdef _DEBUG
+		void Dump_Dbg() const;
+#endif
+	public:
+		std::string eef;
+		int len;
+		CKinaGroup::Algor algor;
+		Real weight_p;
+		Real weight_r;
+		int n_iter;
+		std::string P_Graph;
+		std::vector<CJointConf> Joints;
+	};
+
 	class CBodyConf
 	{
 	public:
@@ -84,16 +138,28 @@ namespace CONF
 
 		BODY_TYPE type() const;
 
-
+		void AddIKChain(const char* eef_name
+						, int len
+						, CKinaGroup::Algor algor
+						, Real weight_p
+						, Real weight_r
+						, int n_iter
+						, const char* P_Graph);
+		CIKChainConf* GetIKChain(const char* eef_name);
+		int Name2IKChainIdx(const char* eef_name) const;
 #ifdef _DEBUG
 		void Dump_Dbg() const;
 #endif
 
-	public:
+	private:
 		std::vector<B_ScaleEx> m_scales;
 		std::vector<Name> m_eefs;
 		std::wstring m_fileName_w;
 		std::string m_fileName_c;
+	public:
+		std::vector<CIKChainConf> IK_Chains;
+	private:
+		std::map<std::string, int> m_name2chainIdx;
 	};
 
 	class CPairsConf
@@ -115,8 +181,6 @@ namespace CONF
 
 	class CMotionPipeConf
 	{
-	public:
-
 	private:
 		CMotionPipeConf();
 		~CMotionPipeConf();

@@ -1,16 +1,15 @@
 #pragma once
 #include <vector>
 #include <map>
+#include "macro_helper.h"
 #include "ArtiBody.h"
 #include "ik_logger.h"
 #include "matrix3.h"
-
 class CMoNode : public TreeNode<CMoNode>
 {
 public:
 	enum TM_TYPE { homo = 0, cross, unknown };
-	static const char* TM_TYPE_STR[];
-	static TM_TYPE to_TM_TYPE(const char* type_str);
+	DECLARE_ENUM_STR(TM_TYPE)
 private:
 	struct JointPair
 	{
@@ -63,12 +62,13 @@ private:
 
 		// homo == tm_type -> !pair->from2to.HasTT()
 		// (cross == tm_type && has_parent_1) -> !pair->from2to.HasTT()
-
+#if defined _DEBUG || defined SMOOTH_LOGGING
 		std::stringstream logInfo;
-		logInfo << "Binding:" << TM_TYPE_STR[m_tmType] << "\t"
+		logInfo << "Binding:" << CMoNode::from_TM_TYPE(tm_type) << "\t"
 				<< pair->j_from->GetName_c() << " => " << pair->j_to->GetName_c() << ":"
 				<< pair->from2to.ToString().c_str();
 		LOGIK(logInfo.str().c_str());
+#endif
 		return ok;
 	}
 	inline void UnInitJointPair(JointPair* pair)
@@ -174,14 +174,16 @@ public:
 			}
 			j_to->SetLinear(linear);
 			j_to->SetTranslation(tt);
-
+#if defined _DEBUG || defined SMOOTH_LOGGING
 			std::stringstream logInfo;
-			logInfo << "\n\t" << TM_TYPE_STR[m_tmType] << ":" << j_from->GetName_c() << ":" << delta_from->ToString().c_str()
+			auto tm_type_str = CMoNode::from_TM_TYPE(m_tmType);
+			logInfo << "\n\t" << tm_type_str << ":" << j_from->GetName_c() << ":" << delta_from->ToString().c_str()
 				<< "\n\t" << pair->from2to.ToString().c_str()
-				<< "\n\t" << TM_TYPE_STR[m_tmType] << ":" << j_to->GetName_c() << ":" << j_to->GetTransform()->ToString().c_str()
+				<< "\n\t" << tm_type_str << ":" << j_to->GetName_c() << ":" << j_to->GetTransform()->ToString().c_str()
 				<< "\n\t" << "Local2world: " << j_to->GetTransformLocal2World()->ToString().c_str();
 
 			LOGIK(logInfo.str().c_str());
+#endif
 		}
 		CArtiBodyTree::FK_Update(m_hostee);
 	}

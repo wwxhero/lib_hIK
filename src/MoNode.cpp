@@ -2,24 +2,12 @@
 #include "MoNode.h"
 
 
+BEGIN_ENUM_STR(CMoNode, TM_TYPE)
+	ENUM_ITEM(homo)
+	ENUM_ITEM(cross)
+	ENUM_ITEM(unknown)
+END_ENUM_STR(CMoNode, TM_TYPE)
 
-const char* CMoNode::TM_TYPE_STR[] = {"homo", "cross", "unknown"};
-
-CMoNode::TM_TYPE CMoNode::to_TM_TYPE(const char* type_str)
-{
-	if (NULL == type_str)
-		return unknown;
-	else
-	{
-		int n_types = sizeof(TM_TYPE_STR)/sizeof(const char*);
-		for (int i_type = 0; i_type < n_types; i_type ++)
-		{
-			if (0 == strcmp(type_str, TM_TYPE_STR[i_type]))
-				return (TM_TYPE)i_type;
-		}
-		return unknown;
-	}
-}
 
 CMoNode::CMoNode(CArtiBodyNode* body)
 	: m_tmType(unknown)
@@ -135,7 +123,7 @@ void CMoTree::Motion_sync(CMoNode* root)
 					{
 
 					};
-	TraverseDFS_botree_nonrecur(root, onEnterNode, onLeaveNode);
+	TraverseDFS(root, onEnterNode, onLeaveNode);
 }
 
 void CMoTree::Destroy(CMoNode* root)
@@ -148,5 +136,5 @@ void CMoTree::Destroy(CMoNode* root)
 					{
 						delete n_this;
 					};
-	TraverseDFS_botree_nonrecur(root, onEnterNode, onLeaveNode);
+	TraverseDFS(root, onEnterNode, onLeaveNode);
 }

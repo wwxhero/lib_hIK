@@ -31,6 +31,10 @@ public:
 		return m_parent;
 	}
 
+	virtual void Dump(int indent) const
+	{
+	}
+
 private:
 	This* m_parent;
 	This* m_firstChild;
@@ -42,7 +46,7 @@ class Tree
 {
 public:
 	template<typename LAMaccessEnter, typename LAMaccessLeave>
-	static void TraverseDFS_botree_nonrecur(NodeType* root, LAMaccessEnter OnEnterBody, LAMaccessLeave OnLeaveBody)
+	static void TraverseDFS(NodeType* root, LAMaccessEnter OnEnterBody, LAMaccessLeave OnLeaveBody)
 	{
 		assert(NULL != root);
 		typedef struct _EDGE
@@ -76,7 +80,7 @@ public:
 	}
 
 	template<typename LAMaccessEnter, typename LAMaccessLeave>
-	static bool TraverseDFS_botree_nonrecur(const NodeType* root, LAMaccessEnter OnEnterBody, LAMaccessLeave OnLeaveBody)
+	static bool TraverseDFS(const NodeType* root, LAMaccessEnter OnEnterBody, LAMaccessLeave OnLeaveBody)
 	{
 		assert(NULL != root);
 		typedef struct _EDGE
@@ -112,7 +116,7 @@ public:
 	}
 
 	template<typename LAMaccess>
-	static bool SearchBFS_botree_nonrecur(const NodeType* root, LAMaccess OnSearchBody)
+	static bool SearchBFS(const NodeType* root, LAMaccess OnSearchBody)
 	{
 		bool hit = false;
 		std::queue<const NodeType*> bfs_q;
@@ -128,6 +132,71 @@ public:
 				bfs_q.push(child);
 		}
 		return hit;
+	}
+
+	template<typename TSrc, typename TDst, typename LAMaccess>
+	static bool Construct(const TSrc* root_src, TDst** a_root_dst, LAMaccess ConstructNode)
+	{
+		typedef std::pair<const TSrc*, TDst*> Bound;
+		std::queue<Bound> queBFS;
+		TDst* root_dst = NULL;
+		bool root_constructed = ConstructNode(root_src, &root_dst);
+		if (root_constructed)
+		{
+			Bound root = std::make_pair(
+				root_src,
+				root_dst
+			);
+			queBFS.push(root);
+			while (!queBFS.empty())
+			{
+				Bound pair = queBFS.front();
+				const TSrc* body_src = pair.first;
+				TDst* body_dst = pair.second;
+				CNN cnn = FIRSTCHD;
+				TDst* b_this_dst = body_dst;
+				for (const TSrc* child_body_src = (const TSrc*)body_src->GetFirstChild()
+					; NULL != child_body_src
+					; child_body_src = (const TSrc*)child_body_src->GetNextSibling())
+				{
+					TDst* child_body_dst = NULL;
+					bool constructed = ConstructNode(child_body_src, &child_body_dst);
+					if (constructed)
+					{
+						Bound child = std::make_pair(
+							child_body_src,
+							child_body_dst
+						);
+						queBFS.push(child);
+						TDst* b_next_dst = child_body_dst;
+						Connect(b_this_dst, b_next_dst, cnn);
+						cnn = NEXTSIB;
+						b_this_dst = b_next_dst;
+					}
+					else
+					{
+						Bound child = std::make_pair(
+							child_body_src,
+							body_dst
+						);
+						queBFS.push(child);
+					}
+				}
+				queBFS.pop();
+			}
+		}
+
+		if (root_constructed)
+		{
+			*a_root_dst = root_dst;
+		}
+		else
+		{
+			if (NULL != root_dst)
+				Destroy(root_dst);
+			*a_root_dst = NULL;
+		}
+		return root_constructed;
 	}
 
 
@@ -154,6 +223,39 @@ public:
 
 		*hook[forward] = target[forward];
 		*hook[inverse] = target[inverse];
+	}
+
+	static void Destroy(NodeType* root)
+	{
+		auto onEnterBody = [](NodeType* node_this)
+						{
+						};
+
+		auto onLeaveBody = [](NodeType* node_this)
+						{
+							delete node_this;
+						};
+
+		Tree<NodeType>::TraverseDFS(root, onEnterBody, onLeaveBody);
+	}
+
+	static void Dump(const NodeType* root)
+	{
+		int indent = 0;
+		auto onEnterBody = [&indent](const NodeType* node_this) -> bool
+						{
+							indent ++;
+							node_this->Dump(indent);
+							return true;
+						};
+
+		auto onLeaveBody = [&indent](const NodeType* node_this) -> bool
+						{
+							indent --;
+							return true;
+						};
+
+		Tree<NodeType>::TraverseDFS(root, onEnterBody, onLeaveBody);
 	}
 
 };

@@ -7,6 +7,14 @@
 
 extern HMODULE g_Module;
 
+BEGIN_ENUM_STR(CKinaGroup, Algor)
+	ENUM_ITEM(Proj)
+	ENUM_ITEM(DLS)
+	ENUM_ITEM(SDLS)
+	ENUM_ITEM(Unknown)
+END_ENUM_STR(CKinaGroup, Algor)
+
+
 namespace CONF
 {
 	std::wstring GetModuleDir()
@@ -25,6 +33,65 @@ namespace CONF
 	    LOGIKVar(LogInfoWCharPtr, dir.c_str());
 	    return dir;
 	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////
+	// CJointConf:
+
+	CJointConf::CJointConf(const char* a_name)
+		: name(a_name)
+	{
+	}
+
+#ifdef _DEBUG
+	void CJointConf::Dump_Dbg() const
+	{
+		LOGIKVar(LogInfoCharPtr, name.c_str());
+	}
+#endif
+
+	////////////////////////////////////////////////////////////////////////////////////////////
+	//CIKChainConf:
+
+	CIKChainConf::CIKChainConf(const char* a_eef_name
+							, int a_len
+							, CKinaGroup::Algor a_algor
+							, Real a_weight_p
+							, Real a_weight_r
+							, int a_n_iter
+							, const char* a_P_Graph)
+		: eef(a_eef_name)
+		, len(a_len)
+		, algor(a_algor)
+		, weight_p(a_weight_p)
+		, weight_r(a_weight_r)
+		, n_iter(a_n_iter)
+		, P_Graph(a_P_Graph)
+	{
+	}
+
+	void CIKChainConf::AddJoint(const char* name)
+	{
+		CJointConf joint_conf(name);
+		Joints.push_back(joint_conf);
+	}
+
+#ifdef _DEBUG
+	void CIKChainConf::Dump_Dbg() const
+	{
+		LOGIKVar(LogInfoCharPtr, eef.c_str());
+		LOGIKVar(LogInfoInt, len);
+		LOGIKVar(LogInfoCharPtr, CKinaGroup::from_Algor(algor));
+		LOGIKVar(LogInfoFloat, weight_p);
+		LOGIKVar(LogInfoFloat, weight_r);
+		LOGIKVar(LogInfoInt, n_iter);
+		LOGIKVar(LogInfoCharPtr, P_Graph.c_str());
+
+		for (const CJointConf& joint_conf : Joints)
+		{
+			joint_conf.Dump_Dbg();
+		}
+	}
+#endif
 
 	////////////////////////////////////////////////////////////////////////////////////////////
 	//CBodyConf:
@@ -124,6 +191,11 @@ namespace CONF
 			LOGIKVar(LogInfoWCharPtr, namesEEFs[i_eef]);
 		}
 		CBodyConf::EndEEF_free(namesEEFs, n_eefs);
+
+		for (const CIKChainConf& ikchain_conf : IK_Chains)
+		{
+			ikchain_conf.Dump_Dbg();
+		}
 	}
 #endif
 
@@ -148,6 +220,43 @@ namespace CONF
 		}
 
 		return undef;
+	}
+
+	void CBodyConf::AddIKChain(const char* eef_name
+						, int len
+						, CKinaGroup::Algor algor
+						, Real weight_p
+						, Real weight_r
+						, int n_iter
+						, const char* P_Graph)
+	{
+		CIKChainConf chain_conf(eef_name, len, algor, weight_p, weight_r, n_iter, P_Graph);
+		int i_new_chain = (int)IK_Chains.size();
+		IK_Chains.push_back(chain_conf);
+		m_name2chainIdx[eef_name] = i_new_chain;
+	}
+
+	CIKChainConf* CBodyConf::GetIKChain(const char* eef_name)
+	{
+		auto it = m_name2chainIdx.find(eef_name);
+		if (m_name2chainIdx.end() != it)
+		{
+			int i_chain = it->second;
+			return &IK_Chains[i_chain];
+		}
+		else
+			return NULL;
+	}
+
+	int CBodyConf::Name2IKChainIdx(const char* eef_name) const
+	{
+		auto it = m_name2chainIdx.find(eef_name);
+		if (m_name2chainIdx.end() != it)
+		{
+			return it->second;
+		}
+		else
+			return -1;
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////
@@ -294,7 +403,32 @@ namespace CONF
 			return -1;
 		};
 
-		auto OnTraverXmlNode = [this, I_Body](const TiXmlNode* node) -> bool
+		auto P_Chain = [this, I_Body](const TiXmlNode* node) -> CIKChainConf*
+		{
+			const char* eef_name = NULL;
+			do
+			{
+				assert(NULL != node);
+				auto v_str = node->ValueStr();
+				bool is_chain = ("IK_Chain" == v_str);
+				if (is_chain)
+				{
+					const TiXmlElement* ele = node->ToElement();
+					eef_name = ele->Attribute("eef");
+				}
+			} while (NULL != (node = node->Parent())
+				&& NULL == eef_name);
+
+			if (NULL != eef_name)
+			{
+				CBodyConf* body_confs[] = {&Source, &Destination};
+				return body_confs[I_Body(node)]->GetIKChain(eef_name);
+			}
+			else
+				return NULL;
+		};
+
+		auto OnTraverXmlNode = [this, I_Body, P_Chain](const TiXmlNode* node) -> bool
 		{
 			bool ret = true;
 			bool is_a_source = false;
@@ -376,6 +510,47 @@ namespace CONF
 					const char* filename = ele->Attribute("file");
 					body_confs[I_Body(node)]->SetFileName(filename);
 				}
+				else if("IK_Chain" == name)
+				{
+					const char* eef_name = ele->Attribute("eef");
+					int len = -1;
+					bool valid_len = (TIXML_SUCCESS == ele->QueryIntAttribute("len", &len));
+					CKinaGroup::Algor algor = CKinaGroup::Unknown;
+					const char* algor_str = NULL;
+					bool valid_algor = (NULL != (algor_str = ele->Attribute("algor"))
+									&& CKinaGroup::Unknown != (algor = CKinaGroup::to_Algor(algor_str)));
+					Real weight_p = 0;
+					bool valid_weight_p = (TIXML_SUCCESS == ele->QueryFloatAttribute("weight_p", &weight_p));
+					Real weight_r = 0;
+					bool valid_weight_r = (TIXML_SUCCESS == ele->QueryFloatAttribute("weight_r", &weight_r));
+
+					IKAssert(valid_len);
+					IKAssert(valid_algor);
+					IKAssert(valid_weight_p);
+					IKAssert(valid_weight_r);
+
+					int n_iter = 20;
+					if (TIXML_SUCCESS != ele->QueryIntAttribute("n_iter", &n_iter))
+						n_iter = 20;
+
+					const char* P_Graph = ele->Attribute("P_Graph");
+
+					body_confs[I_Body(node)]->AddIKChain(eef_name
+														, len
+														, algor
+														, weight_p
+														, weight_r
+														, n_iter
+														, NULL != P_Graph ? P_Graph : "");
+				}
+				else if("Joint" == name)
+				{
+					const char* name_j = ele->Attribute("name");
+					IKAssert(NULL != name_j);
+					CIKChainConf* chain_conf = P_Chain(node);
+					IKAssert(NULL != chain_conf);
+					chain_conf->AddJoint(name_j);
+				}
 			}
 			return ret;
 		};
@@ -385,7 +560,7 @@ namespace CONF
 #ifdef _DEBUG
 	void CMotionPipeConf::Dump_Dbg() const
 	{
-		LOGIKVar(LogInfoEnum_TM_TYPE, sync);
+		LOGIKVar(LogInfoCharPtr, CMoNode::from_TM_TYPE(sync));
 		LOGIKVar(LogInfoFloat3x3_m, m);
 		Source.Dump_Dbg();
 		Destination.Dump_Dbg();

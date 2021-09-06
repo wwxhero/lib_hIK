@@ -36,9 +36,13 @@ void AssertionFail(const char *file, unsigned int line);
 
 #    define LOGIKVar(func, var) func(__FILE__, __LINE__, #    var, var);
 #    define LOGIK(msg) LogInfo(__FILE__, __LINE__, msg);
-#    define IKAssert(v)\
-      if(!(v))\
-        AssertionFail(__FILE__, __LINE__);
+#	if defined HARDASSERTION
+#		define IKAssert assert
+#	else
+#		define IKAssert(v)\
+			if(!(v))\
+				AssertionFail(__FILE__, __LINE__);
+#	endif
 #  else
 
 #    if !defined(NDEBUG)
@@ -82,7 +86,7 @@ void AssertionFail(const char *file, unsigned int line);
 int __cdecl LoggerFast_OutFmt(const char *fmt, ...);
 
 // DECLARE_FLAGLOG(LogInfoFlag_con)
-DECLARE_ENUMLOG(LogInfoEnum_TM_TYPE)
+// DECLARE_ENUMLOG(LogInfoEnum_TM_TYPE)
 // DECLARE_FLAGLOG(LogInfoFlag_bone)
 
 #  ifdef __cplusplus

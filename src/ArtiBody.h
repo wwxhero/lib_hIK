@@ -352,7 +352,7 @@ public:
 	static bool Clone(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst);
 	static void KINA_Initialize(CArtiBodyNode* root);
 	static void FK_Update(CArtiBodyNode* root);
-	static void Destroy(CArtiBodyNode* root);
+
 #ifdef _DEBUG
 	static void Connect(CArtiBodyNode* from, CArtiBodyNode* to, CNN type);
 #endif
