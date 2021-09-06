@@ -13,7 +13,7 @@ public:
 	{
 
 	}
-	void Dump(int n_indents) const
+	virtual void Dump(int n_indents) const
 	{
 		std::stringstream logInfo;
 		for (int i_indent = 0; i_indent < n_indents; i_indent ++)
@@ -159,7 +159,11 @@ class CIKGroupNodeGen 		// G
 	: public CIKGroupNode
 {
 public:
-	void Dump(int n_indents) const
+	CIKGroupNodeGen(const CArtiBodyClrNode* jTree)
+		: m_jTree(jTree)
+	{
+	}
+	virtual void Dump(int n_indents) const
 	{
 		std::stringstream logInfo;
 		for (int i_indent = 0; i_indent < n_indents; i_indent ++)
@@ -168,14 +172,35 @@ public:
 		LOGIK(logInfo.str().c_str());
 	}
 private:
-	CArtiBodyClrNode* m_jTree;
+	const CArtiBodyClrNode* m_jTree;
 };
 
 class CIKGroupTreeGen
 	: public CIKGroupTree
 {
-
+public:
+	static CIKGroupNodeGen* Generate(const CArtiBodyClrNode* root);
 };
+
+CIKGroupNodeGen* CIKGroupTreeGen::Generate(const CArtiBodyClrNode* root)
+{
+	auto ConstructNodeGroupGen = [] (const CArtiBodyClrNode* src, CIKGroupNodeGen** dst) -> bool
+								{
+									const CArtiBodyClrNode* src_p = src->GetParent();
+									bool new_group = ( (NULL == src_p)
+													|| src->GetColor() != src_p->GetColor() );
+									if (new_group)
+									{
+										*dst = new CIKGroupNodeGen(src);
+									}
+									return new_group;
+								};
+	CIKGroupNodeGen* root_G_gen = NULL;
+	bool constructed = Construct(root, &root_G_gen, ConstructNodeGroupGen);
+	LOGIKVar(LogInfoBool, constructed);
+	IKAssert(constructed || NULL == root_G_gen);
+	return root_G_gen;
+}
 
 CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBodyConf& ikChainConf)
 {
@@ -189,13 +214,16 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
 #endif
 		if (root_clr->Colored())
 		{
-// 			CIKGroupNodeGen* root_gen = CIKGroupTreeGen::Generate(root_clr);
-// #ifdef _DEBUG
-// 			CIKGroupTreeGen::Dump(root_gen);
-// #endif
+ 			CIKGroupNodeGen* root_gen = CIKGroupTreeGen::Generate(root_clr);
+			if (root_gen)
+			{
+#ifdef _DEBUG
+ 				CIKGroupTreeGen::Dump(root_gen);
+#endif
 // 			// CIKGroupTreeGen::InitKChain(root_gen);
 // 			// root_G = CIKGroupTreeGen::Generate(root_gen);
-// 			CIKGroupTreeGen::Destroy(root_gen);
+	 			CIKGroupTreeGen::Destroy(root_gen);
+			}
 		}
 		CArtiBodyClrTree::Destroy(root_clr);
 	}

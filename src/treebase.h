@@ -31,7 +31,7 @@ public:
 		return m_parent;
 	}
 
-	void Dump(int indent) const
+	virtual void Dump(int indent) const
 	{
 	}
 
