@@ -231,7 +231,10 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 			*pp_mopipe = mopipe;
 		}
 		else
+		{
 			delete mopipe;
+			*pp_mopipe = NULL;
+		}
 		CMotionPipeConf::UnLoad(mp_conf);
 		return ok;
 	}

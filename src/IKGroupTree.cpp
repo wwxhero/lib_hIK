@@ -334,7 +334,7 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
 	{
 		std::vector<CIKChainClr> chains;
 		CArtiBodyClrTree::ColorGid(root_clr, ikChainConf, chains);
-#ifdef _DEBUG
+#if defined _DEBUG || defined SMOOTH_LOGGING
 		CArtiBodyClrTree::Dump(root_clr);	// step 1
 #endif
 		if (root_clr->Colored())
@@ -342,13 +342,13 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
  			CIKGroupNodeGen* root_gen = CIKGroupTreeGen::Generate(root_clr);
 			if (root_gen)
 			{
-#ifdef _DEBUG
+#if defined _DEBUG || defined SMOOTH_LOGGING
  				CIKGroupTreeGen::Dump(root_gen);
 				for (const CIKChainClr& clr : chains)
 					clr.Dump();
 #endif
  				CIKGroupTreeGen::InitKChain(root_gen, chains);
-#ifdef _DEBUG
+#if defined _DEBUG || defined SMOOTH_LOGGING
  				CIKGroupTreeGen::Dump(root_gen);
 #endif
 				auto GenerateNode = [](const CIKGroupNodeGen* src, CIKGroupNode** dst) -> bool
@@ -360,7 +360,7 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
 				LOGIKVar(LogInfoBool, constructed);
 				IKAssert(constructed || NULL == root_clr);
 	 			CIKGroupTreeGen::Destroy(root_gen);
-#ifdef _DEBUG
+#if defined _DEBUG || defined SMOOTH_LOGGING
 	 			CIKGroupTree::Dump(root_G);
 #endif
 			}
