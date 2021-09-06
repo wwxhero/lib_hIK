@@ -174,7 +174,7 @@ public:
 			}
 			j_to->SetLinear(linear);
 			j_to->SetTranslation(tt);
-#if defined _DEBUG || defined SMOOTH_LOGGING
+#if defined 0 //_DEBUG || defined SMOOTH_LOGGING
 			std::stringstream logInfo;
 			auto tm_type_str = CMoNode::from_TM_TYPE(m_tmType);
 			logInfo << "\n\t" << tm_type_str << ":" << j_from->GetName_c() << ":" << delta_from->ToString().c_str()
