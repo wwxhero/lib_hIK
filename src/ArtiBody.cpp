@@ -173,30 +173,6 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 
 }
 
-bool CArtiBodyTree::CloneNode(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst, const wchar_t* name_dst)
-{
-	bool ret = false;
-	switch(type)
-	{
-		case fbx:
-		{
-			ret = CloneNode_fbx(src, dst, name_dst);
-			break;
-		}
-		case bvh:
-		{
-			ret = CloneNode_bvh(src, dst, name_dst);
-			break;
-		}
-		case htr:
-		{
-			ret = CloneNode_htr(src, dst, name_dst);
-			break;
-		}
-	}
-	return ret;
-}
-
 bool CArtiBodyTree::Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* (*a_matches)[2], int n_matches, bool src_on_match0)
 {
 	if (NULL == src)
@@ -224,7 +200,7 @@ bool CArtiBodyTree::Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, const w
 					*node_dst = NULL;
 					if ( interest )
 					{
-						bool cloned = CArtiBodyTree::CloneNode(node_src, htr, node_dst, it->second.c_str());
+						bool cloned = CArtiBodyTree::CloneNode_htr(node_src, node_dst, it->second.c_str());
 						IKAssert(cloned);
 						return true;
 					}
@@ -246,14 +222,15 @@ bool CArtiBodyTree::Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, const w
 	return cloned_tree;
 }
 
-bool CArtiBodyTree::Clone(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst)
+bool CArtiBodyTree::Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, CArtiBodyTree::CloneNode_x CloneNode)
 {
-	auto CloneNode = [type] (const CArtiBodyNode* src, CArtiBodyNode** dst) -> bool
+	auto ConstructNode = [CloneNode] (const CArtiBodyNode* src, CArtiBodyNode** dst) -> bool
 					{
-						return CArtiBodyTree::CloneNode(src, type, dst);
+							bool ret = CloneNode(src, dst, NULL);
+							return ret;
 					};
 
-	bool cloned = Construct(src, dst, CloneNode);
+	bool cloned = Construct(src, dst, ConstructNode);
 
 	if (cloned)
 	{

@@ -45,17 +45,38 @@ HBODY create_bvh_body_node_c(const char* name
 	return CAST_2HBODY(body);
 }
 
-bool clone_body(HBODY hSrc, BODY_TYPE nodetype, HBODY* hDst)
+bool clone_body_fbx(HBODY hSrc, HBODY* hDst)
 {
 	CArtiBodyNode* body_src = CAST_2PBODY(hSrc);
 	CArtiBodyNode* body_dst = NULL;
-	bool ret = CArtiBodyTree::Clone(body_src, nodetype, &body_dst);
+	bool ret = CArtiBodyTree::Clone(body_src, &body_dst, CArtiBodyTree::CloneNode_fbx);
 	if (ret)
 		*hDst = CAST_2HBODY(body_dst);
 	return ret;
 }
 
-bool clone_body_interests(HBODY hSrc, HBODY* hDst, const wchar_t* (*matches)[2], int n_matches, bool src_on_match0)
+bool clone_body_bvh(HBODY hSrc, HBODY* hDst)
+{
+	CArtiBodyNode* body_src = CAST_2PBODY(hSrc);
+	CArtiBodyNode* body_dst = NULL;
+	bool ret = CArtiBodyTree::Clone(body_src, &body_dst, CArtiBodyTree::CloneNode_bvh);
+	if (ret)
+		*hDst = CAST_2HBODY(body_dst);
+	return ret;
+}
+
+
+bool clone_body_htr(HBODY hSrc, HBODY* hDst)
+{
+	CArtiBodyNode* body_src = CAST_2PBODY(hSrc);
+	CArtiBodyNode* body_dst = NULL;
+	bool ret = CArtiBodyTree::Clone(body_src, &body_dst, CArtiBodyTree::CloneNode_htr);
+	if (ret)
+		*hDst = CAST_2HBODY(body_dst);
+	return ret;
+}
+
+bool clone_body_interests_htr(HBODY hSrc, HBODY* hDst, const wchar_t* (*matches)[2], int n_matches, bool src_on_match0)
 {
 	CArtiBodyNode* body_src = CAST_2PBODY(hSrc);
 	CArtiBodyNode* body_dst = NULL;

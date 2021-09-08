@@ -71,8 +71,8 @@ bool InitBody_Internal(HBODY bodySrc
 			int n_match = mp_conf.Pair.Data_alloc(&matches);
 			HBODY body_htr_1 = H_INVALID;
 			HBODY body_htr_2 = H_INVALID;
-			if (!(clone_body_interests(bodySrc, &body_htr_1, matches, n_match, false)  	// body_htr_1 is an intermediate body, orient bone with src bone information
-			 			&& clone_body(body_htr_1, htr, &body_htr_2))) 						    // body_htr_2 is the result, orient bone with the interest bone information
+			if (!(clone_body_interests_htr(bodySrc, &body_htr_1, matches, n_match, false)  	// body_htr_1 is an intermediate body, orient bone with src bone information
+			 			&& clone_body_htr(body_htr_1, &body_htr_2))) 						    // body_htr_2 is the result, orient bone with the interest bone information
 			 		body_htr_2 = H_INVALID;
 
 			CPairsConf::Data_free(matches, n_match);
