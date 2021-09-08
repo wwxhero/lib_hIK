@@ -6,6 +6,7 @@
 #include "ArtiBody.h"
 #include "handle_helper.hpp"
 #include "ik_logger.h"
+#include "matrix3.h"
 
 float ik_test(float theta)
 {
@@ -66,11 +67,28 @@ bool clone_body_bvh(HBODY hSrc, HBODY* hDst)
 }
 
 
-bool clone_body_htr(HBODY hSrc, HBODY* hDst)
+bool clone_body_htr(HBODY hSrc, HBODY* hDst, const Real a_src2dst_w[3][3])
 {
 	CArtiBodyNode* body_src = CAST_2PBODY(hSrc);
 	CArtiBodyNode* body_dst = NULL;
-	bool ret = CArtiBodyTree::Clone(body_src, &body_dst, CArtiBodyTree::CloneNode_htr);
+
+	auto CloneNode = [&a_src2dst_w] (const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt) -> bool
+					{
+						Eigen::Matrix3r src2dst_w;
+						src2dst_w <<
+								a_src2dst_w[0][0], a_src2dst_w[0][1], a_src2dst_w[0][2],
+								a_src2dst_w[1][0], a_src2dst_w[1][1], a_src2dst_w[1][2],
+								a_src2dst_w[2][0], a_src2dst_w[2][1], a_src2dst_w[2][2];
+#if 0
+						bool verified = true;
+						for (int i_r = 0; i_r < 3 && verified; i_r ++)
+							for (int i_c = 0; i_c < 3 && verified; i_c ++)
+								verified = (src2dst_w(i_r, i_c) == a_src2dst_w[i_r][i_c]);
+						IKAssert(verified);
+#endif
+						return CArtiBodyTree::CloneNode_htr(src, dst, src2dst_w, name_dst_opt);
+					};
+	bool ret = CArtiBodyTree::Clone(body_src, &body_dst, CloneNode);
 	if (ret)
 		*hDst = CAST_2HBODY(body_dst);
 	return ret;

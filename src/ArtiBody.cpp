@@ -78,7 +78,7 @@ bool CArtiBodyTree::CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst,
 
 
 
-bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt)
+bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const Eigen::Matrix3r& src2dst_w, const wchar_t* name_dst_opt)
 {
 	// if (0 == strcmp(src->GetName_c(), "LeftHand"))
 	//  	DebugBreak(); //a zero length bone
@@ -200,7 +200,7 @@ bool CArtiBodyTree::Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, const w
 					*node_dst = NULL;
 					if ( interest )
 					{
-						bool cloned = CArtiBodyTree::CloneNode_htr(node_src, node_dst, it->second.c_str());
+						bool cloned = CArtiBodyTree::CloneNode_htr(node_src, node_dst, Eigen::Matrix3r::Identity(), it->second.c_str());
 						IKAssert(cloned);
 						return true;
 					}
@@ -222,29 +222,7 @@ bool CArtiBodyTree::Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, const w
 	return cloned_tree;
 }
 
-bool CArtiBodyTree::Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, CArtiBodyTree::CloneNode_x CloneNode)
-{
-	auto ConstructNode = [CloneNode] (const CArtiBodyNode* src, CArtiBodyNode** dst) -> bool
-					{
-							bool ret = CloneNode(src, dst, NULL);
-							return ret;
-					};
 
-	bool cloned = Construct(src, dst, ConstructNode);
-
-	if (cloned)
-	{
-		KINA_Initialize(*dst);
-		FK_Update(*dst);
-	}
-	else
-	{
-		IKAssert(NULL == *dst);
-	}
-
-	return cloned;
-
-}
 
 void CArtiBodyTree::FK_Update(CArtiBodyNode* root)
 {

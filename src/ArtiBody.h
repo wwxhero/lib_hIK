@@ -4,6 +4,7 @@
 #include "TreeBase.h"
 #include "Joint.h"
 #include "Transform.h"
+#include "ik_logger.h"
 
 class CArtiBodyNode : public TreeNode<CArtiBodyNode>
 {
@@ -354,8 +355,7 @@ private:
 public:
 	static bool CloneNode_fbx(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL);
 	static bool CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL);
-	static bool CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL);
-	typedef bool (*CloneNode_x)(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt);
+	static bool CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const Eigen::Matrix3r& src2dst_w, const wchar_t* name_dst_opt = NULL);
 
 	static CArtiBodyNode* CreateAnimNode(const wchar_t* name, const _TRANSFORM* tm);
 	static CArtiBodyNode* CreateAnimNode(const char* name, const _TRANSFORM* tm);
@@ -363,7 +363,31 @@ public:
 	static CArtiBodyNode* CreateSimNode(const char* name, const _TRANSFORM* tm, BODY_TYPE type, TM_TYPE jtm, bool local = true);
 
 	static bool Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* (*matches)[2], int n_matches, bool src_on_match0);
-	static bool Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, CloneNode_x CloneNode);
+	
+	template<typename CloneNode_x>
+	static bool Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, CloneNode_x CloneNode)
+	{
+		auto ConstructNode = [CloneNode](const CArtiBodyNode* src, CArtiBodyNode** dst) -> bool
+		{
+			bool ret = CloneNode(src, dst, NULL);
+			return ret;
+		};
+
+		bool cloned = Construct(src, dst, ConstructNode);
+
+		if (cloned)
+		{
+			KINA_Initialize(*dst);
+			FK_Update(*dst);
+		}
+		else
+		{
+			IKAssert(NULL == *dst);
+		}
+
+		return cloned;
+
+	}
 
 	static void KINA_Initialize(CArtiBodyNode* root);
 	static void FK_Update(CArtiBodyNode* root);
