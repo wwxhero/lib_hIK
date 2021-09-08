@@ -98,8 +98,7 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 		Eigen::Vector3r nor = Eigen::Vector3r::Zero();
 
 		Eigen::Vector3r tt_l2p;
-		const Transform* tm_this = src->GetTransformLocal2World();
-		const Eigen::Vector3r& tt_this = tm_this->getTranslation();
+		const Eigen::Vector3r& tt_this = src2dst_w * src->GetTransformLocal2World()->getTranslation();
 
 		auto GetDir = [](const Eigen::Vector3r &tt_from, const Eigen::Vector3r &tt_to, Eigen::Vector3r& dir) -> bool
 			{
@@ -116,9 +115,9 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 				return valid_dir;
 			};
 
-		auto onSearchBody = [&nor, tt_this, GetDir](const CArtiBodyNode* node) -> bool
+		auto onSearchBody = [&nor, tt_this, GetDir, &src2dst_w](const CArtiBodyNode* node_src) -> bool
 			{
-				Eigen::Vector3r tt_other = node->GetTransformLocal2World()->getTranslation();
+				Eigen::Vector3r tt_other = src2dst_w * node_src->GetTransformLocal2World()->getTranslation();
 				bool valid_dir = GetDir(tt_this, tt_other, nor);
 				return valid_dir;
 			};
@@ -128,7 +127,7 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 			while (!valid_nor
 				&& (NULL != parent_src))
 			{
-				Eigen::Vector3r tt_other = parent_src->GetTransformLocal2World()->getTranslation();
+				Eigen::Vector3r tt_other = src2dst_w * parent_src->GetTransformLocal2World()->getTranslation();
 				valid_nor = GetDir(tt_other, tt_this, nor);
 				parent_src = parent_src->GetParent();
 			}
