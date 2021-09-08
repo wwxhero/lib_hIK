@@ -215,59 +215,34 @@ bool CArtiBodyTree::Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, const w
 		std::wstring name_dst(a_matches[i_match][i_dst]);
 		matches[name_src] = name_dst;
 	}
+	std::map<std::wstring, std::wstring>& c_matches = matches;
 
-	std::stack<CArtiBodyNode*> dstSTK;
-	CArtiBodyNode* root_dst = NULL;
-	const CArtiBodyNode* root_src = src;
-	auto it = matches.find(root_src->GetName_w());
-
-	IKAssert(it != matches.end());
-	bool cloned_root = CArtiBodyTree::CloneNode(root_src, htr, &root_dst, it->second.c_str());
-
-	dstSTK.push(root_dst); //root node is unconditionally a interest
-
-	auto onEnterBody = [&dstSTK, &matches](const CArtiBodyNode* node_src) -> bool
+	auto CloneNode = [&c_matches] (const CArtiBodyNode* node_src, CArtiBodyNode** node_dst) -> bool
+				{
+					auto it = c_matches.find(node_src->GetName_w());
+					bool interest = (it != c_matches.end());
+					*node_dst = NULL;
+					if ( interest )
 					{
-						auto it = matches.find(node_src->GetName_w());
-						bool interest = (it != matches.end());
-						CArtiBodyNode* node_dst = NULL;
-						bool cloned = false;
-						if ( interest
-						  && (cloned = CArtiBodyTree::CloneNode(node_src, htr, &node_dst, it->second.c_str())))
-						{
-							CArtiBodyNode* node_dst_parent = dstSTK.top();
-							CArtiBodyTree::Connect(node_dst_parent, node_dst, FIRSTCHD);
-							dstSTK.push(node_dst);
-						}
-						return !interest
-							|| cloned;
-					};
-
-	auto onLeaveBody = [&dstSTK, &matches](const CArtiBodyNode* node_src) -> bool
-					{
-						auto it = matches.find(node_src->GetName_w());
-						bool interest = (matches.end() != it);
-						assert(!interest || (it->second == (dstSTK.top()->GetName_w())));
-						if (interest)
-							dstSTK.pop();
+						bool cloned = CArtiBodyTree::CloneNode(node_src, htr, node_dst, it->second.c_str());
+						IKAssert(cloned);
 						return true;
-					};
+					}
+					else
+						return false;
+				};
 
-	bool cloned_tree = cloned_root;
-
-	for (const CArtiBodyNode* sub_root = root_src->GetFirstChild()
-		; cloned_tree && NULL != sub_root
-		; sub_root = sub_root->GetNextSibling())
-		cloned_tree = (Tree<CArtiBodyNode>::TraverseDFS(sub_root, onEnterBody, onLeaveBody));
+	bool cloned_tree = Construct(src, dst, CloneNode);
 
 	if (cloned_tree)
 	{
-		KINA_Initialize(root_dst);
-		FK_Update(root_dst);
-		*dst = root_dst;
+		KINA_Initialize(*dst);
+		FK_Update(*dst);
 	}
 	else
-		*dst = NULL;
+	{
+		IKAssert(NULL);
+	}
 	return cloned_tree;
 }
 
@@ -287,7 +262,7 @@ bool CArtiBodyTree::Clone(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNod
 	}
 	else
 	{
-		IKAssert(*dst == NULL);
+		IKAssert(NULL == *dst);
 	}
 
 	return cloned;
