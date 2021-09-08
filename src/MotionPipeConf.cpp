@@ -306,6 +306,25 @@ namespace CONF
 		free(matches);
 	}
 
+	void CPairsConf::Map(std::map<std::wstring, std::wstring>& name2name, bool forward)
+	{
+		int src;
+		int dst;
+		if (forward)
+		{
+			src = 0; dst = 1;
+		}
+		else
+		{
+			src = 1; dst = 0;
+		}
+		for (const auto& pair : m_pairs)
+		{
+			const Name* names[] = { &pair.first, &pair.second };
+			name2name[*names[src]] = *names[dst];
+		}
+	}
+
 	void CPairsConf::Add(const char* from, const char* to)
 	{
 		auto pair = std::make_pair(Name(from)

@@ -31,7 +31,9 @@ typedef HIKLIB_CB(HBODY, *FuncBodyInit)(void* paramProc
 
 HIKLIB(bool,			load_mopipe)(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit onInitBodyProc[2], void* paramProc);
 HIKLIB(void,			unload_mopipe)(MotionPipe* mopipe);
-HIKLIB(void,			motion_sync_to)(MotionPipe* mopipe, unsigned int i_frame);
+HIKLIB(void,			fk_update)(MotionPipe* mopipe, unsigned int i_frame);
+HIKLIB(void,			ik_task)(HBODY body_t, const _TRANSFORM* tm);
+HIKLIB(void,			ik_update)(MotionPipe* mopipe);
 
 // these APIs are not for game engine usage
 HIKLIB(HMOTIONNODE,		create_tree_motion_node)(HBODY mo_src);

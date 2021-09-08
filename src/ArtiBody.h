@@ -23,6 +23,17 @@ public:
 	{
 		return m_namec.c_str();
 	}
+
+	void SetGoal(const Transform_TRS& tm_w)
+	{
+		m_goal = tm_w;
+	}
+
+	void GetGoal(Transform_TRS& tm_w) const
+	{
+		tm_w = m_goal;
+	}
+
 	virtual void OnKINA_Initialize() = 0;
 	virtual const Transform* GetTransformLocal2Parent0() const = 0;
 	virtual const Transform* GetTransformParent2Local0() const = 0;
@@ -39,6 +50,7 @@ protected:
 private:
 	std::string m_namec;
 	std::wstring m_namew;
+	Transform_TRS m_goal;
 public:
 	const BODY_TYPE c_type;
 	const TM_TYPE c_jtmflag;

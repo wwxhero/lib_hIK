@@ -83,6 +83,11 @@ namespace CONF
 		{
 			delete [] a_name;
 		}
+
+		operator std::wstring() const
+		{
+			return m_str;
+		}
 	private:
 		std::wstring m_str;
 	};
@@ -170,7 +175,7 @@ namespace CONF
 		static void Data_free(const wchar_t** namesOnPair, int n_pairs);
 		int Data_alloc(const wchar_t* (**matches)[2]) const;
 		static void Data_free(const wchar_t* (*matches)[2], int n_pairs);
-
+		void Map(std::map<std::wstring, std::wstring>& name2name, bool forward);
 #ifdef _DEBUG
 		void Dump_Dbg() const;
 #endif

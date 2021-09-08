@@ -13,6 +13,7 @@ using namespace CONF;
 
 struct MotionPipeInternal : public MotionPipe
 {
+	Eigen::Matrix3r dst2src_w;
 	enum Type {FK, IK};
 	Type type;
 	union
@@ -175,6 +176,7 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 				}
 				else
 				{
+					IKAssert(root_ik);
 					mopipe->root_ik = root_ik;
 					mopipe->type = MotionPipeInternal::IK;
 				}
@@ -195,9 +197,44 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 
 		if (ok)
 		{
+			Eigen::Matrix3r src2dst_w;
 			for (int r_i = 0; r_i < 3; r_i ++)
+			{
 				for (int c_i = 0; c_i < 3; c_i++)
+				{
 					mopipe->src2dst_w[r_i][c_i] = mp_conf->m[r_i][c_i];
+					src2dst_w(r_i, c_i) = mp_conf->m[r_i][c_i];
+				}
+			}
+			mopipe->dst2src_w = src2dst_w.inverse();
+
+			if (MotionPipeInternal::IK == mopipe->type)
+			{
+				std::map<std::wstring, CArtiBodyNode*> nameSrc2bodyDst;
+				std::map<std::wstring, std::wstring> nameDst2Src;
+				mp_conf->Pair.Map(nameDst2Src, false);
+				auto OnBody = [&nameDst2Src, &nameSrc2bodyDst] (CArtiBodyNode* body)
+							{
+								auto it_nameDst2Src = nameDst2Src.find(body->GetName_w());
+								if (nameDst2Src.end() != it_nameDst2Src)
+								{
+									auto nameSrc = it_nameDst2Src->second;
+									nameSrc2bodyDst[nameSrc] = body;
+								}
+							};
+
+				auto OffBody = [] (CArtiBodyNode* body)
+							{
+
+							};
+
+				CArtiBodyTree::TraverseDFS(CAST_2PBODY(mopipe->bodies[c_idxFBX])
+										, OnBody
+										, OffBody);
+
+				CIKGroupTree::SetupTargets(mopipe->root_ik
+										, nameSrc2bodyDst);
+			}
 
 		 	auto moDriver = create_tree_motion_node(mopipe->bodies[0]);
 		 	auto moDrivee = create_tree_motion_node(mopipe->bodies[1]);
@@ -276,13 +313,35 @@ void unload_mopipe(MotionPipe* a_mopipe)
 	delete mopipe;
 }
 
-void motion_sync_to(MotionPipe* a_mopipe, unsigned int i_frame)
+void fk_update(MotionPipe* a_mopipe, unsigned int i_frame)
 {
 	MotionPipeInternal* mopipe = static_cast<MotionPipeInternal*>(a_mopipe);
 	IKAssert(mopipe->type == MotionPipeInternal::FK);
 	const int c_idxSim = 0;
 	pose_body(mopipe->bvh, mopipe->bodies[c_idxSim], i_frame);
 	motion_sync(mopipe->mo_nodes[c_idxSim]);
+}
+
+void ik_task(HBODY body_t, const _TRANSFORM* l2w)
+{
+	CArtiBodyNode* body_tar = CAST_2PBODY(body_t);
+	Transform_TRS l2w_trs(*l2w);
+	body_tar->SetGoal(l2w_trs);
+}
+
+void ik_update(MotionPipe* mopipe)
+{
+	MotionPipeInternal* mopipe_internal = static_cast<MotionPipeInternal*>(mopipe);
+	auto OnGroupNode = [mopipe_internal](CIKGroupNode* node_this)
+					{
+						node_this->IKUpdate(mopipe_internal->dst2src_w);
+					};
+
+	auto OffGroupNode = [&](CIKGroupNode* node_this)
+					{
+					};
+
+	CIKGroupTree::TraverseDFS(mopipe_internal->root_ik, OnGroupNode, OffGroupNode);
 }
 
 HMOTIONNODE	create_tree_motion_node(HBODY mo_src)

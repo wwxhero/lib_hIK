@@ -1,20 +1,25 @@
 #include "pch.h"
 #include "IKGroupTree.hpp"
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// CIKChain:
+
 CIKChain::CIKChain()
-	: m_eef(NULL)
+	: m_eefSrc(NULL)
+	, m_targetDst(NULL)
+	, m_nSteps(20)
 {
 }
 
 bool CIKChain::Init(const CArtiBodyNode* eef, int len)
 {
-	m_eef = const_cast<CArtiBodyNode*>(eef);
+	m_eefSrc = const_cast<CArtiBodyNode*>(eef);
 	m_bodies.resize(len);
 	CArtiBodyNode* body_p = NULL;
 	int i_start = len - 1;
 	int i_end = -1;
 	int i;
-	for ( i = i_start, body_p = m_eef->GetParent()
+	for ( i = i_start, body_p = m_eefSrc->GetParent()
 		; i > i_end && NULL != body_p
 		; i --, body_p = body_p->GetParent())
 	{
@@ -26,22 +31,41 @@ bool CIKChain::Init(const CArtiBodyNode* eef, int len)
 	return initialized;
 }
 
+void CIKChain::SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst)
+{
+	IKAssert(NULL != m_eefSrc);
+	auto it_target = nameSrc2bodyDst.find(m_eefSrc->GetName_w());
+	IKAssert(nameSrc2bodyDst.end() != it_target);
+	m_targetDst = it_target->second;
+}
+
 void CIKChain::Dump(std::stringstream& info) const
 {
 	info << "{";
 	for (auto body : m_bodies)
 		info <<" "<< body->GetName_c();
-	info << " " << m_eef->GetName_c();
+	info << " " << m_eefSrc->GetName_c();
 	info << "}";
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// CIKGroupNode:
+
 CIKGroupNode::CIKGroupNode()
+	: m_nSpecMax(0)
 {
 }
 
 CIKGroupNode::CIKGroupNode(const CIKGroupNode& src)
+	: m_nSpecMax(0)
 {
 	m_kChains = src.m_kChains;
+}
+
+void CIKGroupNode::SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst)
+{
+	for (auto chain : m_kChains)
+		chain->SetupTarget(nameSrc2bodyDst);
 }
 
 void CIKGroupNode::Dump(int n_indents) const
@@ -58,6 +82,8 @@ void CIKGroupNode::Dump(int n_indents) const
 	LOGIK(logInfo.str().c_str());
 }
 
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define COLOR_BOTTOM -1
 
@@ -368,6 +394,21 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
 		CArtiBodyClrTree::Destroy(root_clr);
 	}
 	return root_G;
+}
+
+void CIKGroupTree::SetupTargets(CIKGroupNode* root_ik, const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst)
+{
+	auto OnIKGroupNode = [&nameSrc2bodyDst](CIKGroupNode* gNode)
+		{
+			gNode->SetupTargets(nameSrc2bodyDst);
+		};
+
+	auto OffIKGroupNode = [](CIKGroupNode* gNode)
+		{
+
+		};
+
+	CIKGroupTree::TraverseDFS(root_ik, OnIKGroupNode, OffIKGroupNode);
 }
 
 #undef COLOR_BOTTOM
