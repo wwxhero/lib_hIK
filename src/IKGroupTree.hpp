@@ -12,33 +12,7 @@ public:
 					, const Eigen::Matrix3r& dst2src_w);
 
 	void Dump(std::stringstream& info) const;
-	virtual void BeginUpdate()
-	{
-		IKAssert(NULL != m_eefSrc
-				&& NULL != m_targetDst);
-		Transform_TRS target_dst_w;
-		m_targetDst->GetGoal(target_dst_w);
-
-		Transform_TRS target_src_w;
-		Eigen::Matrix3r target_linear_src_w = m_dst2srcW * target_dst_w.getLinear() * m_src2dstW;
-		Eigen::Vector3r target_tt_src_w = m_dst2srcW * target_dst_w.getTranslation();
-		target_src_w.linear() = target_linear_src_w;
-		target_src_w.translation() = target_tt_src_w;
-		m_eefSrc->SetGoal(target_src_w);
-
-#ifdef _DEBUG
-		const Transform* eef_src_w = m_eefSrc->GetTransformLocal2World();
-		Eigen::Vector3r offset_T = eef_src_w->getTranslation() - target_src_w.getTranslation();
-		std::stringstream logInfo;
-		logInfo << "reaching from " << m_eefSrc->GetName_c()
-				<< " to " << m_targetDst->GetName_c()
-				<< " at\n\ttarget_src = [" << target_src_w.ToString().c_str() << "]"
-				<<    "\n\teef_src = [" << eef_src_w->ToString().c_str() << "]"
-				<<    "\n\tOffset_T = \n["<< offset_T <<"]";
-		LOGIK(logInfo.str().c_str());
-		LOGIKFlush();
-#endif
-	}
+	virtual void BeginUpdate();
 
 	virtual void UpdateNext(int step)
 	{
@@ -69,7 +43,7 @@ private:
 	CArtiBodyNode* m_eefSrc;
 	CArtiBodyNode* m_targetDst;
 	int m_nSteps;
-	Eigen::Matrix3r m_src2dstW;
+	Eigen::Matrix3r m_src2dstW_Offset;
 	Eigen::Matrix3r m_dst2srcW;
 };
 
