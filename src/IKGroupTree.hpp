@@ -7,23 +7,34 @@ class CIKChain
 public:
 	CIKChain();
 	bool Init(const CArtiBodyNode* eef, int len);
-	void SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst);
+	void SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst
+					, const Eigen::Matrix3r& src2dst_w
+					, const Eigen::Matrix3r& dst2src_w);
 
 	void Dump(std::stringstream& info) const;
-	virtual void BeginUpdate(const Eigen::Matrix3r& dst2src_w)
+	virtual void BeginUpdate()
 	{
 		IKAssert(NULL != m_eefSrc
 				&& NULL != m_targetDst);
-		Transform_TRS goal_dst_w;
-		m_targetDst->GetGoal(goal_dst_w);
-		Transform_TRS goal_src_w = dst2src_w * goal_dst_w;
-		m_eefSrc->SetGoal(goal_src_w);
+		Transform_TRS target_dst_w;
+		m_targetDst->GetGoal(target_dst_w);
+
+		Transform_TRS target_src_w;
+		Eigen::Matrix3r target_linear_src_w = m_dst2srcW * target_dst_w.getLinear() * m_src2dstW;
+		Eigen::Vector3r target_tt_src_w = m_dst2srcW * target_dst_w.getTranslation();
+		target_src_w.linear() = target_linear_src_w;
+		target_src_w.translation() = target_tt_src_w;
+		m_eefSrc->SetGoal(target_src_w);
+
 #ifdef _DEBUG
+		const Transform* eef_src_w = m_eefSrc->GetTransformLocal2World();
+		Eigen::Vector3r offset_T = eef_src_w->getTranslation() - target_src_w.getTranslation();
 		std::stringstream logInfo;
 		logInfo << "reaching from " << m_eefSrc->GetName_c()
 				<< " to " << m_targetDst->GetName_c()
-				<< " at\n\t[" << goal_src_w.ToString().c_str() << "]_src"
-				<< "   \n\t[" << goal_dst_w.ToString().c_str() << "]_dst";
+				<< " at\n\ttarget_src = [" << target_src_w.ToString().c_str() << "]"
+				<<    "\n\teef_src = [" << eef_src_w->ToString().c_str() << "]"
+				<<    "\n\tOffset_T = \n["<< offset_T <<"]";
 		LOGIK(logInfo.str().c_str());
 		LOGIKFlush();
 #endif
@@ -58,6 +69,8 @@ private:
 	CArtiBodyNode* m_eefSrc;
 	CArtiBodyNode* m_targetDst;
 	int m_nSteps;
+	Eigen::Matrix3r m_src2dstW;
+	Eigen::Matrix3r m_dst2srcW;
 };
 
 class CIKGroupNode : public TreeNode<CIKGroupNode>
@@ -80,14 +93,14 @@ public:
 		if (m_nSpecMax < n_steps_i)
 			m_nSpecMax = n_steps_i;
 	}
-	void IKUpdate(const Eigen::Matrix3r& dst2src_w)
+	void IKUpdate()
 	{
 		int n_chains = (int)m_kChains.size();
 		if (n_chains < 1)
 			return;
 
 		for (CIKChain* chain : m_kChains)
-			chain->BeginUpdate(dst2src_w);
+			chain->BeginUpdate();
 
 		if (1 == n_chains)
 			m_kChains[0]->UpdateAll();
@@ -102,7 +115,7 @@ public:
 		for (CIKChain* chain : m_kChains)
 			chain->EndUpdate();
 	}
-	void SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst);
+	void SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
 	virtual void Dump(int indent) const override;
 protected:
 	std::vector<CIKChain*> m_kChains;
@@ -113,7 +126,7 @@ class CIKGroupTree : public Tree<CIKGroupNode>
 {
 public:
 	static CIKGroupNode* Generate(const CArtiBodyNode* root, const CONF::CBodyConf& ikChainConf);
-	static void SetupTargets(CIKGroupNode* root_ik, const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst);
+	static void SetupTargets(CIKGroupNode* root_ik, const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
 };
 
 

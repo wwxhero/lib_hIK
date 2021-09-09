@@ -31,12 +31,16 @@ bool CIKChain::Init(const CArtiBodyNode* eef, int len)
 	return initialized;
 }
 
-void CIKChain::SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst)
+void CIKChain::SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst
+						, const Eigen::Matrix3r& src2dst_w
+						, const Eigen::Matrix3r& dst2src_w)
 {
 	IKAssert(NULL != m_eefSrc);
 	auto it_target = nameSrc2bodyDst.find(m_eefSrc->GetName_w());
 	IKAssert(nameSrc2bodyDst.end() != it_target);
 	m_targetDst = it_target->second;
+	m_src2dstW = src2dst_w;
+	m_dst2srcW = dst2src_w;
 }
 
 void CIKChain::Dump(std::stringstream& info) const
@@ -62,10 +66,12 @@ CIKGroupNode::CIKGroupNode(const CIKGroupNode& src)
 	m_kChains = src.m_kChains;
 }
 
-void CIKGroupNode::SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst)
+void CIKGroupNode::SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst
+								, const Eigen::Matrix3r& src2dst_w
+								, const Eigen::Matrix3r& dst2src_w)
 {
 	for (auto chain : m_kChains)
-		chain->SetupTarget(nameSrc2bodyDst);
+		chain->SetupTarget(nameSrc2bodyDst, src2dst_w, dst2src_w);
 }
 
 void CIKGroupNode::Dump(int n_indents) const
@@ -352,6 +358,9 @@ void CIKGroupTreeGen::InitKChain(CIKGroupNodeGen* root, const std::vector<CIKCha
 	CIKGroupTreeGen::TraverseDFS(root, OnGroupNode, OffGroupNode);
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// CIKGroupTree
+
 CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBodyConf& ikChainConf)
 {
 	CIKGroupNode* root_G = NULL;
@@ -396,11 +405,14 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
 	return root_G;
 }
 
-void CIKGroupTree::SetupTargets(CIKGroupNode* root_ik, const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst)
+void CIKGroupTree::SetupTargets(CIKGroupNode* root_ik
+								, const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst
+								, const Eigen::Matrix3r& src2dst_w
+								, const Eigen::Matrix3r& dst2src_w)
 {
-	auto OnIKGroupNode = [&nameSrc2bodyDst](CIKGroupNode* gNode)
+	auto OnIKGroupNode = [&nameSrc2bodyDst, &src2dst_w, &dst2src_w](CIKGroupNode* gNode)
 		{
-			gNode->SetupTargets(nameSrc2bodyDst);
+			gNode->SetupTargets(nameSrc2bodyDst, src2dst_w, dst2src_w);
 		};
 
 	auto OffIKGroupNode = [](CIKGroupNode* gNode)

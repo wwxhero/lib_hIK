@@ -363,6 +363,12 @@ namespace CONF
 
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// CMotionPipeConf:
+	#define SETIDENTITY_3X3(mtx)\
+		for (int i_r = 0; i_r < 3; i_r ++)\
+			for (int i_c = 0; i_c < 3; i_c ++)\
+				mtx[i_r][i_c] = (i_r == i_c);
+
+
 
 	CMotionPipeConf* CMotionPipeConf::Load(const wchar_t* confXML)
 	{
@@ -392,7 +398,8 @@ namespace CONF
 	CMotionPipeConf::CMotionPipeConf()
 		: sync(CMoNode::unknown)
 	{
-
+		SETIDENTITY_3X3(m);
+		SETIDENTITY_3X3(m_inv);
 	}
 
 	CMotionPipeConf::~CMotionPipeConf()
@@ -499,9 +506,26 @@ namespace CONF
 					}
 					ret = all_entry_ij;
 					IKAssert(all_entry_ij);
-					if (!ret)
+					if (ret)
 					{
 						LOGIKVar(LogInfoFloat3x3_m, m);
+						Eigen::Matrix3r src2dst_w;
+						src2dst_w << m[0][0], m[0][1], m[0][2],
+									 m[1][0], m[1][1], m[1][2],
+									 m[2][0], m[2][1], m[2][2];
+						Eigen::Matrix3r dst2src_w = src2dst_w.inverse();
+						for (int i_r = 0; i_r < 3 && all_entry_ij; i_r++)
+						{
+							for (int i_c = 0; i_c < 3 && all_entry_ij; i_c++)
+							{
+								m_inv[i_r][i_c] = dst2src_w(i_r, i_c);
+							}
+						}
+					}
+					else
+					{
+						SETIDENTITY_3X3(m);
+						SETIDENTITY_3X3(m_inv);
 					}
 				}
 				else if ("Pair" == name)
@@ -586,4 +610,5 @@ namespace CONF
 		Pair.Dump_Dbg();
 	}
 #endif
+	#undef SETIDENTITY_3X3
 }

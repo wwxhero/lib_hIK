@@ -362,8 +362,8 @@ public:
 	static CArtiBodyNode* CreateSimNode(const wchar_t* name, const _TRANSFORM* tm, BODY_TYPE type, TM_TYPE jtm, bool local = true);
 	static CArtiBodyNode* CreateSimNode(const char* name, const _TRANSFORM* tm, BODY_TYPE type, TM_TYPE jtm, bool local = true);
 
-	static bool Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* (*matches)[2], int n_matches, bool src_on_match0);
-	
+	static bool Clone_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* (*matches)[2], int n_matches, bool src_on_match0, const Eigen::Matrix3r& src2dst_w);
+
 	template<typename CloneNode_x>
 	static bool Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, CloneNode_x CloneNode)
 	{

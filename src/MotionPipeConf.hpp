@@ -220,6 +220,7 @@ namespace CONF
 	public:
 		CMoNode::TM_TYPE sync;
 		Real m[3][3];
+		Real m_inv[3][3];
 		CBodyConf Source, Destination;
 		CPairsConf Pair;
 	};

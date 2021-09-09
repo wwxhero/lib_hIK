@@ -71,8 +71,13 @@ bool InitBody_Internal(HBODY bodySrc
 			int n_match = mp_conf.Pair.Data_alloc(&matches);
 			HBODY body_htr_1 = H_INVALID;
 			HBODY body_htr_2 = H_INVALID;
-			if (!(clone_body_interests_htr(bodySrc, &body_htr_1, matches, n_match, false)  	// body_htr_1 is an intermediate body, orient bone with src bone information
-			 			&& clone_body_htr(body_htr_1, &body_htr_2, mp_conf.m))) 			// body_htr_2 is the result, orient bone with the interest bone information
+			Real identity[3][3] = {
+				{1, 0, 0},
+				{0, 1, 0},
+				{0, 0, 1}
+			};
+			if (!(clone_body_interests_htr(bodySrc, &body_htr_1, matches, n_match, false, identity)  	// body_htr_1 is an intermediate body, orient bone with src bone information
+			 			&& clone_body_htr(body_htr_1, &body_htr_2, mp_conf.m_inv))) 			// body_htr_2 is the result, orient bone with the interest bone information
 			 		body_htr_2 = H_INVALID;
 
 			CPairsConf::Data_free(matches, n_match);
@@ -117,6 +122,13 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 #endif
 		MotionPipeInternal* mopipe = new MotionPipeInternal;
 		init_mopipe(mopipe);
+
+		for (int r_i = 0; r_i < 3; r_i ++)
+			for (int c_i = 0; c_i < 3; c_i++)
+				mopipe->src2dst_w[r_i][c_i] = mp_conf->m[r_i][c_i];
+		mopipe->dst2src_w << mp_conf->m_inv[0][0], mp_conf->m_inv[0][1], mp_conf->m_inv[0][2],
+							 mp_conf->m_inv[1][0], mp_conf->m_inv[1][1], mp_conf->m_inv[1][2],
+							 mp_conf->m_inv[2][0], mp_conf->m_inv[2][1], mp_conf->m_inv[2][2];
 
 		const int c_idxFBX = 1;
 		const int c_idxSim = 0;
@@ -197,17 +209,6 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 
 		if (ok)
 		{
-			Eigen::Matrix3r src2dst_w;
-			for (int r_i = 0; r_i < 3; r_i ++)
-			{
-				for (int c_i = 0; c_i < 3; c_i++)
-				{
-					mopipe->src2dst_w[r_i][c_i] = mp_conf->m[r_i][c_i];
-					src2dst_w(r_i, c_i) = mp_conf->m[r_i][c_i];
-				}
-			}
-			mopipe->dst2src_w = src2dst_w.inverse();
-
 			if (MotionPipeInternal::IK == mopipe->type)
 			{
 				std::map<std::wstring, CArtiBodyNode*> nameSrc2bodyDst;
@@ -232,8 +233,16 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 										, OnBody
 										, OffBody);
 
+				Eigen::Matrix3r src2dst_w;
+				const Real(*data_src2dst_w)[3] = mopipe->src2dst_w;
+				src2dst_w << data_src2dst_w[0][0], data_src2dst_w[0][1], data_src2dst_w[0][2],
+							 data_src2dst_w[1][0], data_src2dst_w[1][1], data_src2dst_w[1][2],
+							 data_src2dst_w[2][0], data_src2dst_w[2][1], data_src2dst_w[2][2];
+
 				CIKGroupTree::SetupTargets(mopipe->root_ik
-										, nameSrc2bodyDst);
+										, nameSrc2bodyDst
+										, src2dst_w
+										, mopipe->dst2src_w);
 			}
 
 		 	auto moDriver = create_tree_motion_node(mopipe->bodies[0]);
@@ -332,9 +341,9 @@ void ik_task(HBODY body_t, const _TRANSFORM* l2w)
 void ik_update(MotionPipe* mopipe)
 {
 	MotionPipeInternal* mopipe_internal = static_cast<MotionPipeInternal*>(mopipe);
-	auto OnGroupNode = [mopipe_internal](CIKGroupNode* node_this)
+	auto OnGroupNode = [](CIKGroupNode* node_this)
 					{
-						node_this->IKUpdate(mopipe_internal->dst2src_w);
+						node_this->IKUpdate();
 					};
 
 	auto OffGroupNode = [&](CIKGroupNode* node_this)

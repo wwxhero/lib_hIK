@@ -172,7 +172,7 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 
 }
 
-bool CArtiBodyTree::Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* (*a_matches)[2], int n_matches, bool src_on_match0)
+bool CArtiBodyTree::Clone_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* (*a_matches)[2], int n_matches, bool src_on_match0, const Eigen::Matrix3r& src2dst_w)
 {
 	if (NULL == src)
 	{
@@ -192,14 +192,14 @@ bool CArtiBodyTree::Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, const w
 	}
 	std::map<std::wstring, std::wstring>& c_matches = matches;
 
-	auto CloneNode = [&c_matches] (const CArtiBodyNode* node_src, CArtiBodyNode** node_dst) -> bool
+	auto CloneNode = [&c_matches, &src2dst_w] (const CArtiBodyNode* node_src, CArtiBodyNode** node_dst) -> bool
 				{
 					auto it = c_matches.find(node_src->GetName_w());
 					bool interest = (it != c_matches.end());
 					*node_dst = NULL;
 					if ( interest )
 					{
-						bool cloned = CArtiBodyTree::CloneNode_htr(node_src, node_dst, Eigen::Matrix3r::Identity(), it->second.c_str());
+						bool cloned = CArtiBodyTree::CloneNode_htr(node_src, node_dst, src2dst_w, it->second.c_str());
 						IKAssert(cloned);
 						return true;
 					}
