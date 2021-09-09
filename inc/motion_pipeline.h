@@ -26,8 +26,8 @@ typedef HIKLIB_CB(HBODY, *FuncBodyInit)(void* paramProc
 									, int n_pairs
 									, const B_Scale scales[]
 									, int n_scales
-									, const wchar_t* namesEEFs[]
-									, int n_eef);
+									, const wchar_t* nameTargets[]
+									, int n_targets);
 
 HIKLIB(bool,			load_mopipe)(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit onInitBodyProc[2], void* paramProc);
 HIKLIB(void,			unload_mopipe)(MotionPipe* mopipe);
