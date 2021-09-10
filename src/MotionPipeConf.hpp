@@ -132,8 +132,8 @@ namespace CONF
 	public:
 		int Scale_alloc(B_Scale* &scales) const;
 		static void Scale_free(B_Scale* scales, int n_scale);
-		int Targets_alloc(const wchar_t** &namesTargets) const;
-		static void Targets_free(const wchar_t** namesTargets, int n_targets);
+		int Targets_alloc(const wchar_t ** &nameTargets) const;
+		static void Targets_free(const wchar_t** nameTargets, int n_Targets);
 		const wchar_t* file_w() const;
 		const char* file_c() const;
 

@@ -123,25 +123,25 @@ namespace CONF
 	}
 
 
-	int CBodyConf::Targets_alloc(const wchar_t** &namesTargets) const
+	int CBodyConf::Targets_alloc(const wchar_t** &nameTargets) const
 	{
 		int n_targets = (int)m_targets.size();
-		namesTargets = (const wchar_t**)malloc(n_targets * sizeof(const wchar_t*));
+		nameTargets = (const wchar_t**)malloc(n_targets * sizeof(const wchar_t*));
 
-		for (int i_target = 0; i_target < n_targets; i_target++)
+		for (int i_eef = 0; i_eef < n_targets; i_eef++)
 		{
-			m_targets[i_target].AllocCopyTo(&namesTargets[i_target]);
+			m_targets[i_eef].AllocCopyTo(&nameTargets[i_eef]);
 		}
 		return n_targets;
 	}
 
-	void CBodyConf::Targets_free(const wchar_t** namesTargets, int n_targets)
+	void CBodyConf::Targets_free(const wchar_t** nameTargets, int n_targets)
 	{
-		for (int i_target = 0; i_target < n_targets; i_target++)
+		for (int i_eef = 0; i_eef < n_targets; i_eef++)
 		{
-			Name::FreeCopy(namesTargets[i_target]);
+			Name::FreeCopy(nameTargets[i_eef]);
 		}
-		free(namesTargets);
+		free(nameTargets);
 	}
 
 	void CBodyConf::AddTarget(const char* name)
@@ -184,13 +184,13 @@ namespace CONF
 		}
 		CBodyConf::Scale_free(scales, n_scales);
 
-		const wchar_t **namesTargets = NULL;
-		int n_targets = Targets_alloc(namesTargets);
-		for (int i_target = 0; i_target < n_targets; i_target ++)
+		const wchar_t **nameTargets = NULL;
+		int n_Targets = Targets_alloc(nameTargets);
+		for (int i_target = 0; i_target < n_Targets; i_target ++)
 		{
-			LOGIKVar(LogInfoWCharPtr, namesTargets[i_target]);
+			LOGIKVar(LogInfoWCharPtr, nameTargets[i_target]);
 		}
-		CBodyConf::Targets_free(namesTargets, n_targets);
+		CBodyConf::Targets_free(nameTargets, n_Targets);
 
 		for (const CIKChainConf& ikchain_conf : IK_Chains)
 		{

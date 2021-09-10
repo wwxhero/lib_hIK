@@ -151,8 +151,8 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 				B_Scale* scales = NULL;
 				int n_scales = bodies_conf_i->Scale_alloc(scales);
 
-				const wchar_t** namesTargets = NULL;
-				int n_targets = bodies_conf_i->Targets_alloc(namesTargets);
+				const wchar_t** nameTargets = NULL;
+				int n_targets = bodies_conf_i->Targets_alloc(nameTargets);
 
 				mopipe->bodies[i_bodyConf] = InitBody_External_i(paramProc
 														, bodies_conf_i->file_w()
@@ -160,12 +160,12 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 														, n_pairs
 														, scales
 														, n_scales
-														, namesTargets
+														, nameTargets
 														, n_targets);
 
 				CPairsConf::Data_free(namesOnPair, n_pairs);
 				CBodyConf::Scale_free(scales, n_scales);
-				CBodyConf::Targets_free(namesTargets, n_targets);
+				CBodyConf::Targets_free(nameTargets, n_targets);
 			}
 			else
 			{
