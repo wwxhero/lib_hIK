@@ -60,8 +60,10 @@ HIKLIB(HBODY,			create_fbx_body_node_w)(const wchar_t* name, const _TRANSFORM* t
 HIKLIB(HBODY,			create_fbx_body_node_c)(const char* name, const _TRANSFORM* tm_l2p);
 HIKLIB(HBODY,			create_bvh_body_node_w)(const wchar_t* name, const _TRANSFORM* tm_l2p, TM_TYPE jtm);
 HIKLIB(HBODY,			create_bvh_body_node_c)(const char* name, const _TRANSFORM*  tm_l2p, TM_TYPE jtm);
-HIKLIB(bool,			clone_body)(HBODY src, BODY_TYPE nodetype, HBODY* dst);
-HIKLIB(bool,			clone_body_interests)(HBODY src, HBODY* dst, const wchar_t* (*matches)[2], int n_matches, bool src_on_match0);
+HIKLIB(bool,			clone_body_fbx)(HBODY src, HBODY* dst);
+HIKLIB(bool,			clone_body_bvh)(HBODY src, HBODY* dst);
+HIKLIB(bool,			clone_body_htr)(HBODY src, HBODY* dst, const Real src2dst_w[3][3]);
+HIKLIB(bool,			clone_body_interests_htr)(HBODY src, HBODY* dst, const wchar_t* (*matches)[2], int n_matches, bool src_on_match0, const Real src2dst_w[3][3]);
 HIKLIB(void,			destroy_tree_body_node)(HBODY hBody);
 HIKLIB(void,			destroy_tree_body)(HBODY hBody);
 HIKLIB(void,			cnn_arti_body)(HBODY from, HBODY to, enum CNN);

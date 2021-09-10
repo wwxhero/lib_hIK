@@ -123,31 +123,31 @@ namespace CONF
 	}
 
 
-	int CBodyConf::EndEEF_alloc(const wchar_t** &namesEEFs) const
+	int CBodyConf::Targets_alloc(const wchar_t** &nameTargets) const
 	{
-		int n_eefs = (int)m_eefs.size();
-		namesEEFs = (const wchar_t**)malloc(n_eefs * sizeof(const wchar_t*));
+		int n_targets = (int)m_targets.size();
+		nameTargets = (const wchar_t**)malloc(n_targets * sizeof(const wchar_t*));
 
-		for (int i_eef = 0; i_eef < n_eefs; i_eef++)
+		for (int i_eef = 0; i_eef < n_targets; i_eef++)
 		{
-			m_eefs[i_eef].AllocCopyTo(&namesEEFs[i_eef]);
+			m_targets[i_eef].AllocCopyTo(&nameTargets[i_eef]);
 		}
-		return n_eefs;
+		return n_targets;
 	}
 
-	void CBodyConf::EndEEF_free(const wchar_t** namesEEFs, int n_eefs)
+	void CBodyConf::Targets_free(const wchar_t** nameTargets, int n_targets)
 	{
-		for (int i_eef = 0; i_eef < n_eefs; i_eef++)
+		for (int i_eef = 0; i_eef < n_targets; i_eef++)
 		{
-			Name::FreeCopy(namesEEFs[i_eef]);
+			Name::FreeCopy(nameTargets[i_eef]);
 		}
-		free(namesEEFs);
+		free(nameTargets);
 	}
 
-	void CBodyConf::AddEEF(const char* name)
+	void CBodyConf::AddTarget(const char* name)
 	{
-		Name eef(name);
-		m_eefs.push_back(eef);
+		Name target(name);
+		m_targets.push_back(target);
 	}
 
 	const wchar_t* CBodyConf::file_w() const
@@ -184,13 +184,13 @@ namespace CONF
 		}
 		CBodyConf::Scale_free(scales, n_scales);
 
-		const wchar_t **namesEEFs = NULL;
-		int n_eefs = EndEEF_alloc(namesEEFs);
-		for (int i_eef = 0; i_eef < n_eefs; i_eef ++)
+		const wchar_t **nameTargets = NULL;
+		int n_Targets = Targets_alloc(nameTargets);
+		for (int i_target = 0; i_target < n_Targets; i_target ++)
 		{
-			LOGIKVar(LogInfoWCharPtr, namesEEFs[i_eef]);
+			LOGIKVar(LogInfoWCharPtr, nameTargets[i_target]);
 		}
-		CBodyConf::EndEEF_free(namesEEFs, n_eefs);
+		CBodyConf::Targets_free(nameTargets, n_Targets);
 
 		for (const CIKChainConf& ikchain_conf : IK_Chains)
 		{
@@ -306,6 +306,25 @@ namespace CONF
 		free(matches);
 	}
 
+	void CPairsConf::Map(std::map<std::wstring, std::wstring>& name2name, bool forward)
+	{
+		int src;
+		int dst;
+		if (forward)
+		{
+			src = 0; dst = 1;
+		}
+		else
+		{
+			src = 1; dst = 0;
+		}
+		for (const auto& pair : m_pairs)
+		{
+			const Name* names[] = { &pair.first, &pair.second };
+			name2name[*names[src]] = *names[dst];
+		}
+	}
+
 	void CPairsConf::Add(const char* from, const char* to)
 	{
 		auto pair = std::make_pair(Name(from)
@@ -344,6 +363,12 @@ namespace CONF
 
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// CMotionPipeConf:
+	#define SETIDENTITY_3X3(mtx)\
+		for (int i_r = 0; i_r < 3; i_r ++)\
+			for (int i_c = 0; i_c < 3; i_c ++)\
+				mtx[i_r][i_c] = (i_r == i_c);
+
+
 
 	CMotionPipeConf* CMotionPipeConf::Load(const wchar_t* confXML)
 	{
@@ -373,7 +398,8 @@ namespace CONF
 	CMotionPipeConf::CMotionPipeConf()
 		: sync(CMoNode::unknown)
 	{
-
+		SETIDENTITY_3X3(m);
+		SETIDENTITY_3X3(m_inv);
 	}
 
 	CMotionPipeConf::~CMotionPipeConf()
@@ -480,9 +506,26 @@ namespace CONF
 					}
 					ret = all_entry_ij;
 					IKAssert(all_entry_ij);
-					if (!ret)
+					if (ret)
 					{
 						LOGIKVar(LogInfoFloat3x3_m, m);
+						Eigen::Matrix3r src2dst_w;
+						src2dst_w << m[0][0], m[0][1], m[0][2],
+									 m[1][0], m[1][1], m[1][2],
+									 m[2][0], m[2][1], m[2][2];
+						Eigen::Matrix3r dst2src_w = src2dst_w.inverse();
+						for (int i_r = 0; i_r < 3 && all_entry_ij; i_r++)
+						{
+							for (int i_c = 0; i_c < 3 && all_entry_ij; i_c++)
+							{
+								m_inv[i_r][i_c] = dst2src_w(i_r, i_c);
+							}
+						}
+					}
+					else
+					{
+						SETIDENTITY_3X3(m);
+						SETIDENTITY_3X3(m_inv);
 					}
 				}
 				else if ("Pair" == name)
@@ -495,14 +538,14 @@ namespace CONF
 					if (valid_pair)
 						Pair.Add(j_from, j_to);
 				}
-				else if ("EndEEF" == name)
+				else if ("Target" == name)
 				{
 					const char* target_name = ele->Attribute("b_name");
 					bool valid_target = (NULL != target_name);
 					IKAssert(valid_target);
 					ret = valid_target;
 					if (valid_target)
-						body_confs[I_Body(node)]->AddEEF(target_name);
+						body_confs[I_Body(node)]->AddTarget(target_name);
 				}
 				else if ((is_a_source = ("Source" == name))
 					|| (is_a_desti = ("Destination" == name)))
@@ -567,4 +610,5 @@ namespace CONF
 		Pair.Dump_Dbg();
 	}
 #endif
+	#undef SETIDENTITY_3X3
 }

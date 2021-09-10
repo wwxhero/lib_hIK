@@ -4,6 +4,7 @@
 #include "TreeBase.h"
 #include "Joint.h"
 #include "Transform.h"
+#include "ik_logger.h"
 
 class CArtiBodyNode : public TreeNode<CArtiBodyNode>
 {
@@ -23,6 +24,17 @@ public:
 	{
 		return m_namec.c_str();
 	}
+
+	void SetGoal(const Transform_TRS& tm_w)
+	{
+		m_goal = tm_w;
+	}
+
+	void GetGoal(Transform_TRS& tm_w) const
+	{
+		tm_w = m_goal;
+	}
+
 	virtual void OnKINA_Initialize() = 0;
 	virtual const Transform* GetTransformLocal2Parent0() const = 0;
 	virtual const Transform* GetTransformParent2Local0() const = 0;
@@ -39,6 +51,7 @@ protected:
 private:
 	std::string m_namec;
 	std::wstring m_namew;
+	Transform_TRS m_goal;
 public:
 	const BODY_TYPE c_type;
 	const TM_TYPE c_jtmflag;
@@ -338,18 +351,44 @@ private:
 		assert(NULL != ret);
 		return ret;
 	}
-	static bool CloneNode(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL);
-	static bool CloneNode_fbx(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL);
-	static bool CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL);
-	static bool CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL);
 
 public:
+	static bool CloneNode_fbx(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL);
+	static bool CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL);
+	static bool CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const Eigen::Matrix3r& src2dst_w, const wchar_t* name_dst_opt = NULL);
+
 	static CArtiBodyNode* CreateAnimNode(const wchar_t* name, const _TRANSFORM* tm);
 	static CArtiBodyNode* CreateAnimNode(const char* name, const _TRANSFORM* tm);
 	static CArtiBodyNode* CreateSimNode(const wchar_t* name, const _TRANSFORM* tm, BODY_TYPE type, TM_TYPE jtm, bool local = true);
 	static CArtiBodyNode* CreateSimNode(const char* name, const _TRANSFORM* tm, BODY_TYPE type, TM_TYPE jtm, bool local = true);
-	static bool Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* (*matches)[2], int n_matches, bool src_on_match0);
-	static bool Clone(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst);
+
+	static bool Clone_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* (*matches)[2], int n_matches, bool src_on_match0, const Eigen::Matrix3r& src2dst_w);
+
+	template<typename CloneNode_x>
+	static bool Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, CloneNode_x CloneNode)
+	{
+		auto ConstructNode = [CloneNode](const CArtiBodyNode* src, CArtiBodyNode** dst) -> bool
+		{
+			bool ret = CloneNode(src, dst, NULL);
+			return ret;
+		};
+
+		bool cloned = Construct(src, dst, ConstructNode);
+
+		if (cloned)
+		{
+			KINA_Initialize(*dst);
+			FK_Update(*dst);
+		}
+		else
+		{
+			IKAssert(NULL == *dst);
+		}
+
+		return cloned;
+
+	}
+
 	static void KINA_Initialize(CArtiBodyNode* root);
 	static void FK_Update(CArtiBodyNode* root);
 

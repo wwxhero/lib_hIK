@@ -6,6 +6,7 @@
 #include "ArtiBody.h"
 #include "handle_helper.hpp"
 #include "ik_logger.h"
+#include "matrix3.h"
 
 float ik_test(float theta)
 {
@@ -45,26 +46,76 @@ HBODY create_bvh_body_node_c(const char* name
 	return CAST_2HBODY(body);
 }
 
-bool clone_body(HBODY hSrc, BODY_TYPE nodetype, HBODY* hDst)
+bool clone_body_fbx(HBODY hSrc, HBODY* hDst)
 {
 	CArtiBodyNode* body_src = CAST_2PBODY(hSrc);
 	CArtiBodyNode* body_dst = NULL;
-	bool ret = CArtiBodyTree::Clone(body_src, nodetype, &body_dst);
+	bool ret = CArtiBodyTree::Clone(body_src, &body_dst, CArtiBodyTree::CloneNode_fbx);
 	if (ret)
 		*hDst = CAST_2HBODY(body_dst);
 	return ret;
 }
 
-bool clone_body_interests(HBODY hSrc, HBODY* hDst, const wchar_t* (*matches)[2], int n_matches, bool src_on_match0)
+bool clone_body_bvh(HBODY hSrc, HBODY* hDst)
+{
+	CArtiBodyNode* body_src = CAST_2PBODY(hSrc);
+	CArtiBodyNode* body_dst = NULL;
+	bool ret = CArtiBodyTree::Clone(body_src, &body_dst, CArtiBodyTree::CloneNode_bvh);
+	if (ret)
+		*hDst = CAST_2HBODY(body_dst);
+	return ret;
+}
+
+
+bool clone_body_htr(HBODY hSrc, HBODY* hDst, const Real a_src2dst_w[3][3])
+{
+	CArtiBodyNode* body_src = CAST_2PBODY(hSrc);
+	CArtiBodyNode* body_dst = NULL;
+
+	Eigen::Matrix3r src2dst_w;
+	src2dst_w <<
+			a_src2dst_w[0][0], a_src2dst_w[0][1], a_src2dst_w[0][2],
+			a_src2dst_w[1][0], a_src2dst_w[1][1], a_src2dst_w[1][2],
+			a_src2dst_w[2][0], a_src2dst_w[2][1], a_src2dst_w[2][2];
+	const auto& c_src2dst_w = src2dst_w;
+#if 0
+	bool verified = true;
+	for (int i_r = 0; i_r < 3 && verified; i_r ++)
+		for (int i_c = 0; i_c < 3 && verified; i_c ++)
+			verified = (src2dst_w(i_r, i_c) == a_src2dst_w[i_r][i_c]);
+	IKAssert(verified);
+#endif
+
+	auto CloneNode = [&c_src2dst_w] (const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt) -> bool
+					{
+						return CArtiBodyTree::CloneNode_htr(src, dst, c_src2dst_w, name_dst_opt);
+					};
+	bool ret = CArtiBodyTree::Clone(body_src, &body_dst, CloneNode);
+	if (ret)
+		*hDst = CAST_2HBODY(body_dst);
+	return ret;
+}
+
+bool clone_body_interests_htr(HBODY hSrc, HBODY* hDst, const wchar_t* (*matches)[2], int n_matches, bool src_on_match0, const Real a_src2dst_w[3][3])
 {
 	CArtiBodyNode* body_src = CAST_2PBODY(hSrc);
 	CArtiBodyNode* body_dst = NULL;
 	bool matches_not_specified = (NULL == matches || n_matches < 1);
-	bool ret = false;
-	if (matches_not_specified)
-		ret = CArtiBodyTree::Clone(body_src, htr, &body_dst);
-	else
-		ret = CArtiBodyTree::Clone(body_src, &body_dst, matches, n_matches, src_on_match0);
+	IKAssert(!matches_not_specified);
+
+	Eigen::Matrix3r src2dst_w;
+	src2dst_w <<
+			a_src2dst_w[0][0], a_src2dst_w[0][1], a_src2dst_w[0][2],
+			a_src2dst_w[1][0], a_src2dst_w[1][1], a_src2dst_w[1][2],
+			a_src2dst_w[2][0], a_src2dst_w[2][1], a_src2dst_w[2][2];
+#if 0
+	bool verified = true;
+	for (int i_r = 0; i_r < 3 && verified; i_r ++)
+		for (int i_c = 0; i_c < 3 && verified; i_c ++)
+			verified = (src2dst_w(i_r, i_c) == a_src2dst_w[i_r][i_c]);
+	IKAssert(verified);
+#endif
+	bool ret = CArtiBodyTree::Clone_htr(body_src, &body_dst, matches, n_matches, src_on_match0, src2dst_w);
 	if (ret)
 		*hDst = CAST_2HBODY(body_dst);
 	return ret;

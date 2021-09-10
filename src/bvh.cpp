@@ -434,7 +434,7 @@ bool ResetRestPose(bvh11::BvhObject& bvh, int t)
 	if (resetted)
 	{
 		pose_nonrecur(h_driver, bvh, t, true);
-		resetted = clone_body(h_driver, BODY_TYPE::fbx, &h_driveeProxy); // reset = false
+		resetted = clone_body_fbx(h_driver, &h_driveeProxy); // reset = false
 	}
 
 #if 0 //defined _DEBUG
@@ -456,7 +456,7 @@ bool ResetRestPose(bvh11::BvhObject& bvh, int t)
 	}
 #endif
 	if (resetted)
-		resetted = clone_body(h_driveeProxy, BODY_TYPE::bvh, &h_drivee);
+		resetted = clone_body_bvh(h_driveeProxy, &h_drivee);
 
 #if defined _DEBUG
 	if (resetted)

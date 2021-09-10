@@ -83,6 +83,11 @@ namespace CONF
 		{
 			delete [] a_name;
 		}
+
+		operator std::wstring() const
+		{
+			return m_str;
+		}
 	private:
 		std::wstring m_str;
 	};
@@ -127,13 +132,13 @@ namespace CONF
 	public:
 		int Scale_alloc(B_Scale* &scales) const;
 		static void Scale_free(B_Scale* scales, int n_scale);
-		int EndEEF_alloc(const wchar_t ** &namesEEFs) const;
-		static void EndEEF_free(const wchar_t** namesEEFs, int n_eefs);
+		int Targets_alloc(const wchar_t ** &nameTargets) const;
+		static void Targets_free(const wchar_t** nameTargets, int n_Targets);
 		const wchar_t* file_w() const;
 		const char* file_c() const;
 
 		void AddScale(const char* name, Real x, Real y, Real z);
-		void AddEEF(const char* name);
+		void AddTarget(const char* name);
 		void SetFileName(const char* fileName);
 
 		BODY_TYPE type() const;
@@ -153,7 +158,7 @@ namespace CONF
 
 	private:
 		std::vector<B_ScaleEx> m_scales;
-		std::vector<Name> m_eefs;
+		std::vector<Name> m_targets;
 		std::wstring m_fileName_w;
 		std::string m_fileName_c;
 	public:
@@ -170,7 +175,7 @@ namespace CONF
 		static void Data_free(const wchar_t** namesOnPair, int n_pairs);
 		int Data_alloc(const wchar_t* (**matches)[2]) const;
 		static void Data_free(const wchar_t* (*matches)[2], int n_pairs);
-
+		void Map(std::map<std::wstring, std::wstring>& name2name, bool forward);
 #ifdef _DEBUG
 		void Dump_Dbg() const;
 #endif
@@ -215,6 +220,7 @@ namespace CONF
 	public:
 		CMoNode::TM_TYPE sync;
 		Real m[3][3];
+		Real m_inv[3][3];
 		CBodyConf Source, Destination;
 		CPairsConf Pair;
 	};

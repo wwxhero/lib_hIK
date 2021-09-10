@@ -174,6 +174,13 @@ void LogInfoFloat(const char* file, unsigned int line, const char* token, float 
 #endif
 }
 
+void LOGIKFlush()
+{
+#if defined SMOOTH_LOGGING
+	g_LoggerFast.Flush();
+#endif
+}
+
 template<typename TValue>
 void LogInfo3x3_m(const char* file, unsigned int line, const char* token, const TValue m[3][3])
 {

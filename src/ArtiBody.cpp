@@ -78,7 +78,7 @@ bool CArtiBodyTree::CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst,
 
 
 
-bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt)
+bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const Eigen::Matrix3r& src2dst_w, const wchar_t* name_dst_opt)
 {
 	// if (0 == strcmp(src->GetName_c(), "LeftHand"))
 	//  	DebugBreak(); //a zero length bone
@@ -98,8 +98,7 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 		Eigen::Vector3r nor = Eigen::Vector3r::Zero();
 
 		Eigen::Vector3r tt_l2p;
-		const Transform* tm_this = src->GetTransformLocal2World();
-		const Eigen::Vector3r& tt_this = tm_this->getTranslation();
+		const Eigen::Vector3r& tt_this = src2dst_w * src->GetTransformLocal2World()->getTranslation();
 
 		auto GetDir = [](const Eigen::Vector3r &tt_from, const Eigen::Vector3r &tt_to, Eigen::Vector3r& dir) -> bool
 			{
@@ -116,9 +115,9 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 				return valid_dir;
 			};
 
-		auto onSearchBody = [&nor, tt_this, GetDir](const CArtiBodyNode* node) -> bool
+		auto onSearchBody = [&nor, tt_this, GetDir, &src2dst_w](const CArtiBodyNode* node_src) -> bool
 			{
-				Eigen::Vector3r tt_other = node->GetTransformLocal2World()->getTranslation();
+				Eigen::Vector3r tt_other = src2dst_w * node_src->GetTransformLocal2World()->getTranslation();
 				bool valid_dir = GetDir(tt_this, tt_other, nor);
 				return valid_dir;
 			};
@@ -128,7 +127,7 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 			while (!valid_nor
 				&& (NULL != parent_src))
 			{
-				Eigen::Vector3r tt_other = parent_src->GetTransformLocal2World()->getTranslation();
+				Eigen::Vector3r tt_other = src2dst_w * parent_src->GetTransformLocal2World()->getTranslation();
 				valid_nor = GetDir(tt_other, tt_this, nor);
 				parent_src = parent_src->GetParent();
 			}
@@ -173,31 +172,7 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 
 }
 
-bool CArtiBodyTree::CloneNode(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst, const wchar_t* name_dst)
-{
-	bool ret = false;
-	switch(type)
-	{
-		case fbx:
-		{
-			ret = CloneNode_fbx(src, dst, name_dst);
-			break;
-		}
-		case bvh:
-		{
-			ret = CloneNode_bvh(src, dst, name_dst);
-			break;
-		}
-		case htr:
-		{
-			ret = CloneNode_htr(src, dst, name_dst);
-			break;
-		}
-	}
-	return ret;
-}
-
-bool CArtiBodyTree::Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* (*a_matches)[2], int n_matches, bool src_on_match0)
+bool CArtiBodyTree::Clone_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* (*a_matches)[2], int n_matches, bool src_on_match0, const Eigen::Matrix3r& src2dst_w)
 {
 	if (NULL == src)
 	{
@@ -215,84 +190,38 @@ bool CArtiBodyTree::Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, const w
 		std::wstring name_dst(a_matches[i_match][i_dst]);
 		matches[name_src] = name_dst;
 	}
+	std::map<std::wstring, std::wstring>& c_matches = matches;
 
-	std::stack<CArtiBodyNode*> dstSTK;
-	CArtiBodyNode* root_dst = NULL;
-	const CArtiBodyNode* root_src = src;
-	auto it = matches.find(root_src->GetName_w());
-
-	IKAssert(it != matches.end());
-	bool cloned_root = CArtiBodyTree::CloneNode(root_src, htr, &root_dst, it->second.c_str());
-
-	dstSTK.push(root_dst); //root node is unconditionally a interest
-
-	auto onEnterBody = [&dstSTK, &matches](const CArtiBodyNode* node_src) -> bool
+	auto CloneNode = [&c_matches, &src2dst_w] (const CArtiBodyNode* node_src, CArtiBodyNode** node_dst) -> bool
+				{
+					auto it = c_matches.find(node_src->GetName_w());
+					bool interest = (it != c_matches.end());
+					*node_dst = NULL;
+					if ( interest )
 					{
-						auto it = matches.find(node_src->GetName_w());
-						bool interest = (it != matches.end());
-						CArtiBodyNode* node_dst = NULL;
-						bool cloned = false;
-						if ( interest
-						  && (cloned = CArtiBodyTree::CloneNode(node_src, htr, &node_dst, it->second.c_str())))
-						{
-							CArtiBodyNode* node_dst_parent = dstSTK.top();
-							CArtiBodyTree::Connect(node_dst_parent, node_dst, FIRSTCHD);
-							dstSTK.push(node_dst);
-						}
-						return !interest
-							|| cloned;
-					};
-
-	auto onLeaveBody = [&dstSTK, &matches](const CArtiBodyNode* node_src) -> bool
-					{
-						auto it = matches.find(node_src->GetName_w());
-						bool interest = (matches.end() != it);
-						assert(!interest || (it->second == (dstSTK.top()->GetName_w())));
-						if (interest)
-							dstSTK.pop();
+						bool cloned = CArtiBodyTree::CloneNode_htr(node_src, node_dst, src2dst_w, it->second.c_str());
+						IKAssert(cloned);
 						return true;
-					};
+					}
+					else
+						return false;
+				};
 
-	bool cloned_tree = cloned_root;
-
-	for (const CArtiBodyNode* sub_root = root_src->GetFirstChild()
-		; cloned_tree && NULL != sub_root
-		; sub_root = sub_root->GetNextSibling())
-		cloned_tree = (Tree<CArtiBodyNode>::TraverseDFS(sub_root, onEnterBody, onLeaveBody));
+	bool cloned_tree = Construct(src, dst, CloneNode);
 
 	if (cloned_tree)
-	{
-		KINA_Initialize(root_dst);
-		FK_Update(root_dst);
-		*dst = root_dst;
-	}
-	else
-		*dst = NULL;
-	return cloned_tree;
-}
-
-bool CArtiBodyTree::Clone(const CArtiBodyNode* src, BODY_TYPE type, CArtiBodyNode** dst)
-{
-	auto CloneNode = [type] (const CArtiBodyNode* src, CArtiBodyNode** dst) -> bool
-					{
-						return CArtiBodyTree::CloneNode(src, type, dst);
-					};
-
-	bool cloned = Construct(src, dst, CloneNode);
-
-	if (cloned)
 	{
 		KINA_Initialize(*dst);
 		FK_Update(*dst);
 	}
 	else
 	{
-		IKAssert(*dst == NULL);
+		IKAssert(NULL);
 	}
-
-	return cloned;
-
+	return cloned_tree;
 }
+
+
 
 void CArtiBodyTree::FK_Update(CArtiBodyNode* root)
 {

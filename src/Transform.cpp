@@ -156,7 +156,7 @@ std::string Transform_TR::ToString() const
 {
 	const unsigned int szBuff = 1024;
 	char info[szBuff] = { 0 };
-	sprintf_s(info, szBuff, "r[%.4f\t%.4f\t%.4f\t%.4f], tt[%.4f\t%.4f\t%.4f]"
+	sprintf_s(info, szBuff, "s[1.0000	1.0000	1.0000], r[%.4f\t%.4f\t%.4f\t%.4f], tt[%.4f\t%.4f\t%.4f]"
 		, m_rotq.w(), m_rotq.x(), m_rotq.y(), m_rotq.z()
 		, m_tt.x(), m_tt.y(), m_tt.z());
 	std::string strInfo(info);

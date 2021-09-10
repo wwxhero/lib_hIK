@@ -1,7 +1,6 @@
 #pragma once
 #ifndef __IK_LOGGER_H__
 #  define __IK_LOGGER_H__
-
 #  include <string.h>
 // #define SMOOTH_LOGGING
 // #define PROFILE_IK
@@ -23,8 +22,10 @@ void LogInfoFloat(const char *file, unsigned int line, const char *token, float 
 void LogInfoFloat3x3_m(const char *file, unsigned int line, const char *token, const float m[3][3]);
 void LogInfoDouble3x3(const char *file, unsigned int line, const char *token, const double *m);
 void LogInfoDouble1x3(const char *file, unsigned int line, const char *token, const double *v);
+void LOGIKFlush();
 
 void AssertionFail(const char *file, unsigned int line);
+
 
 #  define DECLARE_ENUMLOG(LogInfoEnum_x) \
     void LogInfoEnum_x(const char *file, unsigned int line, const char *token, short type);
