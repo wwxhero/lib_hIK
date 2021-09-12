@@ -88,9 +88,9 @@ public:
 class CIKChainClr
 {
 public:
-	CIKChainClr(CArtiBodyClrNode* eef, int len, int clr, int dist2root)
+	CIKChainClr(CArtiBodyClrNode* eef, const CONF::CIKChainConf& a_conf, int clr, int dist2root)
 		: c_eef(eef)
-		, c_len(len)
+		, c_conf(&a_conf)
 		, m_Color(clr)
 		, c_dist2root(dist2root)
 	{
@@ -112,14 +112,14 @@ public:
 	{
 		LOGIKVar(LogInfoInt, m_Color);
 		LOGIKVar(LogInfoCharPtr, c_eef->c_body->GetName_c());
-		LOGIKVar(LogInfoInt, c_len);
+		LOGIKVar(LogInfoInt, c_conf->len);
 		LOGIKVar(LogInfoInt, c_dist2root);
 	}
 
 	CIKChain* Generate() const
 	{
 		CIKChain* chain = new CIKChain();
-		if (!chain->Init(c_eef->c_body, c_len))
+		if (!chain->Init(c_eef->c_body, c_conf->len))
 		{
 			delete chain;
 			chain = NULL;
@@ -129,7 +129,7 @@ public:
 public:
 	int m_Color;
 	CArtiBodyClrNode* c_eef;
-	int c_len;
+	const CONF::CIKChainConf* c_conf;
 	int c_dist2root;
 };
 
@@ -181,7 +181,7 @@ void CArtiBodyClrTree::ColorGid(CArtiBodyClrNode* root_clr
 					int i_eef = bodyConf.Name2IKChainIdx(node_this->c_body->GetName_c());
 					if (i_eef > -1)
 					{
-						CIKChainClr chain(node_this, bodyConf.IK_Chains[i_eef].len, i_eef, dist2root);
+						CIKChainClr chain(node_this, bodyConf.IK_Chains[i_eef], i_eef, dist2root);
 						chains.push_back(chain);
 					}
 				};
@@ -196,7 +196,7 @@ void CArtiBodyClrTree::ColorGid(CArtiBodyClrNode* root_clr
 	for (CIKChainClr& chain : chains)
 	{
 		int clr = chain.GetColor();
-		int n = chain.c_len;
+		int n = chain.c_conf->len;
 		int i_end = n + 1;
 		CArtiBodyClrNode* p_i_node = NULL;
 		int i = 0;

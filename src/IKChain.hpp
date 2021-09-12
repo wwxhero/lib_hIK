@@ -39,7 +39,7 @@ public:
 		return (int)m_bodies.size();
 	}
 private:
-	std::vector<CArtiBodyNode*> m_bodies;
+	std::vector<IJoint*> m_bodies;
 	CArtiBodyNode* m_eefSrc;
 	CArtiBodyNode* m_targetDst;
 	int m_nSteps;

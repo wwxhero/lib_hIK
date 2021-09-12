@@ -22,7 +22,7 @@ bool CIKChain::Init(const CArtiBodyNode* eef, int len)
 		; i > i_end && NULL != body_p
 		; i --, body_p = body_p->GetParent())
 	{
-		m_bodies[i] = body_p;
+		m_bodies[i] = body_p->GetJoint();
 	}
 
 	bool initialized = (i == i_end);
