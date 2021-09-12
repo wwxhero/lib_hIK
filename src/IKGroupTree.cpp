@@ -95,14 +95,25 @@ public:
 		, c_dist2root(dist2root)
 	{
 	}
+
+	CIKChainClr(const CIKChainClr& src)
+		: m_Color(src.m_Color)
+		, c_eef(src.c_eef)
+		, c_conf(src.c_conf)
+		, c_dist2root(src.c_dist2root)
+	{
+	}
+
 	int GetColor() const
 	{
 		return m_Color;
 	}
+
 	void SetColor(int clr)
 	{
 		m_Color = clr;
 	}
+
 	CArtiBodyClrNode* EEF() const
 	{
 		return c_eef;
@@ -175,7 +186,7 @@ void CArtiBodyClrTree::ColorGid(CArtiBodyClrNode* root_clr
 					dist2root++;
 				};
 
-	auto OffNode = [bodyConf, &chains, &dist2root] (CArtiBodyClrNode* node_this)
+	auto OffNode = [&bodyConf, &chains, &dist2root] (CArtiBodyClrNode* node_this)
 				{
 					dist2root--;
 					int i_eef = bodyConf.Name2IKChainIdx(node_this->c_body->GetName_c());
@@ -355,6 +366,9 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
 #endif
 			}
 		}
+#if defined _DEBUG|| defined SMOOTH_LOGGING
+		LOGIKFlush();
+#endif
 		CArtiBodyClrTree::Destroy(root_clr);
 	}
 	return root_G;

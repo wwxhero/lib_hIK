@@ -89,13 +89,17 @@ bool InitBody_Internal(HBODY bodySrc
 				DBG_printOutSkeletalHierachy(body_htr_2);
 			#endif
 
-			initialized = VALID_HANDLE(body_htr_1)
-						&& VALID_HANDLE(body_htr_2);
 			if (VALID_HANDLE(body_htr_1))
 			 		destroy_tree_body(body_htr_1);
 			hBody = body_htr_2;
 
 			root_ikGroup = CIKGroupTree::Generate(CAST_2PBODY(hBody), *body_conf_i);
+
+			bool valid_fk_body = VALID_HANDLE(hBody);
+			bool valid_ik_group = (NULL != root_ikGroup);
+			IKAssert(valid_fk_body);
+			IKAssert(valid_ik_group);
+			initialized = valid_fk_body && valid_ik_group;
 			break;
 		}
 
@@ -172,14 +176,15 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 				std::experimental::filesystem::path fullPath(confXML);
 				HBVH bvh = H_INVALID;
 				CIKGroupNode* root_ik = NULL;
-				InitBody_Internal(body_ref
-								, fullPath.parent_path().c_str()
-								, *mp_conf
-								, i_bodyConf
-								, mopipe->bodies[i_bodyConf]
-								, mopipe->n_frames
-								, bvh
-								, root_ik);
+				bool initialized = InitBody_Internal(body_ref
+													, fullPath.parent_path().c_str()
+													, *mp_conf
+													, i_bodyConf
+													, mopipe->bodies[i_bodyConf]
+													, mopipe->n_frames
+													, bvh
+													, root_ik);
+				IKAssert(initialized);
 				// IKAssert(VALID_HANDLE(bvh) == (NULL == root_ik));
 				if (VALID_HANDLE(bvh))
 				{

@@ -115,13 +115,13 @@ namespace CONF
 				Real weight_p;
 				Real weight_r;
 				int n_iter;
-				std::string P_Graph;
 			};
 			struct //Proj
 			{
 				Real up[3];
 			};
 		};
+		std::string P_Graph;
 		std::vector<CJointConf> Joints;
 	};
 

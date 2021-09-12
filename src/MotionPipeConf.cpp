@@ -83,19 +83,17 @@ namespace CONF
 			weight_p = src.weight_p;
 			weight_r = src.weight_r;
 			n_iter = src.n_iter;
-			P_Graph = src.P_Graph;
 		}
 		else if(CIKChain::Proj == src.algor)
 		{
 			memcpy(up, src.up, 3 * sizeof(Real));
 		}
+		P_Graph = src.P_Graph;
 
 	}
 
 	CIKChainConf::~CIKChainConf()
 	{
-		if (NumericalAlgor(algor))
-			P_Graph.~P_Graph();
 	}
 
 	void CIKChainConf::AddJoint(const char* name)
