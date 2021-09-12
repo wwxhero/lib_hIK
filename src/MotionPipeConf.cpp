@@ -7,14 +7,6 @@
 
 extern HMODULE g_Module;
 
-BEGIN_ENUM_STR(CKinaGroup, Algor)
-	ENUM_ITEM(Proj)
-	ENUM_ITEM(DLS)
-	ENUM_ITEM(SDLS)
-	ENUM_ITEM(Unknown)
-END_ENUM_STR(CKinaGroup, Algor)
-
-
 namespace CONF
 {
 	std::wstring GetModuleDir()
@@ -54,7 +46,7 @@ namespace CONF
 
 	CIKChainConf::CIKChainConf(const char* a_eef_name
 							, int a_len
-							, CKinaGroup::Algor a_algor
+							, CIKChain::Algor a_algor
 							, Real a_weight_p
 							, Real a_weight_r
 							, int a_n_iter
@@ -69,6 +61,43 @@ namespace CONF
 	{
 	}
 
+	CIKChainConf::CIKChainConf(const char* a_eef_name
+							, int a_len
+							, CIKChain::Algor a_algor
+							, Real a_up[3])
+		: eef(a_eef_name)
+		, len(a_len)
+		, algor(a_algor)
+		, up {a_up[0], a_up[1], a_up[2]}
+	{
+
+	}
+
+	CIKChainConf::CIKChainConf(const CIKChainConf& src)
+	{
+		eef = src.eef;
+		len = src.len;
+		algor = src.algor;
+		if (NumericalAlgor(src.algor))
+		{
+			weight_p = src.weight_p;
+			weight_r = src.weight_r;
+			n_iter = src.n_iter;
+			P_Graph = src.P_Graph;
+		}
+		else if(CIKChain::Proj == src.algor)
+		{
+			memcpy(up, src.up, 3 * sizeof(Real));
+		}
+
+	}
+
+	CIKChainConf::~CIKChainConf()
+	{
+		if (NumericalAlgor(algor))
+			P_Graph.~P_Graph();
+	}
+
 	void CIKChainConf::AddJoint(const char* name)
 	{
 		CJointConf joint_conf(name);
@@ -80,7 +109,7 @@ namespace CONF
 	{
 		LOGIKVar(LogInfoCharPtr, eef.c_str());
 		LOGIKVar(LogInfoInt, len);
-		LOGIKVar(LogInfoCharPtr, CKinaGroup::from_Algor(algor));
+		LOGIKVar(LogInfoCharPtr, CIKChain::from_Algor(algor));
 		LOGIKVar(LogInfoFloat, weight_p);
 		LOGIKVar(LogInfoFloat, weight_r);
 		LOGIKVar(LogInfoInt, n_iter);
@@ -224,13 +253,24 @@ namespace CONF
 
 	void CBodyConf::AddIKChain(const char* eef_name
 						, int len
-						, CKinaGroup::Algor algor
+						, CIKChain::Algor algor
 						, Real weight_p
 						, Real weight_r
 						, int n_iter
 						, const char* P_Graph)
 	{
 		CIKChainConf chain_conf(eef_name, len, algor, weight_p, weight_r, n_iter, P_Graph);
+		int i_new_chain = (int)IK_Chains.size();
+		IK_Chains.push_back(chain_conf);
+		m_name2chainIdx[eef_name] = i_new_chain;
+	}
+
+	void CBodyConf::AddIKChain(const char* eef_name
+						, int len
+						, CIKChain::Algor algor
+						, Real up[3])
+	{
+		CIKChainConf chain_conf(eef_name, len, algor, up);
 		int i_new_chain = (int)IK_Chains.size();
 		IK_Chains.push_back(chain_conf);
 		m_name2chainIdx[eef_name] = i_new_chain;
@@ -558,19 +598,24 @@ namespace CONF
 					const char* eef_name = ele->Attribute("eef");
 					int len = -1;
 					bool valid_len = (TIXML_SUCCESS == ele->QueryIntAttribute("len", &len));
-					CKinaGroup::Algor algor = CKinaGroup::Unknown;
+					CIKChain::Algor algor = CIKChain::Unknown;
 					const char* algor_str = NULL;
 					bool valid_algor = (NULL != (algor_str = ele->Attribute("algor"))
-									&& CKinaGroup::Unknown != (algor = CKinaGroup::to_Algor(algor_str)));
+									&& CIKChain::Unknown != (algor = CIKChain::to_Algor(algor_str)));
 					Real weight_p = 0;
 					bool valid_weight_p = (TIXML_SUCCESS == ele->QueryFloatAttribute("weight_p", &weight_p));
 					Real weight_r = 0;
 					bool valid_weight_r = (TIXML_SUCCESS == ele->QueryFloatAttribute("weight_r", &weight_r));
+					Real up[3];
+					bool valid_up =   (TIXML_SUCCESS == ele->QueryFloatAttribute("up_x", &up[0])
+									&& TIXML_SUCCESS == ele->QueryFloatAttribute("up_y", &up[1])
+									&& TIXML_SUCCESS == ele->QueryFloatAttribute("up_z", &up[2]));
 
 					IKAssert(valid_len);
 					IKAssert(valid_algor);
-					IKAssert(valid_weight_p);
-					IKAssert(valid_weight_r);
+					bool numerical_algor = NumericalAlgor(algor);
+					IKAssert(!numerical_algor || (valid_weight_p && valid_weight_r));
+					IKAssert(CIKChain::Proj != algor || valid_up);
 
 					int n_iter = 20;
 					if (TIXML_SUCCESS != ele->QueryIntAttribute("n_iter", &n_iter))
@@ -578,13 +623,19 @@ namespace CONF
 
 					const char* P_Graph = ele->Attribute("P_Graph");
 
-					body_confs[I_Body(node)]->AddIKChain(eef_name
+					if (numerical_algor)
+						body_confs[I_Body(node)]->AddIKChain(eef_name
 														, len
 														, algor
 														, weight_p
 														, weight_r
 														, n_iter
 														, NULL != P_Graph ? P_Graph : "");
+					else
+						body_confs[I_Body(node)]->AddIKChain(eef_name
+														, len
+														, algor
+														, up);
 				}
 				else if("Joint" == name)
 				{
