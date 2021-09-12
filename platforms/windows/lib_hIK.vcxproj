@@ -386,6 +386,7 @@
     <ClInclude Include="..\..\src\ArtiBody.h" />
     <ClInclude Include="..\..\src\bvh11_helper.hpp" />
     <ClInclude Include="..\..\src\handle_helper.hpp" />
+    <ClInclude Include="..\..\src\IKChain.hpp" />
     <ClInclude Include="..\..\src\IKGroupTree.hpp" />
     <ClInclude Include="..\..\src\Joint.h" />
     <ClInclude Include="..\..\src\ik_logger.h" />
@@ -401,6 +402,7 @@
     <ClCompile Include="..\..\src\articulated_body.cpp" />
     <ClCompile Include="..\..\src\bvh.cpp" />
     <ClCompile Include="..\..\src\bvh11_helper.cpp" />
+    <ClCompile Include="..\..\src\IKChain.cpp" />
     <ClCompile Include="..\..\src\IKGroupTree.cpp" />
     <ClCompile Include="..\..\src\Joint.cpp" />
     <ClCompile Include="..\..\src\ik_logger.cpp" />
