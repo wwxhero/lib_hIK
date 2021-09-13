@@ -25,7 +25,7 @@ public:
 
 public:
 	CIKChain(Algor algor);
-	bool Init(const CArtiBodyNode* eef, int len);
+	virtual bool Init(const CArtiBodyNode* eef, int len);
 	void SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst
 					, const Eigen::Matrix3r& src2dst_w
 					, const Eigen::Matrix3r& dst2src_w);
@@ -79,7 +79,8 @@ private:
 class CIKChainProj : public CIKChain
 {
 public:
-	CIKChainProj();
+	CIKChainProj(const Real norm[3]);
+	virtual bool Init(const CArtiBodyNode* eef, int len) override;
 	virtual void Dump(std::stringstream& info) const override;
 	virtual void UpdateNext(int step) override;
 
@@ -87,5 +88,33 @@ public:
 	virtual void UpdateAll() override;
 private:
 	void Update();
+	struct Plane
+	{
+		Eigen::Vector3r n;
+		Eigen::Vector3r p;
+		Eigen::Vector3r ProjP(const Eigen::Vector3r& a_p) const
+		{
+			Real t = (p - a_p).transpose() * n;
+			return a_p + t*n;
+		}
+		Eigen::Vector3r ProjV(const Eigen::Vector3r& a_v) const
+		{
+			Eigen::Vector3r Proj_n_v = (a_v.transpose()*n)*n;
+			return a_v - Proj_n_v;
+		}
+
+		bool in_P(const Eigen::Vector3r& a_p, Real epsilon = c_epsilon) const
+		{
+			Real err = (a_p - p).transpose() * n;
+			return -epsilon < err && err < epsilon;
+		}
+
+		bool in_V(const Eigen::Vector3r& a_v, Real epsilon = c_epsilon) const
+		{
+			Real err = a_v.transpose() * n;
+			return -epsilon < err && err < epsilon;
+		}
+	};
+	Plane m_terrain;
 
 };

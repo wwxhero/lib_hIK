@@ -133,7 +133,7 @@ public:
 		switch(c_conf->algor)
 		{
 			case CIKChain::Proj:
-				chain = new CIKChainProj();
+				chain = new CIKChainProj(c_conf->up);
 				break;
 			default:
 				chain = new CIKChain(c_conf->algor);

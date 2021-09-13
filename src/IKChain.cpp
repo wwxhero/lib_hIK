@@ -104,9 +104,22 @@ void CIKChain::Dump(std::stringstream& info) const
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKChainProj:
 
-CIKChainProj::CIKChainProj()
+CIKChainProj::CIKChainProj(const Real norm[3])
 	: CIKChain(Proj)
 {
+	m_terrain.n << norm[0], norm[1], norm[2];
+	UnitVec(m_terrain.n);
+}
+
+bool CIKChainProj::Init(const CArtiBodyNode* eef, int len)
+{
+	bool initialized = CIKChain::Init(eef, len);
+	if (initialized)
+	{
+		const Transform* l2w_0 = m_segments[0].body->GetTransformLocal2World();
+		m_terrain.p = l2w_0->getTranslation();
+	}
+	return initialized;
 }
 
 void CIKChainProj::Dump(std::stringstream& info) const
@@ -132,23 +145,37 @@ void CIKChainProj::Update()
 	m_eefSrc->GetGoal(goal);
 	IKAssert(NoScale(goal));
 
-	Transform_TR tm_t(goal);
-	const Transform_TR* tm[] = {
-		static_cast<const Transform_TR*>(m_segments[0].body->GetTransformLocal2Parent0())
-		, static_cast<const Transform_TR*>(m_eefSrc->GetTransformLocal2Parent0())
-	};
-	Transform_TR tm_0;
-	tm_0.Update(*tm[0], *tm[1]);
+	Eigen::Quaternionr R(goal.r.w, goal.r.x, goal.r.y, goal.r.z);
+	Eigen::Vector3r T(goal.tt.x, goal.tt.y, goal.tt.z);
 
-	// tm_0 * delta = tm_t
-	//		=> delta = (tm_0 ^ -1)*tm_t
-	Transform_TR tm_0_inv = tm_0.inverse();
-	Transform_TR delta;
-	delta.Update(tm_0_inv, tm_t);
+	Eigen::Quaternionr R_0 = Eigen::Quaternionr::Identity();
+	Eigen::Quaternionr R_1 = R;
 
-	IJoint* eef = m_eefSrc->GetJoint();
-	eef->SetRotation(delta.getRotation_q());
-	eef->SetTranslation(delta.getTranslation());
+	Eigen::Vector3r T_0 = m_terrain.ProjP(T);
+	Eigen::Vector3r T_1 = T - T_0;
+
+	Eigen::Quaternionr* Rs[] = {&R_0, &R_1};
+	Eigen::Vector3r* Ts[] = {&T_0, &T_1};
+
+	CArtiBodyNode* bodies[] = {m_segments[0].body, m_eefSrc};
+	IJoint* joints[] = {m_segments[0].joint, m_eefSrc->GetJoint()};
+
+	for (int i_kina = 0; i_kina < 2; i_kina ++)
+	{
+		Transform_TR l2p_i;
+		l2p_i.setRotation(*Rs[i_kina]);
+		l2p_i.setTranslation(*Ts[i_kina]);
+		const Transform* l2p_i_0_temp = bodies[i_kina]->GetTransformLocal2Parent0();
+		IKAssert(t_tr == l2p_i_0_temp->Type());
+		const Transform_TR* l2p_i_0 = static_cast<const Transform_TR*>(l2p_i_0_temp);
+		// l2p_0_0 * delta = l2p_0;
+		//		=> delta = (l2p_0_0^-1)*l2p_0
+		Transform_TR delta_i;
+		delta_i.Update(l2p_i_0->inverse(), l2p_i);
+		auto joint_i = joints[i_kina];
+		joint_i->SetRotation(delta_i.getRotation_q());
+		joint_i->SetTranslation(delta_i.getTranslation());
+	}
 
 	CArtiBodyTree::FK_Update(m_segments[0].body);
 }

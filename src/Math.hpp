@@ -1,3 +1,5 @@
+#pragma once
+
 #pragma push_macro("new")
 #undef new
 
@@ -42,3 +44,10 @@ typedef Transform<Real,3,Affine> Affine3r;
 #pragma pop_macro("new")
 
 void vec_roll_to_mat3_normalized(const Eigen::Vector3r& nor, const Real roll, Eigen::Matrix3r& rotm);
+
+inline bool UnitVec(const Eigen::Vector3r& v)
+{
+	Real err = v.squaredNorm() - 1;
+	return -c_2epsilon < err
+					&& err < c_2epsilon;
+}

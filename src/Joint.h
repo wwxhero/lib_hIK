@@ -56,7 +56,6 @@ public:
 
 	virtual void SetLinear(const Eigen::Matrix3r& rotm)
 	{
-		IKAssert(NoScale(rotm));
 		m_tm.setLinear(rotm);
 	}
 

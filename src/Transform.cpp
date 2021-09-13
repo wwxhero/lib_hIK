@@ -96,7 +96,7 @@ Eigen::Matrix3r Transform_R::getLinear() const
 
 void Transform_R::setLinear(const Eigen::Matrix3r& tm_l)
 {
-	assert(tm_l.isUnitary((Real)0.005));
+	IKAssert(tm_l.isUnitary(c_rotm_epsilon));
 	m_rotq = tm_l;
 }
 
@@ -107,7 +107,7 @@ Eigen::Vector3r Transform_R::getTranslation() const
 
 void Transform_R::setTranslation(const Eigen::Vector3r& tt)
 {
-	assert(tt.norm() < c_epsilon);
+	IKAssert(tt.norm() < c_epsilon);
 }
 
 std::string Transform_R::ToString() const

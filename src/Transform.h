@@ -36,6 +36,12 @@ public:
 	virtual void CopyFrom(const _TRANSFORM& tm) = 0;
 	virtual Eigen::Matrix3r getRotation_m() const;
 	virtual Eigen::Affine3r getAffine() const;
+	TM_TYPE Type() const
+	{
+		return c_type;
+	}
+protected:
+	TM_TYPE c_type;
 };
 
 class Transform_TRS
@@ -56,25 +62,30 @@ public:
 	Transform_TRS(const _TRANSFORM& tm)
 	{
 		Init(tm);
+		c_type = t_trs;
 	}
 
 	Transform_TRS(const Transform_TRS& tm)
 		: Super(tm)
 	{
+		c_type = t_trs;
 	}
 
 	Transform_TRS(const Eigen::Affine3r& tm)
 		: Super(tm)
 	{
+		c_type = t_trs;
 	}
 
 	Transform_TRS()
 	{
+		c_type = t_trs;
 		setIdentity();
 	}
 
 	explicit Transform_TRS(const Real m_affine[3][4])
 	{
+		c_type = t_trs;
 		Real* dat = data();
 		for (int i_r = 0; i_r < 3; i_r ++)
 		{
@@ -137,11 +148,13 @@ class Transform_R : public Transform
 public:
 	Transform_R(const _TRANSFORM& tm)
 	{
+		c_type = t_r;
 		Init(tm);
 	}
 
 	Transform_R()
 	{
+		c_type = t_r;
 		m_rotq.setIdentity();
 	}
 
@@ -189,11 +202,13 @@ class Transform_TR : public Transform_R
 public:
 	Transform_TR(const _TRANSFORM& tm)
 	{
+		c_type = t_tr;
 		Init(tm);
 	}
 
 	Transform_TR()
 	{
+		c_type = t_tr;
 		m_rotq.setIdentity();
 		m_tt.setZero();
 	}
