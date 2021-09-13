@@ -330,7 +330,7 @@ void unload_mopipe(MotionPipe* a_mopipe)
 void fk_update(MotionPipe* a_mopipe, unsigned int i_frame)
 {
 	MotionPipeInternal* mopipe = static_cast<MotionPipeInternal*>(a_mopipe);
-	IKAssert(mopipe->type == MotionPipeInternal::FK);
+	IKAssert(MotionPipeInternal::FK == mopipe->type);
 	const int c_idxSim = 0;
 	pose_body(mopipe->bvh, mopipe->bodies[c_idxSim], i_frame);
 	motion_sync(mopipe->mo_nodes[c_idxSim]);
@@ -346,6 +346,7 @@ void ik_task(HBODY body_t, const _TRANSFORM* l2w)
 void ik_update(MotionPipe* mopipe)
 {
 	MotionPipeInternal* mopipe_internal = static_cast<MotionPipeInternal*>(mopipe);
+	IKAssert(MotionPipeInternal::IK == mopipe_internal->type);
 	auto OnGroupNode = [](CIKGroupNode* node_this)
 					{
 						node_this->IKUpdate();
@@ -356,6 +357,8 @@ void ik_update(MotionPipe* mopipe)
 					};
 
 	CIKGroupTree::TraverseDFS(mopipe_internal->root_ik, OnGroupNode, OffGroupNode);
+	const int c_idxSim = 0;
+	motion_sync(mopipe->mo_nodes[c_idxSim]);
 }
 
 HMOTIONNODE	create_tree_motion_node(HBODY mo_src)

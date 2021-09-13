@@ -1,6 +1,28 @@
 #pragma once
 #include "articulated_body.h"
 #include "Math.hpp"
+#include "ik_logger.h"
+
+inline bool NoScale(const _TRANSFORM& tm)
+{
+	auto err_x = tm.s.x - (Real)1;
+	auto err_y = tm.s.y - (Real)1;
+	auto err_z = tm.s.z - (Real)1;
+	return (-c_epsilon < err_x && err_x < c_epsilon)
+		&& (-c_epsilon < err_y && err_y < c_epsilon)
+		&& (-c_epsilon < err_z && err_z < c_epsilon);
+
+}
+
+inline bool NoScale(const Eigen::Matrix3r& lin)
+{
+	Eigen::Matrix3r lin_t = lin.transpose();
+	Eigen::Matrix3r product = lin * lin_t;
+	Eigen::Matrix3r err3x3 = product - Eigen::Matrix3r::Identity();
+	Real err = err3x3.squaredNorm();
+	return -c_epsilon < err
+					&& err < c_epsilon;
+}
 
 class Transform
 {
@@ -79,6 +101,10 @@ public:
 	virtual Eigen::Vector3r getTranslation() const;
 	virtual void setTranslation(const Eigen::Vector3r& tt);
 	virtual Eigen::Affine3r getAffine() const;
+	inline void setRotation(const Eigen::Quaternionr& rotq)
+	{
+		linear() = rotq.matrix();
+	}
 };
 
 class Transform_T : public Transform
@@ -137,6 +163,10 @@ public:
 	{
 		return m_rotq;
 	}
+	inline void setRotation(const Eigen::Quaternionr& rotq)
+	{
+		m_rotq = rotq;
+	}
 protected:
 	Eigen::Quaternionr m_rotq;
 };
@@ -145,9 +175,7 @@ class Transform_TR : public Transform_R
 {
 	void Init(const _TRANSFORM& tm)
 	{
-		assert(1 == tm.s.x
-			&& 1 == tm.s.y
-			&& 1 == tm.s.z);
+		IKAssert(NoScale(tm));
 
 		m_rotq.w() = tm.r.w;
 		m_rotq.x() = tm.r.x;
@@ -205,8 +233,9 @@ public:
 
 	bool Valid() const
 	{
-		auto abs_rotq = m_rotq.norm();
-		return 1 - c_epsilon < abs_rotq && abs_rotq < 1 + c_epsilon;
+		auto abs_rotq = m_rotq.squaredNorm();
+		Real err = abs_rotq - (Real)1;
+		return 1 - c_2epsilon < abs_rotq && abs_rotq < 1 + c_2epsilon;
 	}
 private:
 	Eigen::Vector3r m_tt;

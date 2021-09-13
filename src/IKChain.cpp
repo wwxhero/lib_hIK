@@ -11,8 +11,9 @@ END_ENUM_STR(CIKChain, Algor)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKChain:
 
-CIKChain::CIKChain()
-	: m_eefSrc(NULL)
+CIKChain::CIKChain(Algor algor)
+	: c_algor(algor)
+	, m_eefSrc(NULL)
 	, m_targetDst(NULL)
 	, m_nSteps(20)
 {
@@ -20,8 +21,9 @@ CIKChain::CIKChain()
 
 bool CIKChain::Init(const CArtiBodyNode* eef, int len)
 {
+	IKAssert(Proj != c_algor || 1 == len); // (c_algor == Proj) -> 1 == len
 	m_eefSrc = const_cast<CArtiBodyNode*>(eef);
-	m_bodies.resize(len);
+	m_segments.resize(len);
 	CArtiBodyNode* body_p = NULL;
 	int i_start = len - 1;
 	int i_end = -1;
@@ -30,7 +32,9 @@ bool CIKChain::Init(const CArtiBodyNode* eef, int len)
 		; i > i_end && NULL != body_p
 		; i --, body_p = body_p->GetParent())
 	{
-		m_bodies[i] = body_p->GetJoint();
+		Segment& seg_i = m_segments[i];
+		seg_i.joint = body_p->GetJoint();
+		seg_i.body = body_p;
 	}
 
 	bool initialized = (i == i_end);
@@ -61,8 +65,9 @@ void CIKChain::BeginUpdate()
 {
 	IKAssert(NULL != m_eefSrc
 		&& NULL != m_targetDst);
-	Transform_TRS target_dst_w;
-	m_targetDst->GetGoal(target_dst_w);
+	_TRANSFORM tm;
+	m_targetDst->GetGoal(tm);
+	Transform_TRS target_dst_w(tm);
 
 	Transform_TRS target_src_w;
 	Eigen::Matrix3r target_linear_src_w = m_dst2srcW * target_dst_w.getLinear() * m_src2dstW_Offset;
@@ -88,8 +93,8 @@ void CIKChain::BeginUpdate()
 void CIKChain::Dump(std::stringstream& info) const
 {
 	info << "{";
-	for (auto body : m_bodies)
-		info <<" "<< body->GetName_c();
+	for (auto seg : m_segments)
+		info <<" "<< seg.body->GetName_c();
 	info << " " << m_eefSrc->GetName_c();
 	info << "}";
 }
@@ -100,6 +105,50 @@ void CIKChain::Dump(std::stringstream& info) const
 // CIKChainProj:
 
 CIKChainProj::CIKChainProj()
+	: CIKChain(Proj)
 {
+}
 
+void CIKChainProj::Dump(std::stringstream& info) const
+{
+	info << "CIKChainProj:";
+	CIKChain::Dump(info);
+}
+
+void CIKChainProj::UpdateNext(int step)
+{
+	Update();
+}
+
+void CIKChainProj::UpdateAll()
+{
+	Update();
+}
+
+// make it to be inline
+void CIKChainProj::Update()
+{
+	_TRANSFORM goal;
+	m_eefSrc->GetGoal(goal);
+	IKAssert(NoScale(goal));
+
+	Transform_TR tm_t(goal);
+	const Transform_TR* tm[] = {
+		static_cast<const Transform_TR*>(m_segments[0].body->GetTransformLocal2Parent0())
+		, static_cast<const Transform_TR*>(m_eefSrc->GetTransformLocal2Parent0())
+	};
+	Transform_TR tm_0;
+	tm_0.Update(*tm[0], *tm[1]);
+
+	// tm_0 * delta = tm_t
+	//		=> delta = (tm_0 ^ -1)*tm_t
+	Transform_TR tm_0_inv = tm_0.inverse();
+	Transform_TR delta;
+	delta.Update(tm_0_inv, tm_t);
+
+	IJoint* eef = m_eefSrc->GetJoint();
+	eef->SetRotation(delta.getRotation_q());
+	eef->SetTranslation(delta.getTranslation());
+
+	CArtiBodyTree::FK_Update(m_segments[0].body);
 }

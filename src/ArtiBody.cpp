@@ -163,7 +163,8 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 			{rot_q.w(), rot_q.x(), rot_q.y(), rot_q.z()},
 			{tt_this.x(), tt_this.y(), tt_this.z()}
 		};
-		TM_TYPE tm_type = (is_root? t_tr : t_r);
+		// entity node and hip node are tr nodes: translation + rotation
+		TM_TYPE tm_type = ((is_root || NULL == parent_src->GetParent()) ? t_tr : t_r);
 		const wchar_t* name_dst = (NULL == name_dst_opt ? src->GetName_w() : name_dst_opt);
 		*dst = CreateSimNode(name_dst, &tm, htr, tm_type, false);
 

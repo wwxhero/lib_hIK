@@ -129,7 +129,17 @@ public:
 
 	CIKChain* Generate() const
 	{
-		CIKChain* chain = new CIKChain();
+		CIKChain* chain = NULL;
+		switch(c_conf->algor)
+		{
+			case CIKChain::Proj:
+				chain = new CIKChainProj();
+				break;
+			default:
+				chain = new CIKChain(c_conf->algor);
+				break;
+		}
+
 		if (!chain->Init(c_eef->c_body, c_conf->len))
 		{
 			delete chain;

@@ -9,7 +9,6 @@
 class CIKChain
 {
 public:
-	public:
 	enum Algor
 	{
 		Proj = 0x00000001
@@ -24,17 +23,16 @@ public:
 	// static Algor toAlgor(const char* algor_str);
 	DECLARE_ENUM_STR(Algor)
 
-
-
 public:
-	CIKChain();
+	CIKChain(Algor algor);
 	bool Init(const CArtiBodyNode* eef, int len);
 	void SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst
 					, const Eigen::Matrix3r& src2dst_w
 					, const Eigen::Matrix3r& dst2src_w);
 
-	void Dump(std::stringstream& info) const;
-	virtual void BeginUpdate();
+	virtual void Dump(std::stringstream& info) const;
+
+	void BeginUpdate();
 
 	virtual void UpdateNext(int step)
 	{
@@ -46,7 +44,7 @@ public:
 
 	}
 
-	virtual void EndUpdate()
+	void EndUpdate()
 	{
 
 	}
@@ -58,19 +56,36 @@ public:
 
 	int NBodies() const
 	{
-		return (int)m_bodies.size();
+		return (int)m_segments.size();
 	}
-private:
-	std::vector<IJoint*> m_bodies;
+public:
+	const Algor c_algor;
+protected:
+	struct Segment
+	{
+		CArtiBodyNode* body;
+		IJoint* joint;
+	};
+	std::vector<Segment> m_segments;
 	CArtiBodyNode* m_eefSrc;
-	CArtiBodyNode* m_targetDst;
 	int m_nSteps;
+private:
+	CArtiBodyNode* m_targetDst;
 	Eigen::Matrix3r m_src2dstW_Offset;
 	Eigen::Matrix3r m_dst2srcW;
+
 };
 
 class CIKChainProj : public CIKChain
 {
 public:
 	CIKChainProj();
+	virtual void Dump(std::stringstream& info) const override;
+	virtual void UpdateNext(int step) override;
+
+	// this is a quick IK update solution
+	virtual void UpdateAll() override;
+private:
+	void Update();
+
 };

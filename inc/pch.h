@@ -81,6 +81,7 @@ typedef void* HCONFMOPIPE;
 #endif
 
 const Real c_epsilon = 1e-5f;
+const Real c_2epsilon = 2e-5f;
 
 #include <crtdbg.h>
 #if defined LEAK_CHECK

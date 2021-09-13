@@ -1,6 +1,7 @@
 #pragma once
 #include "Transform.h"
 #include "articulated_body.h"
+#include "ik_logger.h"
 
 class CArtiBodyNode;
 
@@ -13,6 +14,7 @@ public:
 	virtual const Transform* GetTransform() const = 0;
 	virtual Transform* GetTransform() = 0;
 	virtual void SetLinear(const Eigen::Matrix3r& rotm) = 0;
+	virtual void SetRotation(const Eigen::Quaternionr& rotq) = 0;
 	virtual void SetTranslation(const Eigen::Vector3r& tt) = 0;
 };
 
@@ -54,7 +56,13 @@ public:
 
 	virtual void SetLinear(const Eigen::Matrix3r& rotm)
 	{
+		IKAssert(NoScale(rotm));
 		m_tm.setLinear(rotm);
+	}
+
+	virtual void SetRotation(const Eigen::Quaternionr& rotq)
+	{
+		m_tm.setRotation(rotq);
 	}
 
 	virtual void SetTranslation(const Eigen::Vector3r& tt)
