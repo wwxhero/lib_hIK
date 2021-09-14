@@ -3,7 +3,7 @@
 #include <stack>
 #include <map>
 #include "articulated_body.h"
-#include "ArtiBody.h"
+#include "ArtiBody.hpp"
 #include "ik_logger.h"
 #include <sstream>
 

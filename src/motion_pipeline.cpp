@@ -1,7 +1,7 @@
 #include "pch.h"
 #include <filesystem>
 #include "motion_pipeline.h"
-#include "MoNode.h"
+#include "MoNode.hpp"
 #include "handle_helper.hpp"
 #include "MotionPipeConf.hpp"
 #include "bvh.h"

@@ -2,7 +2,7 @@
 #include <vector>
 #include <map>
 #include "macro_helper.h"
-#include "ArtiBody.h"
+#include "ArtiBody.hpp"
 #include "ik_logger.h"
 #include "matrix3.h"
 class CMoNode : public TreeNode<CMoNode>

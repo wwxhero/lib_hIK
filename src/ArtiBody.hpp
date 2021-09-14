@@ -1,9 +1,9 @@
 #pragma once
 #include <string>
 #include <list>
-#include "TreeBase.h"
-#include "Joint.h"
-#include "Transform.h"
+#include "TreeBase.hpp"
+#include "Joint.hpp"
+#include "Transform.hpp"
 #include "ik_logger.h"
 
 class CArtiBodyNode : public TreeNode<CArtiBodyNode>

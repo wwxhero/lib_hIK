@@ -1,6 +1,6 @@
 #pragma once
 #include <map>
-#include "ArtiBody.h"
+#include "ArtiBody.hpp"
 #include "macro_helper.h"
 
 #define NumericalAlgor(algor)\

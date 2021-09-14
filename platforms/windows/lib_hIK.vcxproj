@@ -383,19 +383,19 @@
     <ClInclude Include="..\..\inc\fk_joint.h" />
     <ClInclude Include="..\..\inc\motion_pipeline.h" />
     <ClInclude Include="..\..\inc\pch.h" />
-    <ClInclude Include="..\..\src\ArtiBody.h" />
+    <ClInclude Include="..\..\src\ArtiBody.hpp" />
     <ClInclude Include="..\..\src\bvh11_helper.hpp" />
     <ClInclude Include="..\..\src\handle_helper.hpp" />
     <ClInclude Include="..\..\src\IKChain.hpp" />
     <ClInclude Include="..\..\src\IKGroupTree.hpp" />
-    <ClInclude Include="..\..\src\Joint.h" />
+    <ClInclude Include="..\..\src\Joint.hpp" />
     <ClInclude Include="..\..\src\ik_logger.h" />
     <ClInclude Include="..\..\src\loggerSrv_i.h" />
     <ClInclude Include="..\..\src\matrix3.h" />
-    <ClInclude Include="..\..\src\MoNode.h" />
+    <ClInclude Include="..\..\src\MoNode.hpp" />
     <ClInclude Include="..\..\src\MotionPipeConf.hpp" />
-    <ClInclude Include="..\..\src\Transform.h" />
-    <ClInclude Include="..\..\src\treebase.h" />
+    <ClInclude Include="..\..\src\Transform.hpp" />
+    <ClInclude Include="..\..\src\treebase.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\ArtiBody.cpp" />
