@@ -2,7 +2,7 @@
 #include <vector>
 #include <map>
 #include "macro_helper.h"
-#include "ArtiBody.h"
+#include "ArtiBody.hpp"
 #include "ik_logger.h"
 #include "matrix3.h"
 class CMoNode : public TreeNode<CMoNode>
@@ -15,8 +15,8 @@ private:
 	{
 		const IJoint* j_from;
 		IJoint* j_to;
-		Matrix3 from2to;
-		Matrix3 to2from;
+		Eigen::Matrix3r from2to;
+		Eigen::Matrix3r to2from;
 	};
 
 	inline bool InitJointPair(JointPair* pair, const CArtiBodyNode* artiPair[2], TM_TYPE tm_type, const Real mf2t_w[3][3])
@@ -29,11 +29,13 @@ private:
 		// Transform_TRS s = Transform_TRS::Scale(6);
 		// f2t_w = f2t_w * s;
 
-		Matrix3 f2t_w;
+		Eigen::Matrix3r f2t_w;
 		if (NULL == mf2t_w)
 			f2t_w.setIdentity();
 		else
-			f2t_w.setData(mf2t_w);
+			f2t_w << mf2t_w[0][0], mf2t_w[0][1], mf2t_w[0][2],
+					 mf2t_w[1][0], mf2t_w[1][1], mf2t_w[1][2],
+					 mf2t_w[2][0], mf2t_w[2][1], mf2t_w[2][2];
 
 		pair->j_from = artiPair[0]->GetJoint();
 		pair->j_to = const_cast<CArtiBodyNode*>(artiPair[1])->GetJoint();
@@ -65,8 +67,8 @@ private:
 #if defined _DEBUG || defined SMOOTH_LOGGING
 		std::stringstream logInfo;
 		logInfo << "Binding:" << CMoNode::from_TM_TYPE(tm_type) << "\t"
-				<< pair->j_from->GetName_c() << " => " << pair->j_to->GetName_c() << ":"
-				<< pair->from2to.ToString().c_str();
+				<< pair->j_from->GetName_c() << " => " << pair->j_to->GetName_c() << ":\n" 
+				<< pair->from2to;
 		LOGIK(logInfo.str().c_str());
 #endif
 		return ok;

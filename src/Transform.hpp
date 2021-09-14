@@ -1,6 +1,18 @@
 #pragma once
 #include "articulated_body.h"
 #include "Math.hpp"
+#include "ik_logger.h"
+
+inline bool NoScale(const _TRANSFORM& tm)
+{
+	auto err_x = tm.s.x - (Real)1;
+	auto err_y = tm.s.y - (Real)1;
+	auto err_z = tm.s.z - (Real)1;
+	return (-c_epsilon < err_x && err_x < c_epsilon)
+		&& (-c_epsilon < err_y && err_y < c_epsilon)
+		&& (-c_epsilon < err_z && err_z < c_epsilon);
+
+}
 
 class Transform
 {
@@ -14,6 +26,12 @@ public:
 	virtual void CopyFrom(const _TRANSFORM& tm) = 0;
 	virtual Eigen::Matrix3r getRotation_m() const;
 	virtual Eigen::Affine3r getAffine() const;
+	TM_TYPE Type() const
+	{
+		return c_type;
+	}
+protected:
+	TM_TYPE c_type;
 };
 
 class Transform_TRS
@@ -34,25 +52,30 @@ public:
 	Transform_TRS(const _TRANSFORM& tm)
 	{
 		Init(tm);
+		c_type = t_trs;
 	}
 
 	Transform_TRS(const Transform_TRS& tm)
 		: Super(tm)
 	{
+		c_type = t_trs;
 	}
 
 	Transform_TRS(const Eigen::Affine3r& tm)
 		: Super(tm)
 	{
+		c_type = t_trs;
 	}
 
 	Transform_TRS()
 	{
+		c_type = t_trs;
 		setIdentity();
 	}
 
 	explicit Transform_TRS(const Real m_affine[3][4])
 	{
+		c_type = t_trs;
 		Real* dat = data();
 		for (int i_r = 0; i_r < 3; i_r ++)
 		{
@@ -79,6 +102,10 @@ public:
 	virtual Eigen::Vector3r getTranslation() const;
 	virtual void setTranslation(const Eigen::Vector3r& tt);
 	virtual Eigen::Affine3r getAffine() const;
+	inline void setRotation(const Eigen::Quaternionr& rotq)
+	{
+		linear() = rotq.matrix();
+	}
 };
 
 class Transform_T : public Transform
@@ -111,11 +138,13 @@ class Transform_R : public Transform
 public:
 	Transform_R(const _TRANSFORM& tm)
 	{
+		c_type = t_r;
 		Init(tm);
 	}
 
 	Transform_R()
 	{
+		c_type = t_r;
 		m_rotq.setIdentity();
 	}
 
@@ -137,6 +166,10 @@ public:
 	{
 		return m_rotq;
 	}
+	inline void setRotation(const Eigen::Quaternionr& rotq)
+	{
+		m_rotq = rotq;
+	}
 protected:
 	Eigen::Quaternionr m_rotq;
 };
@@ -145,9 +178,7 @@ class Transform_TR : public Transform_R
 {
 	void Init(const _TRANSFORM& tm)
 	{
-		assert(1 == tm.s.x
-			&& 1 == tm.s.y
-			&& 1 == tm.s.z);
+		IKAssert(NoScale(tm));
 
 		m_rotq.w() = tm.r.w;
 		m_rotq.x() = tm.r.x;
@@ -161,11 +192,13 @@ class Transform_TR : public Transform_R
 public:
 	Transform_TR(const _TRANSFORM& tm)
 	{
+		c_type = t_tr;
 		Init(tm);
 	}
 
 	Transform_TR()
 	{
+		c_type = t_tr;
 		m_rotq.setIdentity();
 		m_tt.setZero();
 	}
@@ -205,8 +238,9 @@ public:
 
 	bool Valid() const
 	{
-		auto abs_rotq = m_rotq.norm();
-		return 1 - c_epsilon < abs_rotq && abs_rotq < 1 + c_epsilon;
+		auto abs_rotq = m_rotq.squaredNorm();
+		Real err = abs_rotq - (Real)1;
+		return -c_2epsilon < err && err < +c_2epsilon;
 	}
 private:
 	Eigen::Vector3r m_tt;

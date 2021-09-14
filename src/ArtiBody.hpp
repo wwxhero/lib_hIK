@@ -1,9 +1,9 @@
 #pragma once
 #include <string>
 #include <list>
-#include "TreeBase.h"
-#include "Joint.h"
-#include "Transform.h"
+#include "TreeBase.hpp"
+#include "Joint.hpp"
+#include "Transform.hpp"
 #include "ik_logger.h"
 
 class CArtiBodyNode : public TreeNode<CArtiBodyNode>
@@ -27,10 +27,15 @@ public:
 
 	void SetGoal(const Transform_TRS& tm_w)
 	{
+		tm_w.CopyTo(m_goal);
+	}
+
+	void SetGoal(const _TRANSFORM& tm_w)
+	{
 		m_goal = tm_w;
 	}
 
-	void GetGoal(Transform_TRS& tm_w) const
+	void GetGoal(_TRANSFORM& tm_w) const
 	{
 		tm_w = m_goal;
 	}
@@ -51,7 +56,7 @@ protected:
 private:
 	std::string m_namec;
 	std::wstring m_namew;
-	Transform_TRS m_goal;
+	_TRANSFORM m_goal;
 public:
 	const BODY_TYPE c_type;
 	const TM_TYPE c_jtmflag;

@@ -1,7 +1,7 @@
 #include "pch.h"
 #include <filesystem>
 #include "motion_pipeline.h"
-#include "MoNode.h"
+#include "MoNode.hpp"
 #include "handle_helper.hpp"
 #include "MotionPipeConf.hpp"
 #include "bvh.h"
@@ -89,13 +89,17 @@ bool InitBody_Internal(HBODY bodySrc
 				DBG_printOutSkeletalHierachy(body_htr_2);
 			#endif
 
-			initialized = VALID_HANDLE(body_htr_1)
-						&& VALID_HANDLE(body_htr_2);
 			if (VALID_HANDLE(body_htr_1))
 			 		destroy_tree_body(body_htr_1);
 			hBody = body_htr_2;
 
 			root_ikGroup = CIKGroupTree::Generate(CAST_2PBODY(hBody), *body_conf_i);
+
+			bool valid_fk_body = VALID_HANDLE(hBody);
+			bool valid_ik_group = (NULL != root_ikGroup);
+			IKAssert(valid_fk_body);
+			IKAssert(valid_ik_group);
+			initialized = valid_fk_body && valid_ik_group;
 			break;
 		}
 
@@ -172,14 +176,15 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 				std::experimental::filesystem::path fullPath(confXML);
 				HBVH bvh = H_INVALID;
 				CIKGroupNode* root_ik = NULL;
-				InitBody_Internal(body_ref
-								, fullPath.parent_path().c_str()
-								, *mp_conf
-								, i_bodyConf
-								, mopipe->bodies[i_bodyConf]
-								, mopipe->n_frames
-								, bvh
-								, root_ik);
+				bool initialized = InitBody_Internal(body_ref
+													, fullPath.parent_path().c_str()
+													, *mp_conf
+													, i_bodyConf
+													, mopipe->bodies[i_bodyConf]
+													, mopipe->n_frames
+													, bvh
+													, root_ik);
+				IKAssert(initialized);
 				// IKAssert(VALID_HANDLE(bvh) == (NULL == root_ik));
 				if (VALID_HANDLE(bvh))
 				{
@@ -325,7 +330,7 @@ void unload_mopipe(MotionPipe* a_mopipe)
 void fk_update(MotionPipe* a_mopipe, unsigned int i_frame)
 {
 	MotionPipeInternal* mopipe = static_cast<MotionPipeInternal*>(a_mopipe);
-	IKAssert(mopipe->type == MotionPipeInternal::FK);
+	IKAssert(MotionPipeInternal::FK == mopipe->type);
 	const int c_idxSim = 0;
 	pose_body(mopipe->bvh, mopipe->bodies[c_idxSim], i_frame);
 	motion_sync(mopipe->mo_nodes[c_idxSim]);
@@ -341,6 +346,7 @@ void ik_task(HBODY body_t, const _TRANSFORM* l2w)
 void ik_update(MotionPipe* mopipe)
 {
 	MotionPipeInternal* mopipe_internal = static_cast<MotionPipeInternal*>(mopipe);
+	IKAssert(MotionPipeInternal::IK == mopipe_internal->type);
 	auto OnGroupNode = [](CIKGroupNode* node_this)
 					{
 						node_this->IKUpdate();
@@ -351,6 +357,8 @@ void ik_update(MotionPipe* mopipe)
 					};
 
 	CIKGroupTree::TraverseDFS(mopipe_internal->root_ik, OnGroupNode, OffGroupNode);
+	const int c_idxSim = 0;
+	motion_sync(mopipe->mo_nodes[c_idxSim]);
 }
 
 HMOTIONNODE	create_tree_motion_node(HBODY mo_src)

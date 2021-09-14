@@ -1,28 +1,10 @@
 #pragma once
 #include "pch.h"
 #include <queue>
-#include "macro_helper.h"
 #include "tinyxml.h"
-#include "MoNode.h"
+#include "MoNode.hpp"
 #include "motion_pipeline.h"
-
-
-class CKinaGroup
-{
-public:
-	enum Algor
-	{
-		Proj = 0
-		, DLS
-		, SDLS
-		, Unknown
-	};
-
-	// static const char* s_Algor_str[];
-	// static Algor s_Algor_val[];
-	// static Algor toAlgor(const char* algor_str);
-	DECLARE_ENUM_STR(Algor)
-};
+#include "IKChain.hpp"
 
 namespace CONF
 {
@@ -107,11 +89,17 @@ namespace CONF
 	public:
 		CIKChainConf(const char* eef_name
 					, int len
-					, CKinaGroup::Algor algor
+					, CIKChain::Algor algor
 					, Real weight_p
 					, Real weight_r
 					, int n_iter
 					, const char* P_Graph);
+		CIKChainConf(const char* eef_name
+					, int len
+					, CIKChain::Algor algor
+					, Real up[3]);
+		CIKChainConf(const CIKChainConf& src);
+		~CIKChainConf();
 		void AddJoint(const char* name);
 #ifdef _DEBUG
 		void Dump_Dbg() const;
@@ -119,10 +107,20 @@ namespace CONF
 	public:
 		std::string eef;
 		int len;
-		CKinaGroup::Algor algor;
-		Real weight_p;
-		Real weight_r;
-		int n_iter;
+		CIKChain::Algor algor;
+		union
+		{
+			struct // Numerical
+			{
+				Real weight_p;
+				Real weight_r;
+				int n_iter;
+			};
+			struct //Proj
+			{
+				Real up[3];
+			};
+		};
 		std::string P_Graph;
 		std::vector<CJointConf> Joints;
 	};
@@ -145,11 +143,15 @@ namespace CONF
 
 		void AddIKChain(const char* eef_name
 						, int len
-						, CKinaGroup::Algor algor
+						, CIKChain::Algor algor
 						, Real weight_p
 						, Real weight_r
 						, int n_iter
 						, const char* P_Graph);
+		void AddIKChain(const char* eef_name
+						, int len
+						, CIKChain::Algor algor
+						, Real up[3]);
 		CIKChainConf* GetIKChain(const char* eef_name);
 		int Name2IKChainIdx(const char* eef_name) const;
 #ifdef _DEBUG
