@@ -240,7 +240,7 @@ public:
 	{
 		auto abs_rotq = m_rotq.squaredNorm();
 		Real err = abs_rotq - (Real)1;
-		return 1 - c_2epsilon < abs_rotq && abs_rotq < 1 + c_2epsilon;
+		return -c_2epsilon < err && err < +c_2epsilon;
 	}
 private:
 	Eigen::Vector3r m_tt;
