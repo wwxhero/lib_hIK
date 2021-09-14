@@ -14,16 +14,6 @@ inline bool NoScale(const _TRANSFORM& tm)
 
 }
 
-inline bool NoScale(const Eigen::Matrix3r& lin)
-{
-	Eigen::Matrix3r lin_t = lin.transpose();
-	Eigen::Matrix3r product = lin * lin_t;
-	Eigen::Matrix3r err3x3 = product - Eigen::Matrix3r::Identity();
-	Real err = err3x3.squaredNorm();
-	return -c_epsilon < err
-					&& err < c_epsilon;
-}
-
 class Transform
 {
 public:
