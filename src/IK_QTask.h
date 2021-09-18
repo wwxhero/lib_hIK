@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "IK_Math.h"
+#include "Math.hpp"
 #include "IK_QJacobian.h"
 #include "IK_QSegment.h"
 
@@ -51,12 +51,12 @@ class IK_QTask {
     return m_primary;
   }
 
-  double Weight() const
+  Real Weight() const
   {
     return m_weight * m_weight;
   }
 
-  void SetWeight(double weight)
+  void SetWeight(Real weight)
   {
     m_weight = sqrt(weight);
   }
@@ -68,7 +68,7 @@ class IK_QTask {
     return false;
   }
 
-  virtual void Scale(double)
+  virtual void Scale(Real)
   {
   }
 
@@ -79,12 +79,12 @@ protected:
   int m_size;
   bool m_primary;
   const IK_QSegment *m_segment;
-  double m_weight;
+  Real m_weight;
 };
 
 class IK_QPositionTask : public IK_QTask {
  public:
-  IK_QPositionTask(bool primary, const IK_QSegment *segment, const Vector3d &goal);
+  IK_QPositionTask(bool primary, const IK_QSegment *segment, const Eigen::Vector3r &goal);
 
   void ComputeJacobian(IK_QJacobian &jacobian);
 
@@ -92,45 +92,25 @@ class IK_QPositionTask : public IK_QTask {
   {
     return true;
   }
-  virtual void Scale(double scale) override
+  virtual void Scale(Real scale) override
   {
     m_goal *= scale;
     m_clamp_length *= scale;
   }
 
  private:
-  Vector3d m_goal;
-  double m_clamp_length;
+  Eigen::Vector3r m_goal;
+  Real m_clamp_length;
 };
 
 class IK_QOrientationTask : public IK_QTask {
  public:
-  IK_QOrientationTask(bool primary, const IK_QSegment *segment, const Matrix3d &goal);
+  IK_QOrientationTask(bool primary, const IK_QSegment *segment, const Eigen::Matrix3r &goal);
 
   void ComputeJacobian(IK_QJacobian &jacobian);
 
  private:
-  Matrix3d m_goal;
+  Eigen::Matrix3r m_goal;
 };
 
-class IK_QCenterOfMassTask : public IK_QTask {
- public:
-  IK_QCenterOfMassTask(bool primary, const IK_QSegment *segment, const Vector3d &center);
 
-  void ComputeJacobian(IK_QJacobian &jacobian);
-
-
-  virtual void Scale(double scale) override
-  {
-    m_goal_center *= scale;
-  }
-
- private:
-  double ComputeTotalMass(const IK_QSegment *segment);
-  Vector3d ComputeCenter(const IK_QSegment *segment);
-  void JacobianSegment(IK_QJacobian &jacobian, Vector3d &center, const IK_QSegment *segment);
-
-  Vector3d m_goal_center;
-  double m_total_mass_inv;
-
-};
