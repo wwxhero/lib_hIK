@@ -32,22 +32,23 @@ class IK_QJacobian {
   ~IK_QJacobian();
 
   // Call once to initialize
-  void ArmMatrices(int dof, int task_size);
+  virtual void ArmMatrices(int dof, int task_size);
   void SetDoFWeight(int dof, Real weight);
 
   // Iteratively called
   void SetBetas(int id, int size, const Eigen::Vector3r &v);
-  void SetDerivatives(int id, int dof_id, const Eigen::Vector3r &v, Real norm_weight);
+  void SetDerivatives(int id, int dof_id, const Eigen::Vector3r &v);
   Eigen::Vector3r GetBeta(int id) const;
   int NumBetas() const;
-
+protected:
   void Invert();
+public:
 
   Real AngleUpdate(int dof_id) const;
   Real AngleUpdateNorm() const;
 
   // DoF locking for inner clamping loop
-  void Lock(int dof_id, Real delta);
+  virtual void Lock(int dof_id, Real delta);
 
   // Secondary task
   bool ComputeNullProjection();
@@ -64,16 +65,15 @@ class IK_QJacobian {
   {
     return (int)m_jacobian.cols();
   }
- private:
-  void InvertSDLS();
-  void InvertDLS();
+
+private:
 
   int m_dof;
   int m_task_size; // either 3 for position task of a chain, or 6 for position and orientation task
   bool m_transpose; // m_transpose = (m_task_size < m_dof)
 
   // the jacobian matrix and it's null space projector
-  Eigen::MatrixXr m_jacobian, m_jacobian_tmp;
+  Eigen::MatrixXr m_jacobian;
   Eigen::MatrixXr m_nullspace;
 
   /// the vector of intermediate betas
@@ -81,7 +81,6 @@ class IK_QJacobian {
 
   /// the vector of computed angle changes
   Eigen::VectorXr m_d_theta;
-  Eigen::VectorXr m_d_norm_weight;
 
   /// space required for SVD computation
   Eigen::VectorXr m_svd_w;
@@ -90,17 +89,27 @@ class IK_QJacobian {
 
   Eigen::VectorXr m_svd_u_beta;
 
-  // space required for SDLS
-
-  bool m_sdls;
-  Eigen::VectorXr m_norm;
-  Eigen::VectorXr m_d_theta_tmp;
-  Real m_min_damp;
-
-  // null space task vector
-  Eigen::VectorXr m_alpha;
-
   // dof weighting
   Eigen::VectorXr m_weight;
   Eigen::VectorXr m_weight_sqrt;
+};
+
+class IK_QJacobianDLS : public IK_QJacobian
+{
+public:
+  IK_QJacobianDLS();
+  void Invert();
+};
+
+class IK_QJacobianSDLS : public IK_QJacobian
+{
+public:
+  IK_QJacobianSDLS();
+  virtual void ArmMatrices(int dof, int task_size) override;
+  virtual void Lock(int dof_id, Real delta) override;
+  void Invert();
+private:
+  // space required for SDLS
+  Eigen::VectorXr m_norm;
+  Eigen::VectorXr m_d_theta_unclamped;
 };

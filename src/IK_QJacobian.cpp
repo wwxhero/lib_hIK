@@ -30,7 +30,7 @@
 #undef min
 #undef max
 
-IK_QJacobian::IK_QJacobian() : m_sdls(false), m_min_damp(1.0)
+IK_QJacobian::IK_QJacobian()
 {
 }
 
@@ -46,17 +46,9 @@ void IK_QJacobian::ArmMatrices(int dof, int task_size)
   m_jacobian.resize(task_size, dof);
   m_jacobian.setZero();
 
-  m_alpha.resize(dof);
-  m_alpha.setZero();
-
   m_nullspace.resize(dof, dof);
 
   m_d_theta.resize(dof);
-  m_d_theta_tmp.resize(dof);
-  m_d_norm_weight.resize(dof);
-
-  m_norm.resize(dof);
-  m_norm.setZero();
 
   m_beta.resize(task_size);
 
@@ -68,8 +60,6 @@ void IK_QJacobian::ArmMatrices(int dof, int task_size)
   if (task_size >= dof) {
     m_transpose = false;
 
-    m_jacobian_tmp.resize(task_size, dof);
-
     m_svd_u.resize(task_size, dof);
     m_svd_v.resize(dof, dof);
     m_svd_w.resize(dof);
@@ -80,8 +70,6 @@ void IK_QJacobian::ArmMatrices(int dof, int task_size)
     // use the SVD of the transpose jacobian, it works just as well
     // as the original, and often allows using smaller matrices.
     m_transpose = true;
-
-    m_jacobian_tmp.resize(dof, task_size);
 
     m_svd_u.resize(task_size, task_size);
     m_svd_v.resize(dof, task_size);
@@ -113,14 +101,11 @@ int IK_QJacobian::NumBetas() const
   return numBetas;
 }
 
-void IK_QJacobian::SetDerivatives(int id, int dof_id, const Eigen::Vector3r &v, Real norm_weight)
+void IK_QJacobian::SetDerivatives(int id, int dof_id, const Eigen::Vector3r &v)
 {
   m_jacobian(id + 0, dof_id) = v.x() * m_weight_sqrt[dof_id];
   m_jacobian(id + 1, dof_id) = v.y() * m_weight_sqrt[dof_id];
   m_jacobian(id + 2, dof_id) = v.z() * m_weight_sqrt[dof_id];
-
-  m_d_norm_weight[dof_id] = norm_weight;
-  LOGIKVar(LogInfoInt, id);
 }
 
 void IK_QJacobian::Invert()
@@ -128,9 +113,9 @@ void IK_QJacobian::Invert()
   LOGIKVar(LogInfoInt, (int)m_jacobian.rows());
   LOGIKVar(LogInfoInt, (int)m_jacobian.cols());
 
-  std::stringstream m_d_norm_weight_Info;
-  m_d_norm_weight_Info << "\n" << m_d_norm_weight;
-  LOGIKVar(LogInfoCharPtr, m_d_norm_weight_Info.str().c_str());
+  // std::stringstream m_d_norm_weight_Info;
+  // m_d_norm_weight_Info << "\n" << m_d_norm_weight;
+  // LOGIKVar(LogInfoCharPtr, m_d_norm_weight_Info.str().c_str());
 
   std::stringstream m_weight_Info;
   m_weight_Info << "\n" << m_weight;
@@ -166,16 +151,11 @@ void IK_QJacobian::Invert()
   LOGIKVar(LogInfoInt, (int)m_svd_v.rows());
   LOGIKVar(LogInfoInt, (int)m_svd_v.cols());
 
-
-  if (m_sdls)
-    InvertSDLS();
-  else
-    InvertDLS();
 }
 
 bool IK_QJacobian::ComputeNullProjection()
 {
-  Real epsilon = (Real)1e-10;
+  const Real epsilon = c_epsilon;
 
   // compute null space projection based on V
   int i, j, rank = 0;
@@ -238,8 +218,9 @@ void IK_QJacobian::Restrict(Eigen::VectorXr &d_theta, Eigen::MatrixXr &nullspace
   m_jacobian = m_jacobian * nullspace;
 }
 
-void IK_QJacobian::InvertSDLS()
+void IK_QJacobianSDLS::Invert()
 {
+  IK_QJacobian::Invert();
   // Compute the dampeds least squeares pseudo inverse of J.
   //
   // Since J is usually not invertible (most of the times it's not even
@@ -256,12 +237,11 @@ void IK_QJacobian::InvertSDLS()
   // DLS. The SDLS damps individual singular values, instead of using a single
   // damping term.
 
-  Real max_angle_change = (Real)(M_PI / 4.0);
-  Real epsilon = (Real)1e-10;
+  const Real max_angle_change = (Real)(M_PI / 4.0);
+  const Real epsilon = c_epsilon;
   int i, j;
 
   m_d_theta.setZero();
-  m_min_damp = 1.0;
 
   for (i = 0; i < m_dof; i++) {
     m_norm[i] = 0.0;
@@ -307,11 +287,11 @@ void IK_QJacobian::InvertSDLS()
       M += fabs(v) * m_norm[j];
 
       // compute tmporary dTheta's
-      m_d_theta_tmp[j] = v * alpha;
+      m_d_theta_unclamped[j] = v * alpha;
 
       // find largest absolute dTheta
       // multiply with weight to prevent unnecessary damping
-      abs_dtheta = fabs(m_d_theta_tmp[j]) * m_weight_sqrt[j];
+      abs_dtheta = fabs(m_d_theta_unclamped[j]) * m_weight_sqrt[j];
       if (abs_dtheta > max_dtheta)
         max_dtheta = abs_dtheta;
     }
@@ -334,11 +314,8 @@ void IK_QJacobian::InvertSDLS()
       if (dofdamp > 1.0)
         dofdamp = 1.0;
 
-      m_d_theta[j] += (Real)0.80 * dofdamp * m_d_theta_tmp[j];
+      m_d_theta[j] += (Real)0.80 * dofdamp * m_d_theta_unclamped[j];
     }
-
-    if (damp < m_min_damp)
-      m_min_damp = damp;
   }
 
   // weight + prevent from doing angle updates with angles > max_angle_change
@@ -361,8 +338,9 @@ void IK_QJacobian::InvertSDLS()
   }
 }
 
-void IK_QJacobian::InvertDLS()
+void IK_QJacobianDLS::Invert()
 {
+  IK_QJacobian::Invert();
   // Compute damped least squares inverse of pseudo inverse
   // Compute damping term lambda
 
@@ -380,9 +358,9 @@ void IK_QJacobian::InvertDLS()
   // find the smallest non-zero W value, anything below epsilon is
   // treated as zero
 
-  Real epsilon = (Real)1e-10;
-  Real max_angle_change = (Real)0.1;
-  Real x_length = sqrt(m_beta.dot(m_beta));
+  const Real epsilon = c_epsilon;
+  const Real max_angle_change = (Real)0.1;
+  const Real x_length = sqrt(m_beta.dot(m_beta));
 
   int i, j;
   Real w_min = std::numeric_limits<Real>::max();
@@ -443,7 +421,6 @@ void IK_QJacobian::Lock(int dof_id, Real delta)
     m_jacobian(i, dof_id) = 0.0;
   }
 
-  m_norm[dof_id] = 0.0;  // unneeded
   m_d_theta[dof_id] = 0.0;
 }
 
@@ -458,7 +435,7 @@ Real IK_QJacobian::AngleUpdateNorm() const
   Real mx = 0.0, dtheta_abs;
 
   for (i = 0; i < m_d_theta.size(); i++) {
-    dtheta_abs = fabs(m_d_theta[i] * m_d_norm_weight[i]);
+    dtheta_abs = fabs(m_d_theta[i]);
     if (dtheta_abs > mx)
       mx = dtheta_abs;
   }
@@ -470,6 +447,33 @@ void IK_QJacobian::SetDoFWeight(int dof, Real weight)
 {
   m_weight[dof] = weight;
   m_weight_sqrt[dof] = sqrt(weight);
+}
+
+
+IK_QJacobianDLS::IK_QJacobianDLS()
+  : IK_QJacobian()
+{
+}
+
+IK_QJacobianSDLS::IK_QJacobianSDLS()
+  : IK_QJacobian()
+{
+
+}
+
+
+void IK_QJacobianSDLS::ArmMatrices(int dof, int task_size)
+{
+  IK_QJacobian::ArmMatrices(dof, task_size);
+  m_d_theta_unclamped.resize(dof);
+  m_norm.resize(dof);
+  m_norm.setZero();
+}
+
+void IK_QJacobianSDLS::Lock(int dof_id, Real delta)
+{
+  IK_QJacobian::Lock(dof_id, delta);
+  m_norm[dof_id] = 0.0;  // unneeded
 }
 
 #pragma pop_macro("min")
