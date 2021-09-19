@@ -390,7 +390,7 @@
     <ClInclude Include="..\..\src\IKGroupTree.hpp" />
     <ClInclude Include="..\..\src\IK_QJacobian.h" />
     <ClInclude Include="..\..\src\IK_QJacobianSolver.h" />
-    <ClInclude Include="..\..\src\IK_QSegment.h" />
+    <ClInclude Include="..\..\src\IK_QSegment.hpp" />
     <ClInclude Include="..\..\src\IK_QTask.h" />
     <ClInclude Include="..\..\src\Joint.hpp" />
     <ClInclude Include="..\..\src\ik_logger.h" />

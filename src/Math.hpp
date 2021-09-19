@@ -52,6 +52,11 @@ inline bool UnitVec(const Eigen::Vector3r& v)
 					&& err < c_2epsilon;
 }
 
+inline bool FuzzyZero(Real x)
+{
+	return fabs(x) < c_epsilon;
+}
+
 struct Plane
 {
 	Eigen::Vector3r n;

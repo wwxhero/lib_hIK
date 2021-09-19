@@ -33,7 +33,7 @@
 
 #include "Math.hpp"
 #include "IK_QJacobian.h"
-#include "IK_QSegment.h"
+#include "IK_QSegment.hpp"
 #include "IK_QTask.h"
 
 class IK_QJacobianSolver {
@@ -49,15 +49,15 @@ class IK_QJacobianSolver {
   // returns true if converged, false if max number of iterations was used
   bool Solve(IK_QSegment *root,
              std::list<IK_QTask *> tasks,
-             const double tolerance,
+             const Real tolerance,
              const int max_iterations);
 
  protected:
   void AddSegmentList(IK_QSegment *seg);
-  bool UpdateAngles(double &norm);
+  bool UpdateAngles(Real &norm);
 
-  double ComputeScale();
-  void Scale(double scale, std::list<IK_QTask *> &tasks);
+  Real ComputeScale();
+  void Scale(Real scale, std::list<IK_QTask *> &tasks);
 
  protected:
   IK_QJacobianSDLS m_jacobian;
@@ -65,46 +65,9 @@ class IK_QJacobianSolver {
 
   bool m_secondary_enabled;
 
-  std::vector<IK_QSegment *> m_segments;
+  std::vector<IK_QSegment *> m_segments; //the corresponds to CIKChain::m_segments
 
 
 };
 
 
-class IK_QJacobianSolverPoleAngle : protected IK_QJacobianSolver
-{
-public:
-  IK_QJacobianSolverPoleAngle();
-
-    // setup pole vector constraint
-  void SetPoleVectorConstraint(
-      IK_QSegment *tip, Vector3d &goal, Vector3d &polegoal, float poleangle, bool getangle);
-  float GetPoleAngle()
-  {
-    return m_poleangle;
-  }
-  void ConstrainPoleVector(IK_QSegment *root, std::list<IK_QTask *> &tasks);
-
-  void Scale(double scale, std::list<IK_QTask *> &tasks);
-
-    // call setup once before solving, if it fails don't solve
-  bool Setup(IK_QSegment *root, std::list<IK_QTask *> &tasks)
-  {
-    return IK_QJacobianSolver::Setup(root, tasks);
-  }
-
-    // returns true if converged, false if max number of iterations was used
-  bool Solve(IK_QSegment *root,
-             std::list<IK_QTask *> tasks,
-             const double tolerance,
-             const int max_iterations);
-protected:
-  Affine3d m_rootmatrix;
-
-  bool m_poleconstraint;
-  bool m_getpoleangle;
-  Vector3d m_goal;
-  Vector3d m_polegoal;
-  float m_poleangle;
-  IK_QSegment *m_poletip;
-};

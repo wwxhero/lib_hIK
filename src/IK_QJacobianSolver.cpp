@@ -20,9 +20,8 @@
 /** \file
  * \ingroup iksolver
  */
-
-#include <stdio.h>
-
+#include "pch.h"
+#include "ik_logger.h"
 #include "IK_QJacobianSolver.h"
 
 //#include "analyze.h"
@@ -31,11 +30,11 @@ IK_QJacobianSolver::IK_QJacobianSolver()
 
 }
 
-double IK_QJacobianSolver::ComputeScale()
+Real IK_QJacobianSolver::ComputeScale()
 {
   return 1.0;
   std::vector<IK_QSegment *>::iterator seg;
-  double length = 0.0f;
+  Real length = (Real)0.0f;
 
   for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
     length += (*seg)->MaxExtension();
@@ -43,10 +42,10 @@ double IK_QJacobianSolver::ComputeScale()
   if (length == 0.0)
     return 1.0;
   else
-    return 1.0 / length;
+    return (Real)1.0 / length;
 }
 
-void IK_QJacobianSolver::Scale(double scale, std::list<IK_QTask *> &tasks)
+void IK_QJacobianSolver::Scale(Real scale, std::list<IK_QTask *> &tasks)
 {
   std::list<IK_QTask *>::iterator task;
   std::vector<IK_QSegment *>::iterator seg;
@@ -88,7 +87,7 @@ bool IK_QJacobianSolver::Setup(IK_QSegment *root, std::list<IK_QTask *> &tasks)
   // compute task id's and assing weights to task
   int primary_size = 0, primary = 0;
   int secondary_size = 0, secondary = 0;
-  double primary_weight = 0.0, secondary_weight = 0.0;
+  Real primary_weight = 0.0, secondary_weight = 0.0;
   std::list<IK_QTask *>::iterator task;
 
   for (task = tasks.begin(); task != tasks.end(); task++) {
@@ -114,12 +113,12 @@ bool IK_QJacobianSolver::Setup(IK_QSegment *root, std::list<IK_QTask *> &tasks)
   m_secondary_enabled = (secondary > 0);
 
   // rescale weights of tasks to sum up to 1
-  double primary_rescale = 1.0 / primary_weight;
-  double secondary_rescale;
+  Real primary_rescale = (Real)1.0 / primary_weight;
+  Real secondary_rescale;
   if (FuzzyZero(secondary_weight))
     secondary_rescale = 0.0;
   else
-    secondary_rescale = 1.0 / secondary_weight;
+    secondary_rescale = (Real)1.0 / secondary_weight;
 
   for (task = tasks.begin(); task != tasks.end(); task++) {
     IK_QTask *qtask = *task;
@@ -145,13 +144,15 @@ bool IK_QJacobianSolver::Setup(IK_QSegment *root, std::list<IK_QTask *> &tasks)
   return true;
 }
 
-bool IK_QJacobianSolver::UpdateAngles(double &norm)
+// true: exists a segment that is locked.
+// false: no segment is locked.
+bool IK_QJacobianSolver::UpdateAngles(Real &norm)
 {
   // assing each segment a unique id for the jacobian
   std::vector<IK_QSegment *>::iterator seg;
   IK_QSegment *qseg, *minseg = NULL;
-  double minabsdelta = 1e10, absdelta;
-  Vector3d delta, mindelta;
+  Real minabsdelta = 1e10, absdelta;
+  Eigen::Vector3r delta, mindelta;
   bool locked = false, clamp[3];
   int i, mindof = 0;
 
@@ -165,7 +166,7 @@ bool IK_QJacobianSolver::UpdateAngles(double &norm)
         if (clamp[i] && !qseg->Locked(i)) {
           absdelta = fabs(delta[i]);
 
-          if (absdelta < IK_EPSILON) {
+          if (absdelta < c_epsilon) {
             qseg->Lock(i, m_jacobian, delta);
             locked = true;
           }
@@ -202,12 +203,12 @@ bool IK_QJacobianSolver::UpdateAngles(double &norm)
 
 bool IK_QJacobianSolver::Solve(IK_QSegment *root,
                                std::list<IK_QTask *> tasks,
-                               const double,
+                               const Real tolerance,
                                const int max_iterations)
 {
   float scale = ComputeScale();
   bool solved = false;
-  // double dt = analyze_time();
+  // Real dt = analyze_time();
   LOGIKVar(LogInfoFloat, scale);
   Scale(scale, tasks);
 
@@ -228,7 +229,7 @@ bool IK_QJacobianSolver::Solve(IK_QSegment *root,
         (*task)->ComputeJacobian(m_jacobian_sub);
     }
 
-    double norm = 0.0;
+    Real norm = 0.0;
 
     do {
       // invert jacobian
@@ -251,7 +252,7 @@ bool IK_QJacobianSolver::Solve(IK_QSegment *root,
       (*seg)->UnLock();
 
     // compute angle update norm
-    double maxnorm = m_jacobian.AngleUpdateNorm();
+    Real maxnorm = m_jacobian.AngleUpdateNorm();
     if (maxnorm > norm)
       norm = maxnorm;
 
@@ -281,197 +282,4 @@ bool IK_QJacobianSolver::Solve(IK_QSegment *root,
   return solved;
 }
 
-IK_QJacobianSolverPoleAngle::IK_QJacobianSolverPoleAngle()
-{
-  m_poleconstraint = false;
-  m_getpoleangle = false;
-  m_rootmatrix.setIdentity();
-}
 
-void IK_QJacobianSolverPoleAngle::Scale(double scale, std::list<IK_QTask *> &tasks)
-{
-  IK_QJacobianSolver::Scale(scale, tasks);
-  m_rootmatrix.translation() *= scale;
-  m_goal *= scale;
-  m_polegoal *= scale;
-}
-
-void IK_QJacobianSolverPoleAngle::SetPoleVectorConstraint(
-    IK_QSegment *tip, Vector3d &goal, Vector3d &polegoal, float poleangle, bool getangle)
-{
-  m_poleconstraint = true;
-  m_poletip = tip;
-  m_goal = goal;
-  m_polegoal = polegoal;
-  m_poleangle = (getangle) ? 0.0f : poleangle;
-  m_getpoleangle = getangle;
-  LOGIKVar(LogInfoBool, m_getpoleangle);
-}
-
-void IK_QJacobianSolverPoleAngle::ConstrainPoleVector(IK_QSegment *root, std::list<IK_QTask *> &tasks)
-{
-  // this function will be called before and after solving. calling it before
-  // solving gives predictable solutions by rotating towards the solution,
-  // and calling it afterwards ensures the solution is exact.
-
-  if (!m_poleconstraint)
-    return;
-
-  // disable pole vector constraint in case of multiple position tasks
-  std::list<IK_QTask *>::iterator task;
-  int positiontasks = 0;
-
-  for (task = tasks.begin(); task != tasks.end(); task++)
-    if (IK_QTask::Position == (*task)->c_type)
-      positiontasks++;
-
-  if (positiontasks >= 2) {
-    m_poleconstraint = false;
-    return;
-  }
-
-  // get positions and rotations
-  root->UpdateTransform(m_rootmatrix);
-
-  const Vector3d rootpos = root->GlobalStart();
-  const Vector3d endpos = m_poletip->GlobalEnd();
-  const Matrix3d &rootbasis = root->GlobalTransform().linear();
-
-  // construct "lookat" matrices (like gluLookAt), based on a direction and
-  // an up vector, with the direction going from the root to the end effector
-  // and the up vector going from the root to the pole constraint position.
-  Vector3d dir = normalize(endpos - rootpos);
-  Vector3d rootx = rootbasis.col(0);
-  Vector3d rootz = rootbasis.col(2);
-  Vector3d up = rootx * cos(m_poleangle) + rootz * sin(m_poleangle);
-  // i.e. up =  [rootx, rooty, rootz] [cos(m_poleangle), 0, sin(m_poleangle)]^T
-  //   => [up]_root = [cos(m_poleangle), 0, sin(m_poleangle)]
-
-  // in post, don't rotate towards the goal but only correct the pole up
-  Vector3d poledir = (m_getpoleangle) ? dir : normalize(m_goal - rootpos);
-  Vector3d poleup = normalize(m_polegoal - rootpos);
-
-  Matrix3d mat, polemat;
-
-  mat.row(0) = normalize(dir.cross(up));
-  mat.row(1) = mat.row(0).cross(dir);
-  mat.row(2) = -dir;
-
-  polemat.row(0) = normalize(poledir.cross(poleup));
-  polemat.row(1) = polemat.row(0).cross(poledir);
-  polemat.row(2) = -poledir;
-
-  if (m_getpoleangle) {
-    // we compute the pole angle that to rotate towards the target
-    m_poleangle = angle(mat.row(1), polemat.row(1));
-
-    double dt = rootz.dot(mat.row(1) * cos(m_poleangle) + mat.row(0) * sin(m_poleangle));
-    if (dt > 0.0)
-      m_poleangle = -m_poleangle;
-
-    // solve again, with the pole angle we just computed
-    m_getpoleangle = false;
-    ConstrainPoleVector(root, tasks);
-  }
-  else {
-    // now we set as root matrix the difference between the current and
-    // desired rotation based on the pole vector constraint. we use
-    // transpose instead of inverse because we have orthogonal matrices
-    // anyway, and in case of a singular matrix we don't get NaN's.
-    Affine3d trans;
-    trans.linear() = polemat.transpose() * mat;
-    // i.e. trans.linear() * mat.transpose() = polemat.transpose()
-    trans.translation() = Vector3d(0, 0, 0);
-    m_rootmatrix = trans * m_rootmatrix;
-  }
-}
-
-bool IK_QJacobianSolverPoleAngle::Solve(IK_QSegment *root,
-                               std::list<IK_QTask *> tasks,
-                               const double,
-                               const int max_iterations)
-{
-  float scale = ComputeScale();
-  bool solved = false;
-  // double dt = analyze_time();
-  LOGIKVar(LogInfoFloat, scale);
-  Scale(scale, tasks);
-
-  ConstrainPoleVector(root, tasks);
-
-  root->UpdateTransform(m_rootmatrix);
-
-  // iterate
-  int iterations = 0;
-  for (; iterations < max_iterations; iterations++) {
-    // update transform
-    IKAssert(m_rootmatrix.isApprox(Eigen::Affine3d::Identity()));
-    root->UpdateTransform(m_rootmatrix);
-
-    std::list<IK_QTask *>::iterator task;
-
-    // compute jacobian
-    for (task = tasks.begin(); task != tasks.end(); task++) {
-      bool primary_tsk = (*task)->Primary();
-      // LOGIKVar(LogInfoBool, primary_tsk);
-      if (primary_tsk)
-        (*task)->ComputeJacobian(m_jacobian);
-      else
-        (*task)->ComputeJacobian(m_jacobian_sub);
-    }
-
-    double norm = 0.0;
-
-    do {
-      // invert jacobian
-      try {
-        m_jacobian.Invert();
-        if (m_secondary_enabled)
-          m_jacobian.SubTask(m_jacobian_sub);
-      }
-      catch (...) {
-        fprintf(stderr, "IK Exception\n");
-        return false;
-      }
-
-      // update angles and check limits
-    } while (UpdateAngles(norm));
-
-    // unlock segments again after locking in clamping loop
-    std::vector<IK_QSegment *>::iterator seg;
-    for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
-      (*seg)->UnLock();
-
-    // compute angle update norm
-    double maxnorm = m_jacobian.AngleUpdateNorm();
-    if (maxnorm > norm)
-      norm = maxnorm;
-
-    // check for convergence
-    if (norm < 1e-3 && iterations > 10) {
-      solved = true;
-      for (int i_beta = 0
-      ; (i_beta < m_jacobian.NumBetas()
-            && solved)
-        ; i_beta ++)
-      {
-        auto norm_beta = m_jacobian.GetBeta(i_beta).norm();
-        solved = (norm_beta < 1e-3);
-        LOGIKVar(LogInfoFloat, norm_beta);
-      }
-      break;
-    }
-  }
-
-  if (m_poleconstraint)
-    root->PrependBasis(m_rootmatrix.linear());
-
-  Scale(1.0f / scale, tasks);
-
-  // analyze_add_run(max_iterations, analyze_time()-dt);
-  LOGIKVar(LogInfoInt, m_jacobian.rows());
-  LOGIKVar(LogInfoInt, m_jacobian.cols());
-  LOGIKVar(LogInfoBool, solved);
-  LOGIKVar(LogInfoInt, iterations);
-  return solved;
-}

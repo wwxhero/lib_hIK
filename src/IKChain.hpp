@@ -6,6 +6,12 @@
 #define NumericalAlgor(algor)\
 		(algor)&(CIKChain::NUM)
 
+struct Segment
+{
+	CArtiBodyNode* body;
+	IJoint* joint;
+};
+
 class CIKChain
 {
 public:
@@ -61,11 +67,6 @@ public:
 public:
 	const Algor c_algor;
 protected:
-	struct Segment
-	{
-		CArtiBodyNode* body;
-		IJoint* joint;
-	};
 	std::vector<Segment> m_segments;
 	CArtiBodyNode* m_eefSrc;
 	int m_nSteps;
@@ -89,4 +90,9 @@ public:
 private:
 	void Update();
 	Plane m_terrain;
+};
+
+class CIKChainInverseJK : public CIKChain
+{
+
 };

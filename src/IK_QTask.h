@@ -26,11 +26,12 @@
 
 #include "Math.hpp"
 #include "IK_QJacobian.h"
-#include "IK_QSegment.h"
+#include "IK_QSegment.hpp"
 
 class IK_QTask {
  public:
   enum Type { Position, Orientation, CenterOfMass};
+  // segment: is the one prior to end effector
   IK_QTask(Type type, int size, bool primary, const IK_QSegment *segment);
   virtual ~IK_QTask()
   {
@@ -78,7 +79,7 @@ protected:
   int m_id;
   int m_size;
   bool m_primary;
-  const IK_QSegment *m_segment;
+  const IK_QSegment *m_segment; //replace this with a chain of segments
   Real m_weight;
 };
 

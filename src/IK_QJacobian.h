@@ -66,7 +66,7 @@ public:
     return (int)m_jacobian.cols();
   }
 
-private:
+protected:
 
   int m_dof;
   int m_task_size; // either 3 for position task of a chain, or 6 for position and orientation task
