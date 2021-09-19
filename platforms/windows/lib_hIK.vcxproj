@@ -387,6 +387,7 @@
     <ClInclude Include="..\..\src\bvh11_helper.hpp" />
     <ClInclude Include="..\..\src\handle_helper.hpp" />
     <ClInclude Include="..\..\src\IKChain.hpp" />
+    <ClInclude Include="..\..\src\IKChainInverseJK.hpp" />
     <ClInclude Include="..\..\src\IKGroupTree.hpp" />
     <ClInclude Include="..\..\src\IK_QJacobian.h" />
     <ClInclude Include="..\..\src\IK_QJacobianSolver.h" />

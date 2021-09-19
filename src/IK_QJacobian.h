@@ -25,6 +25,7 @@
 #pragma once
 
 #include "Math.hpp"
+#include "IKChain.hpp"
 
 class IK_QJacobian {
  public:
@@ -94,11 +95,16 @@ protected:
   Eigen::VectorXr m_weight_sqrt;
 };
 
+#define DECLARE_ALGOR\
+	public:\
+  		static CIKChain::Algor s_Algor;	
+
 class IK_QJacobianDLS : public IK_QJacobian
 {
 public:
   IK_QJacobianDLS();
   void Invert();
+  DECLARE_ALGOR
 };
 
 class IK_QJacobianSDLS : public IK_QJacobian
@@ -112,4 +118,7 @@ private:
   // space required for SDLS
   Eigen::VectorXr m_norm;
   Eigen::VectorXr m_d_theta_unclamped;
+  DECLARE_ALGOR
 };
+
+#undef DECLARE_ALGOR

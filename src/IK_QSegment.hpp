@@ -3,9 +3,15 @@
 class IK_QSegment
 {
 public:
-	bool Initialize(const CIKChain::IKNode& from, const CIKChain::IKNode& to);
+	bool Initialize(const CIKChain::IKNode& from, const CIKChain::IKNode& to)
+	{
+		return false;
+	}
 	//to unify the segment positions within [0, 1], for better numerical computation performance
-	void Scale(Real s);
+	void Scale(Real s)
+	{
+
+	}
 	// number of degrees of freedom
 	int NumberOfDoF() const
 	{

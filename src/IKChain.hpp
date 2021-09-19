@@ -3,6 +3,7 @@
 #include "ArtiBody.hpp"
 #include "macro_helper.h"
 
+
 #define NumericalAlgor(algor)\
 		(algor)&(CIKChain::NUM)
 
@@ -91,7 +92,3 @@ private:
 	Plane m_terrain;
 };
 
-class CIKChainInverseJK : public CIKChain
-{
-
-};

@@ -84,6 +84,9 @@
     <ClInclude Include="..\..\src\IK_QSegment.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\IKChainInverseJK.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
