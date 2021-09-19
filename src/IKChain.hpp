@@ -25,7 +25,7 @@ public:
 	DECLARE_ENUM_STR(Algor)
 
 public:
-	CIKChain(Algor algor);
+	CIKChain(Algor algor, int n_iters);
 	virtual bool Init(const CArtiBodyNode* eef, int len);
 	void SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst
 					, const Eigen::Matrix3r& src2dst_w
@@ -50,9 +50,9 @@ public:
 
 	}
 
-	int NSteps() const
+	int NIters() const
 	{
-		return m_nSteps;
+		return m_nIters;
 	}
 
 	int NBodies() const
@@ -69,7 +69,7 @@ public:
 protected:
 	std::vector<IKNode> m_nodes;
 	CArtiBodyNode* m_eefSrc;
-	int m_nSteps;
+	int m_nIters;
 private:
 	CArtiBodyNode* m_targetDst;
 	Eigen::Matrix3r m_src2dstW_Offset;

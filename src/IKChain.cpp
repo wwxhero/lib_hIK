@@ -11,11 +11,11 @@ END_ENUM_STR(CIKChain, Algor)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKChain:
 
-CIKChain::CIKChain(Algor algor)
+CIKChain::CIKChain(Algor algor, int n_iters)
 	: c_algor(algor)
 	, m_eefSrc(NULL)
 	, m_targetDst(NULL)
-	, m_nSteps(20)
+	, m_nIters(n_iters)
 {
 }
 
@@ -105,7 +105,7 @@ void CIKChain::Dump(std::stringstream& info) const
 // CIKChainProj:
 
 CIKChainProj::CIKChainProj(const Real norm[3])
-	: CIKChain(Proj)
+	: CIKChain(Proj, 1)
 {
 	m_terrain.n << norm[0], norm[1], norm[2];
 	UnitVec(m_terrain.n);

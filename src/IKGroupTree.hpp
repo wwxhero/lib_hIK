@@ -18,7 +18,7 @@ public:
 		m_kChains.insert(it_chain, chain);
 
 		// insertion sort with predicate: len(chain_i) <= len(chain_i+1)
-		int n_steps_i = chain->NSteps();
+		int n_steps_i = chain->NIters();
 		if (m_nSpecMax < n_steps_i)
 			m_nSpecMax = n_steps_i;
 	}
