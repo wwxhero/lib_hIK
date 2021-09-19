@@ -19,7 +19,7 @@ CIKChain::CIKChain(Algor algor, int n_iters)
 {
 }
 
-bool CIKChain::Init(const CArtiBodyNode* eef, int len)
+bool CIKChain::Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>&)
 {
 	IKAssert(Proj != c_algor || 1 == len); // (c_algor == Proj) -> 1 == len
 	m_eefSrc = const_cast<CArtiBodyNode*>(eef);
@@ -111,10 +111,10 @@ CIKChainProj::CIKChainProj(const Real norm[3])
 	UnitVec(m_terrain.n);
 }
 
-bool CIKChainProj::Init(const CArtiBodyNode* eef, int len)
+bool CIKChainProj::Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>& joints_conf)
 {
 	bool initialized = (1 == len)
-					&&  CIKChain::Init(eef, len);
+					&&  CIKChain::Init(eef, len, joints_conf);
 	if (initialized)
 	{
 		const Transform* l2w_0 = m_nodes[0].body->GetTransformLocal2World();

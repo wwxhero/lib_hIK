@@ -10,10 +10,15 @@ public:
 	{
 	}
 
-	// virtual bool Init(const CArtiBodyNode* eef, int len) override;
+	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>& joint_confs) override
+	{
+		bool initialized = CIKChain::Init(eef, len, joint_confs);
+		return initialized;
+	}
+
 	virtual void Dump(std::stringstream& info) const override
 	{
-		info << from_Algor(c_algor);
+		info << from_Algor(c_algor) << " : ";
 		CIKChain::Dump(info);
 	}
 	// virtual void UpdateNext(int step) override;

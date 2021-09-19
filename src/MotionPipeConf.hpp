@@ -4,6 +4,7 @@
 #include "tinyxml.h"
 #include "MoNode.hpp"
 #include "motion_pipeline.h"
+#include "JointConf.hpp"
 #include "IKChain.hpp"
 
 namespace CONF
@@ -72,16 +73,6 @@ namespace CONF
 		}
 	private:
 		std::wstring m_str;
-	};
-
-	class CJointConf
-	{
-	public:
-		CJointConf(const char* name);
-#ifdef _DEBUG
-		void Dump_Dbg() const;
-#endif
-		std::string name;
 	};
 
 	class CIKChainConf

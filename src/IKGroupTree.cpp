@@ -147,7 +147,7 @@ public:
 				break;
 		}
 
-		if (!chain->Init(c_eef->c_body, c_conf->len))
+		if (!chain->Init(c_eef->c_body, c_conf->len, c_conf->Joints))
 		{
 			delete chain;
 			chain = NULL;
@@ -328,9 +328,18 @@ void CIKGroupTreeGen::InitKChain(CIKGroupNodeGen* root, const std::vector<CIKCha
 					if (!CArtiBodyClrTree::ValidClr(clr_this))
 						return;
 					const GroupChains& g_chains = c_gid2gchains[clr_this];
-					for (const CIKChainClr& chain : g_chains)
+					for (const CIKChainClr& chainclr : g_chains)
 					{
-						node_this_gen->Joint(chain.Generate());
+						CIKChain *chain = chainclr.Generate();
+						if (NULL != chain)
+							node_this_gen->Joint(chain);
+						else
+						{
+							std::stringstream err;
+							err << "Chain: " << chainclr.c_eef->c_body->GetName_c() << " failed initialization!!!";
+							LOGIKVarErr(LogInfoCharPtr, err.str().c_str());
+						}
+
 					}
 				};
 

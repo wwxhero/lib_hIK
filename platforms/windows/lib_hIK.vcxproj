@@ -395,6 +395,7 @@
     <ClInclude Include="..\..\src\IK_QTask.h" />
     <ClInclude Include="..\..\src\Joint.hpp" />
     <ClInclude Include="..\..\src\ik_logger.h" />
+    <ClInclude Include="..\..\src\JointConf.hpp" />
     <ClInclude Include="..\..\src\loggerSrv_i.h" />
     <ClInclude Include="..\..\src\Math.hpp" />
     <ClInclude Include="..\..\src\matrix3.h" />

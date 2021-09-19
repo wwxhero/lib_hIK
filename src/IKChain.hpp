@@ -2,7 +2,7 @@
 #include <map>
 #include "ArtiBody.hpp"
 #include "macro_helper.h"
-
+#include "JointConf.hpp"
 
 #define NumericalAlgor(algor)\
 		(algor)&(CIKChain::NUM)
@@ -21,12 +21,12 @@ public:
 
 	// static const char* s_Algor_str[];
 	// static Algor s_Algor_val[];
-	// static Algor toAlgor(const char* algor_str);
+	// static Algor to_Algor(const char* algor_str);
+	// static const char* from_Algor(Algor);
 	DECLARE_ENUM_STR(Algor)
-
 public:
 	CIKChain(Algor algor, int n_iters);
-	virtual bool Init(const CArtiBodyNode* eef, int len);
+	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>& joint_confs);
 	void SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst
 					, const Eigen::Matrix3r& src2dst_w
 					, const Eigen::Matrix3r& dst2src_w);
@@ -81,7 +81,7 @@ class CIKChainProj : public CIKChain
 {
 public:
 	CIKChainProj(const Real norm[3]);
-	virtual bool Init(const CArtiBodyNode* eef, int len) override;
+	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>&) override;
 	virtual void Dump(std::stringstream& info) const override;
 	virtual void UpdateNext(int step) override;
 

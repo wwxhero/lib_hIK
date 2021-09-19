@@ -36,6 +36,7 @@ void AssertionFail(const char *file, unsigned int line);
 #  if defined _DEBUG || defined SMOOTH_LOGGING
 
 #    define LOGIKVar(func, var) func(__FILE__, __LINE__, #    var, var);
+#    define LOGIKVarErr(func, var) func(__FILE__, __LINE__, "Error: "#var, var);
 #    define LOGIK(msg) LogInfo(__FILE__, __LINE__, msg);
 #	if defined HARDASSERTION
 #		define IKAssert assert
@@ -51,6 +52,7 @@ void AssertionFail(const char *file, unsigned int line);
 #    endif
 
 #    define LOGIKVar(func, var)
+#    define LogIKVarErr(func, var)
 #    define LOGIK(msg)
 #    define IKAssert(v)
 
