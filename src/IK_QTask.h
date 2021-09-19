@@ -32,7 +32,7 @@ class IK_QTask {
  public:
   enum Type { Position, Orientation, CenterOfMass};
   // segment: is the one prior to end effector
-  IK_QTask(Type type, int size, bool primary, const IK_QSegment *segment);
+  IK_QTask(Type type, int size, bool primary, const std::vector<IK_QSegment*> &segment);
   virtual ~IK_QTask()
   {
   }
@@ -61,7 +61,7 @@ class IK_QTask {
   {
     m_weight = sqrt(weight);
   }
-
+  // Update Jacobian
   virtual void ComputeJacobian(IK_QJacobian &jacobian) = 0;
 
   virtual bool PositionTask() const
@@ -79,13 +79,13 @@ protected:
   int m_id;
   int m_size;
   bool m_primary;
-  const IK_QSegment *m_segment; //replace this with a chain of segments
+  const std::vector<IK_QSegment*>& m_segments;
   Real m_weight;
 };
 
 class IK_QPositionTask : public IK_QTask {
  public:
-  IK_QPositionTask(bool primary, const IK_QSegment *segment, const Eigen::Vector3r &goal);
+  IK_QPositionTask(bool primary, const std::vector<IK_QSegment*> &segment, const Eigen::Vector3r &goal);
 
   void ComputeJacobian(IK_QJacobian &jacobian);
 
@@ -106,7 +106,7 @@ class IK_QPositionTask : public IK_QTask {
 
 class IK_QOrientationTask : public IK_QTask {
  public:
-  IK_QOrientationTask(bool primary, const IK_QSegment *segment, const Eigen::Matrix3r &goal);
+  IK_QOrientationTask(bool primary, const std::vector<IK_QSegment*>& segment, const Eigen::Matrix3r &goal);
 
   void ComputeJacobian(IK_QJacobian &jacobian);
 

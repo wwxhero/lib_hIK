@@ -1,8 +1,9 @@
 #pragma once
 #include "IKChain.hpp"
-class IK_QSegment : public Segment
+class IK_QSegment
 {
 public:
+	bool Initialize(const CIKChain::IKNode& from, const CIKChain::IKNode& to);
 	//to unify the segment positions within [0, 1], for better numerical computation performance
 	void Scale(Real s);
 	// number of degrees of freedom
@@ -25,7 +26,7 @@ public:
 	// per dof joint weighting
 	Real Weight(int dof) const
 	{
-
+		return (Real)0;
 	}
 
 	// set joint weights (per axis)
@@ -77,6 +78,21 @@ public:
 		return Eigen::Vector3r(0, 0, 0);
 	}
 
+	// Eigen::Quaternionr GlobalTransform() const
+	// {
+	// 	//
+	// 	return Eigen::Quaternionr::Identity();
+	// }
+
+	// the global transformation at the end of the segment
+	// will be changed later
+	Eigen::Affine3r GlobalTransform() const
+	{
+		//
+		return Eigen::Affine3r::Identity();
+	}
+
+
 	Eigen::Vector3r Axis(int dof) const
 	{
 		//joint answers this question
@@ -88,7 +104,14 @@ public:
 	{
 		return false; //currently, we don't have a translational joint
 	}
+
+	void FK_Update()
+	{
+
+	}
 private:
 	Real m_scale;
+	CIKChain::IKNode m_from;
+	CIKChain::IKNode m_to;
 };
 

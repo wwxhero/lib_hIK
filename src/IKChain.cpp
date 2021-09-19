@@ -23,7 +23,7 @@ bool CIKChain::Init(const CArtiBodyNode* eef, int len)
 {
 	IKAssert(Proj != c_algor || 1 == len); // (c_algor == Proj) -> 1 == len
 	m_eefSrc = const_cast<CArtiBodyNode*>(eef);
-	m_segments.resize(len);
+	m_nodes.resize(len);
 	CArtiBodyNode* body_p = NULL;
 	int i_start = len - 1;
 	int i_end = -1;
@@ -32,9 +32,9 @@ bool CIKChain::Init(const CArtiBodyNode* eef, int len)
 		; i > i_end && NULL != body_p
 		; i --, body_p = body_p->GetParent())
 	{
-		Segment& seg_i = m_segments[i];
-		seg_i.joint = body_p->GetJoint();
-		seg_i.body = body_p;
+		IKNode& node_i = m_nodes[i];
+		node_i.joint = body_p->GetJoint();
+		node_i.body = body_p;
 	}
 
 	bool initialized = (i == i_end);
@@ -93,7 +93,7 @@ void CIKChain::BeginUpdate()
 void CIKChain::Dump(std::stringstream& info) const
 {
 	info << "{";
-	for (auto seg : m_segments)
+	for (auto seg : m_nodes)
 		info <<" "<< seg.body->GetName_c();
 	info << " " << m_eefSrc->GetName_c();
 	info << "}";
@@ -113,10 +113,11 @@ CIKChainProj::CIKChainProj(const Real norm[3])
 
 bool CIKChainProj::Init(const CArtiBodyNode* eef, int len)
 {
-	bool initialized = CIKChain::Init(eef, len);
+	bool initialized = (1 == len)
+					&&  CIKChain::Init(eef, len);
 	if (initialized)
 	{
-		const Transform* l2w_0 = m_segments[0].body->GetTransformLocal2World();
+		const Transform* l2w_0 = m_nodes[0].body->GetTransformLocal2World();
 		m_terrain.p = l2w_0->getTranslation();
 	}
 	return initialized;
@@ -157,8 +158,8 @@ void CIKChainProj::Update()
 	Eigen::Quaternionr* Rs[] = {&R_0, &R_1};
 	Eigen::Vector3r* Ts[] = {&T_0, &T_1};
 
-	CArtiBodyNode* bodies[] = {m_segments[0].body, m_eefSrc};
-	IJoint* joints[] = {m_segments[0].joint, m_eefSrc->GetJoint()};
+	CArtiBodyNode* bodies[] = {m_nodes[0].body, m_eefSrc};
+	IJoint* joints[] = {m_nodes[0].joint, m_eefSrc->GetJoint()};
 
 	for (int i_kina = 0; i_kina < 2; i_kina ++)
 	{
@@ -177,5 +178,5 @@ void CIKChainProj::Update()
 		joint_i->SetTranslation(delta_i.getTranslation());
 	}
 
-	CArtiBodyTree::FK_Update(m_segments[0].body);
+	CArtiBodyTree::FK_Update(m_nodes[0].body);
 }

@@ -36,37 +36,38 @@
 #include "IK_QSegment.hpp"
 #include "IK_QTask.h"
 
-class IK_QJacobianSolver {
- public:
-  IK_QJacobianSolver();
-  ~IK_QJacobianSolver()
-  {
-  }
 
-  // call setup once before solving, if it fails don't solve
-  bool Setup(IK_QSegment *root, std::list<IK_QTask *> &tasks);
+class IK_QJacobianSolver
+{
+public:
+	IK_QJacobianSolver();
+	~IK_QJacobianSolver()
+	{
+	}
 
-  // returns true if converged, false if max number of iterations was used
-  bool Solve(IK_QSegment *root,
-             std::list<IK_QTask *> tasks,
-             const Real tolerance,
-             const int max_iterations);
+	// call setup once before solving, if it fails don't solve
+	bool Setup(const std::vector<CIKChain::IKNode>& chain
+			, const CArtiBodyNode* eef
+			, std::list<IK_QTask *> &tasks);
 
- protected:
-  void AddSegmentList(IK_QSegment *seg);
-  bool UpdateAngles(Real &norm);
+	// returns true if converged, false if max number of iterations was used
+	bool Solve(std::list<IK_QTask *> &tasks
+			, const Real tolerance
+			, const int max_iterations);
 
-  Real ComputeScale();
-  void Scale(Real scale, std::list<IK_QTask *> &tasks);
+protected:
+	bool UpdateAngles(Real &norm);
 
- protected:
-  IK_QJacobianSDLS m_jacobian;
-  IK_QJacobianSDLS m_jacobian_sub;
+	Real ComputeScale();
+	void Scale(Real scale, std::list<IK_QTask *> &tasks);
 
-  bool m_secondary_enabled;
+protected:
+	IK_QJacobianSDLS m_jacobian;
+	IK_QJacobianSDLS m_jacobian_sub;
 
-  std::vector<IK_QSegment *> m_segments; //the corresponds to CIKChain::m_segments
+	bool m_secondary_enabled;
 
+	std::vector<IK_QSegment*> m_segments; //the corresponds to CIKChain::m_segments
 
 };
 
