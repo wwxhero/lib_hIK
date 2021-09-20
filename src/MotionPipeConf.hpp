@@ -91,7 +91,7 @@ namespace CONF
 					, Real up[3]);
 		CIKChainConf(const CIKChainConf& src);
 		~CIKChainConf();
-		void AddJoint(const char* name);
+		void AddJoint(const char* attri_values[5]);
 #ifdef _DEBUG
 		void Dump_Dbg() const;
 #endif

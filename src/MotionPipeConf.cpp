@@ -29,8 +29,10 @@ namespace CONF
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// CJointConf:
 
-	CJointConf::CJointConf(const char* a_name)
+	CJointConf::CJointConf(const char* a_name, IK_QSegment::Type a_type, Real a_stiffness[3])
 		: name(a_name)
+		, type(a_type)
+		, stiffness{a_stiffness[0], a_stiffness[1], a_stiffness[2]}
 	{
 	}
 
@@ -96,9 +98,18 @@ namespace CONF
 	{
 	}
 
-	void CIKChainConf::AddJoint(const char* name)
+	void CIKChainConf::AddJoint(const char* attri_values[5])
 	{
-		CJointConf joint_conf(name);
+		const char* name = attri_values[0];
+		IK_QSegment::Type type = (NULL == attri_values[1])
+							? IK_QSegment::R_xyz
+							: IK_QSegment::to_Type(attri_values[1]);
+		Real stiffness[] = {
+			(NULL == attri_values[2]) ? 0 : (Real)atof(attri_values[2]),
+			(NULL == attri_values[3]) ? 0 : (Real)atof(attri_values[3]),
+			(NULL == attri_values[4]) ? 0 : (Real)atof(attri_values[4]),
+		};
+		CJointConf joint_conf(name, type, stiffness);
 		Joints.push_back(joint_conf);
 	}
 
@@ -637,11 +648,37 @@ namespace CONF
 				}
 				else if("Joint" == name)
 				{
-					const char* name_j = ele->Attribute("name");
-					IKAssert(NULL != name_j);
+					struct
+					{
+						const char* str;
+						bool is_optional;
+					} names_attri[] = {
+						  { "name",			false }		// 0
+						, { "type",			true }		// 1
+						, { "Stiffness_x",	true }		// 2
+						, { "Stiffness_y",	true }		// 3
+						, { "Stiffness_z",	true }		// 4
+					};
+					const char* value_attri[] = {
+						  ele->Attribute(names_attri[0].str)
+						, ele->Attribute(names_attri[1].str)
+						, ele->Attribute(names_attri[2].str)
+						, ele->Attribute(names_attri[3].str)
+						, ele->Attribute(names_attri[4].str)
+					};
+
+					bool value_valid = true;
+					for (int i_value = 0
+						; i_value < sizeof(value_attri)/sizeof(const char*)
+							&& value_valid
+						; i_value ++)
+						value_valid = (NULL != value_attri[i_value]
+									|| names_attri[i_value].is_optional);
+					IKAssert(value_valid);
+
 					CIKChainConf* chain_conf = P_Chain(node);
 					IKAssert(NULL != chain_conf);
-					chain_conf->AddJoint(name_j);
+					chain_conf->AddJoint(value_attri);
 				}
 			}
 			return ret;
