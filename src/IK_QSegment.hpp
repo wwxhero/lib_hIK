@@ -1,9 +1,19 @@
 #pragma once
-#include "IKChain.hpp"
+#include "IK_QJacobian.h"
+#include "ArtiBody.hpp"
+#include "macro_helper.h"
 class IK_QSegment
 {
 public:
-	bool Initialize(const CIKChain::IKNode& from, const CIKChain::IKNode& to)
+	enum Type
+	{
+		R_xyz = 0
+	};
+
+	DECLARE_ENUM_STR(Type)
+
+public:
+	bool Initialize(CArtiBodyNode* from, CArtiBodyNode* to)
 	{
 		return false;
 	}
@@ -117,7 +127,10 @@ public:
 	}
 private:
 	Real m_scale;
-	CIKChain::IKNode m_from;
-	CIKChain::IKNode m_to;
 };
 
+
+class IK_QIxyzSegment : public IK_QSegment
+{
+
+};

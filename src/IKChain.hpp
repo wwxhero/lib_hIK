@@ -26,6 +26,7 @@ public:
 	DECLARE_ENUM_STR(Algor)
 public:
 	CIKChain(Algor algor, int n_iters);
+	virtual ~CIKChain();
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>& joint_confs);
 	void SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst
 					, const Eigen::Matrix3r& src2dst_w

@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-
+#include "IK_QSegment.hpp"
 namespace CONF
 {
 	class CJointConf
@@ -11,5 +11,6 @@ namespace CONF
 		void Dump_Dbg() const;
 #endif
 		std::string name;
+		IK_QSegment::Type type;
 	};
 };

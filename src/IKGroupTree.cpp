@@ -15,6 +15,13 @@ CIKGroupNode::CIKGroupNode(const CIKGroupNode& src)
 	m_kChains = src.m_kChains;
 }
 
+CIKGroupNode::~CIKGroupNode()
+{
+	for (auto chain : m_kChains)
+		delete chain;
+}
+
+
 void CIKGroupNode::SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst
 								, const Eigen::Matrix3r& src2dst_w
 								, const Eigen::Matrix3r& dst2src_w)

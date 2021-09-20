@@ -410,9 +410,11 @@
     <ClCompile Include="..\..\src\bvh.cpp" />
     <ClCompile Include="..\..\src\bvh11_helper.cpp" />
     <ClCompile Include="..\..\src\IKChain.cpp" />
+    <ClCompile Include="..\..\src\IKChainInverseJK.cpp" />
     <ClCompile Include="..\..\src\IKGroupTree.cpp" />
     <ClCompile Include="..\..\src\IK_QJacobian.cpp" />
     <ClCompile Include="..\..\src\IK_QJacobianSolver.cpp" />
+    <ClCompile Include="..\..\src\IK_QSegment.cpp" />
     <ClCompile Include="..\..\src\IK_QTask.cpp" />
     <ClCompile Include="..\..\src\Joint.cpp" />
     <ClCompile Include="..\..\src\ik_logger.cpp" />

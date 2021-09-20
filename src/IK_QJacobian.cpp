@@ -449,24 +449,16 @@ void IK_QJacobian::SetDoFWeight(int dof, Real weight)
   m_weight_sqrt[dof] = sqrt(weight);
 }
 
-#define ALGOR(cls, type)\
-	CIKChain::Algor cls::s_Algor = type;
-
-ALGOR(IK_QJacobianDLS, CIKChain::DLS)
-
 IK_QJacobianDLS::IK_QJacobianDLS()
   : IK_QJacobian()
 {
 }
-
-ALGOR(IK_QJacobianSDLS, CIKChain::SDLS)
 
 IK_QJacobianSDLS::IK_QJacobianSDLS()
   : IK_QJacobian()
 {
 
 }
-
 
 void IK_QJacobianSDLS::ArmMatrices(int dof, int task_size)
 {
@@ -482,7 +474,6 @@ void IK_QJacobianSDLS::Lock(int dof_id, Real delta)
   m_norm[dof_id] = 0.0;  // unneeded
 }
 
-#undef ALGOR
 
 #pragma pop_macro("min")
 #pragma pop_macro("max")

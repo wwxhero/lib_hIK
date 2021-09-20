@@ -320,6 +320,8 @@ void unload_mopipe(MotionPipe* a_mopipe)
 		mopipe->bvh = H_INVALID;
 		break;
 	case MotionPipeInternal::IK:
+		delete mopipe->root_ik;
+		mopipe->root_ik = NULL;
 		break;
 	}
 

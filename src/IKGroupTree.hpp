@@ -7,6 +7,8 @@ class CIKGroupNode : public TreeNode<CIKGroupNode>
 public:
 	CIKGroupNode();
 	CIKGroupNode(const CIKGroupNode& src);
+	~CIKGroupNode();
+
 	void Joint(CIKChain* chain)
 	{
 		int len = chain->NBodies();
