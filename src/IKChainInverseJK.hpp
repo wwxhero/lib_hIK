@@ -161,9 +161,195 @@ public:
 		CIKChain::Dump(info);
 	}
 
+	virtual void BeginUpdate() override
+	{
+		CIKChain::BeginUpdate();
+		_TRANSFORM goal;
+		m_eefSrc->GetGoal(goal);
+		IKAssert(NoScale(goal));
+
+		Eigen::Quaternionr R(goal.r.w, goal.r.x, goal.r.y, goal.r.z);
+		Eigen::Vector3r T(goal.tt.x, goal.tt.y, goal.tt.z);
+
+		m_taskP.SetGoal(T);
+		m_taskR.SetGoal(R);
+
+		m_scaleNormlize = ComputeScale();
+		// Real dt = analyze_time();
+		LOGIKVar(LogInfoFloat, m_scaleNormlize);
+		Scale(m_scaleNormlize, m_tasksReg);
+	}
+
 	// virtual void UpdateNext(int step) override;
 	// this is a quick IK update solution
-	// virtual void UpdateAll() override;
+	virtual void UpdateAll() override
+	{
+		// m_segments[0]->FK_Update();
+		// iterate
+		bool solved = false;
+		int iterations = 0;
+		for (; iterations < m_nIters && !solved; iterations++)
+		{
+			// root->UpdateTransform(Eigen::Affine3d::Identity());
+			std::vector<IK_QTask *>::iterator task;
+
+			// compute jacobian
+			for (task = m_tasksReg.begin(); task != m_tasksReg.end(); task++)
+			{
+				bool primary_tsk = (*task)->Primary();
+				// LOGIKVar(LogInfoBool, primary_tsk);
+				if (primary_tsk)
+					(*task)->ComputeJacobian(m_jacobian);
+				else
+					(*task)->ComputeJacobian(m_jacobian_sub);
+			}
+
+			Real norm = 0.0;
+
+			do
+			{
+				// invert jacobian
+				try
+				{
+					m_jacobian.Invert();
+					if (m_secondary_enabled)
+						m_jacobian.SubTask(m_jacobian_sub);
+				}
+				catch (...)
+				{
+					const char* err = "IK Exception\n";
+					LOGIKVarErr(LogInfoCharPtr, err);
+					return;
+				}
+				// update angles and check limits
+			} while (UpdateAngles(norm));
+
+			// unlock segments again after locking in clamping loop
+			std::vector<IK_QSegment*>::iterator seg;
+			for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
+				(*seg)->UnLock();
+
+			// compute angle update norm
+			Real maxnorm = m_jacobian.AngleUpdateNorm();
+			if (maxnorm > norm)
+				norm = maxnorm;
+
+			// check for convergence
+			if (norm < 1e-3 && iterations > 10)
+			{
+				solved = true;
+			}
+
+			m_segments[0]->FK_Update();
+		}
+
+		LOGIKVar(LogInfoBool, solved);
+		LOGIKVar(LogInfoInt, iterations);
+
+	}
+
+	virtual void EndUpdate() override
+	{
+		Scale(1.0f / m_scaleNormlize, m_tasksReg);
+		// analyze_add_run(max_iterations, analyze_time()-dt);
+		LOGIKVar(LogInfoInt, m_jacobian.rows());
+		LOGIKVar(LogInfoInt, m_jacobian.cols());
+	}
+
+protected:
+	// true: exists a segment that is locked.
+	// false: no segment is locked.
+	bool UpdateAngles(Real &norm)
+	{
+		// assing each segment a unique id for the jacobian
+		std::vector<IK_QSegment *>::iterator seg;
+		IK_QSegment *qseg, *minseg = NULL;
+		Real minabsdelta = 1e10, absdelta;
+		Eigen::Vector3r delta, mindelta;
+		bool locked = false, clamp[3];
+		int i, mindof = 0;
+
+		// here we check if any angle limits were violated. angles whose clamped
+		// position is the same as it was before, are locked immediate. of the
+		// other violation angles the most violating angle is rememberd
+		for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
+		{
+			qseg = *seg;
+			if (qseg->UpdateAngle(m_jacobian, delta, clamp))
+			{
+				for (i = 0; i < qseg->NumberOfDoF(); i++)
+				{
+					if (clamp[i] && !qseg->Locked(i))
+					{
+						absdelta = fabs(delta[i]);
+						if (absdelta < c_epsilon)
+						{
+							qseg->Lock(i, m_jacobian, delta);
+							locked = true;
+						}
+						else if (absdelta < minabsdelta)
+						{
+							minabsdelta = absdelta;
+							mindelta = delta;
+							minseg = qseg;
+							mindof = i;
+						}
+					}
+				}
+			}
+		}
+
+		// lock most violating angle
+		if (minseg)
+		{
+			minseg->Lock(mindof, m_jacobian, mindelta);
+			locked = true;
+
+			if (minabsdelta > norm)
+				norm = minabsdelta;
+		}
+
+		if (locked == false)
+		{
+			// no locking done, last inner iteration, apply the angles
+			for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
+			{
+				(*seg)->UnLock();
+				(*seg)->UpdateAngleApply();
+			}
+		}
+
+		// signal if another inner iteration is needed
+		return locked;
+	}
+
+	Real ComputeScale()
+	{
+		return 1.0;
+		std::vector<IK_QSegment *>::iterator seg;
+		Real length = (Real)0.0f;
+
+		for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
+			length += (*seg)->MaxExtension();
+
+		if (length == 0.0)
+			return 1.0;
+		else
+			return (Real)1.0 / length;
+	}
+
+	void Scale(Real scale, std::vector<IK_QTask *> &tasks)
+	{
+		std::vector<IK_QTask *>::iterator task;
+		std::vector<IK_QSegment *>::iterator seg;
+
+		for (task = tasks.begin(); task != tasks.end(); task++)
+			(*task)->Scale(scale);
+
+		for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
+			(*seg)->Scale(scale);
+
+	}
 
 private:
 	IK_QJacobianX m_jacobian;
@@ -172,6 +358,7 @@ private:
 	IK_QPositionTask m_taskP;
 	IK_QOrientationTask m_taskR;
 	std::vector<IK_QTask*> m_tasksReg;
+	Real m_scaleNormlize;
 
 	bool m_secondary_enabled;
 

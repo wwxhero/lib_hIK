@@ -34,7 +34,7 @@ public:
 
 	virtual void Dump(std::stringstream& info) const;
 
-	void BeginUpdate();
+	virtual void BeginUpdate();
 
 	virtual void UpdateNext(int step)
 	{
@@ -46,7 +46,7 @@ public:
 
 	}
 
-	void EndUpdate()
+	virtual void EndUpdate()
 	{
 
 	}
