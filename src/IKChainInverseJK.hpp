@@ -1,5 +1,6 @@
 #include "IKChain.hpp"
 #include "IK_QJacobian.h"
+#include "IK_QSegment.hpp"
 
 template<typename IK_QJacobianX>
 class CIKChainInverseJK : public CIKChain
@@ -24,6 +25,14 @@ public:
 	// virtual void UpdateNext(int step) override;
 	// this is a quick IK update solution
 	// virtual void UpdateAll() override;
+
+private:
+	IK_QJacobianX m_jacobian;
+	IK_QJacobianX m_jacobian_sub;
+
+	bool m_secondary_enabled;
+
+	std::vector<IK_QSegment*> m_segments; //the corresponds to CIKChain::m_segments
 
 };
 
