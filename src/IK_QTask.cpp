@@ -38,9 +38,8 @@ IK_QTask::IK_QTask(Type type, int size, bool primary, const std::vector<IK_QSegm
 
 // IK_QPositionTask
 
-IK_QPositionTask::IK_QPositionTask(bool primary, const std::vector<IK_QSegment*> &segment, const Eigen::Vector3r &goal)
+IK_QPositionTask::IK_QPositionTask(bool primary, const std::vector<IK_QSegment*> &segment)
 		: IK_QTask(Position, 3, primary, segment)
-		, m_goal(goal)
 {
 	// computing clamping length
 	int num;
@@ -95,10 +94,8 @@ void IK_QPositionTask::ComputeJacobian(IK_QJacobian &jacobian)
 // IK_QOrientationTask
 
 IK_QOrientationTask::IK_QOrientationTask(bool primary,
-										const std::vector<IK_QSegment*>& segment,
-										const Eigen::Matrix3r &goal)
+										const std::vector<IK_QSegment*>& segment)
 		: IK_QTask(Orientation, 3, primary, segment)
-		, m_goal(goal)
 {
 }
 

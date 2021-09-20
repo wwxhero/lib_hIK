@@ -35,7 +35,7 @@
 #include "IK_QJacobian.h"
 #include "IK_QSegment.hpp"
 #include "IK_QTask.h"
-
+#include "IKChain.hpp"
 
 class IK_QJacobianSolver
 {

@@ -19,6 +19,10 @@ CIKChain::CIKChain(Algor algor, int n_iters)
 {
 }
 
+CIKChain::~CIKChain()
+{
+}
+
 bool CIKChain::Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>&)
 {
 	IKAssert(Proj != c_algor || 1 == len); // (c_algor == Proj) -> 1 == len

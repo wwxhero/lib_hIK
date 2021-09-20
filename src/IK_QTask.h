@@ -30,7 +30,7 @@
 
 class IK_QTask {
  public:
-  enum Type { Position, Orientation, CenterOfMass};
+  enum Type { Position, Orientation };
   // segment: is the one prior to end effector
   IK_QTask(Type type, int size, bool primary, const std::vector<IK_QSegment*> &segment);
   virtual ~IK_QTask()
@@ -64,10 +64,6 @@ class IK_QTask {
   // Update Jacobian
   virtual void ComputeJacobian(IK_QJacobian &jacobian) = 0;
 
-  virtual bool PositionTask() const
-  {
-    return false;
-  }
 
   virtual void Scale(Real)
   {
@@ -85,18 +81,19 @@ protected:
 
 class IK_QPositionTask : public IK_QTask {
  public:
-  IK_QPositionTask(bool primary, const std::vector<IK_QSegment*> &segment, const Eigen::Vector3r &goal);
+  IK_QPositionTask(bool primary, const std::vector<IK_QSegment*> &segment);
 
   void ComputeJacobian(IK_QJacobian &jacobian);
 
-  bool PositionTask() const
-  {
-    return true;
-  }
   virtual void Scale(Real scale) override
   {
     m_goal *= scale;
     m_clamp_length *= scale;
+  }
+
+  void SetGoal(const Eigen::Vector3r& goal)
+  {
+    m_goal = goal;
   }
 
  private:
@@ -106,9 +103,14 @@ class IK_QPositionTask : public IK_QTask {
 
 class IK_QOrientationTask : public IK_QTask {
  public:
-  IK_QOrientationTask(bool primary, const std::vector<IK_QSegment*>& segment, const Eigen::Matrix3r &goal);
+  IK_QOrientationTask(bool primary, const std::vector<IK_QSegment*>& segment);
 
   void ComputeJacobian(IK_QJacobian &jacobian);
+
+  void SetGoal(const Eigen::Quaternionr& goal)
+  {
+    m_goal = goal;
+  }
 
  private:
   Eigen::Matrix3r m_goal;

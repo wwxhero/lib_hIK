@@ -9,26 +9,21 @@ class CIKChainInverseJK : public CIKChain
 public:
 	CIKChainInverseJK(CIKChain::Algor algor, Real weight_p, Real weight_r, int n_iter)
 		: CIKChain(algor, n_iter)
+		, m_taskP(true, m_segments)
+		, m_taskR(true, m_segments)
 	{
 		if (weight_p > 0)
-		{
-			IK_QTask* task = new IK_QPositionTask(true, weight_p);
-			m_tasks.push_back(task);
-		}
-
+			m_tasksReg.push_back(&m_taskP);
 		if (weight_r > 0)
-		{
-			IK_QTask* task = new IK_QOrientationTask(true, weight_r);
-			m_tasks.push_back(task);
-		}
+			m_tasksReg.push_back(&m_taskR);
+		m_taskP.SetWeight(weight_p);
+		m_taskR.SetWeight(weight_r);
 	}
 
 	virtual ~CIKChainInverseJK()
 	{
 		for (auto seg : m_segments)
 			delete seg;
-		for (auto task : m_tasks)
-			delete task;
 	}
 
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>& joint_confs) override
@@ -40,9 +35,9 @@ public:
 			delete seg;
 		m_segments.clear();
 
-		std::map<std::string, CONF::CJointConf&> name2confJoint;
+		std::map<std::string, CONF::CJointConf*> name2confJoint;
 		for (auto confJoint : joint_confs)
-			name2confJoint[confJoint.name] = confJoint;
+			name2confJoint[confJoint.name] = &confJoint;
 
 		int n_nodes = (int)m_nodes.size();
 
@@ -65,7 +60,7 @@ public:
 		{
 			auto it_conf_j = name2confJoint.find(seg_from[i_node]->GetName_c());
 			IK_QSegment::Type type = (name2confJoint.end() != it_conf_j)
-									? it_conf_j->second.type
+									? it_conf_j->second->type
 									: IK_QSegment::R_xyz;
 			IK_QSegment* seg = NULL;
 			switch (type)
@@ -100,7 +95,7 @@ public:
 		int secondary_size = 0, secondary = 0;
 		Real primary_weight = 0.0, secondary_weight = 0.0;
 		std::vector<IK_QTask*>::iterator task;
-		std::vector<IK_QTask*>& tasks = m_tasks;
+		std::vector<IK_QTask*>& tasks = m_tasksReg;
 
 		for (task = tasks.begin(); task != tasks.end(); task++)
 		{
@@ -174,7 +169,9 @@ private:
 	IK_QJacobianX m_jacobian;
 	IK_QJacobianX m_jacobian_sub;
 
-	std::vector<IK_QTask*> m_tasks;
+	IK_QPositionTask m_taskP;
+	IK_QOrientationTask m_taskR;
+	std::vector<IK_QTask*> m_tasksReg;
 
 	bool m_secondary_enabled;
 
