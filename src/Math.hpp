@@ -3,6 +3,7 @@
 #pragma push_macro("new")
 #undef new
 
+#include <Eigen/Eigenvalues>
 #include <Eigen/Geometry>
 
 namespace Eigen {
@@ -39,6 +40,7 @@ EIGEN_MAKE_TYPEDEFS_ALL_SIZES(std::complex<Real>, c)
 
 typedef Quaternion<Real> Quaternionr;
 typedef Transform<Real,3,Affine> Affine3r;
+typedef AngleAxis<Real> AngleAxisr;
 } // end namespace Eigen
 
 #pragma pop_macro("new")
@@ -56,6 +58,22 @@ inline bool FuzzyZero(Real x)
 {
 	return fabs(x) < c_epsilon;
 }
+
+template<typename T>
+T wrap_pi(T rad)
+{
+  const T pi_2 = 2 * M_PI;
+  T rad_wrap = 0;
+  auto k = floor(rad / pi_2);
+  auto r_i_2pi = rad - k * pi_2;
+  assert(r_i_2pi >= 0 && r_i_2pi < pi_2);
+  if (r_i_2pi > M_PI)
+    rad_wrap = r_i_2pi - pi_2;
+  else
+    rad_wrap = r_i_2pi;
+  return rad_wrap;
+}
+
 
 struct Plane
 {

@@ -41,6 +41,7 @@ IK_QIxyzSegment::IK_QIxyzSegment()
 	, m_weight{(Real)1, (Real)1, (Real)1}
 	, m_axis {Eigen::Vector3r::UnitX(), Eigen::Vector3r::UnitY(), Eigen::Vector3r::UnitZ()}
 	, m_locked {false, false, false}
+	, m_theta(Eigen::Vector3r::Zero())
 {
 }
 
@@ -91,6 +92,30 @@ void IK_QIxyzSegment::FK_Update()
 
 bool IK_QIxyzSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp)
 {
+	if (m_locked[0] && m_locked[1] && m_locked[2])
+		return false;
+
+	delta.x() = jacobian.AngleUpdate(m_DoF_id);
+	delta.y() = jacobian.AngleUpdate(m_DoF_id + 1);
+	delta.z() = jacobian.AngleUpdate(m_DoF_id + 2);
+
+	// Directly update the rotation matrix, with Rodrigues' rotation formula,
+	// to avoid singularities and allow smooth integration.
+	bool zero_d_theta = ((m_locked[0] || FuzzyZero(delta.x()))
+					  && (m_locked[1] || FuzzyZero(delta.y()))
+					  && (m_locked[2] || FuzzyZero(delta.z())));
+	if (!zero_d_theta) 
+	{
+
+		m_theta += delta;
+
+		// interpret dq as: x->y'->z'' == z->y->x
+		Eigen::AngleAxisr rz(m_theta[2], Eigen::Vector3r::UnitZ());
+		Eigen::AngleAxisr ry(m_theta[1], Eigen::Vector3r::UnitY());
+		Eigen::AngleAxisr rx(m_theta[0], Eigen::Vector3r::UnitX());
+		m_joints[0]->SetRotation(rx * ry * rz);
+	}
+
 	return false;
 }
 

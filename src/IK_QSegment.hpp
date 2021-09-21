@@ -176,4 +176,5 @@ private:
 	Real m_weight[3];
 	Eigen::Vector3r m_axis[3];
 	bool m_locked[3];
+	Eigen::Vector3r m_theta;
 };

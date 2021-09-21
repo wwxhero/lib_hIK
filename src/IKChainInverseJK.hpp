@@ -325,7 +325,6 @@ protected:
 
 	Real ComputeScale()
 	{
-		return 1.0;
 		std::vector<IK_QSegment *>::iterator seg;
 		Real length = (Real)0.0f;
 
