@@ -537,7 +537,7 @@ namespace CONF
 				else if ("MotionPipe" == name)
 				{
 					const char* sync_type = ele->Attribute("sync");
-					sync = CMoNode::to_TM_TYPE(sync_type);
+					sync = CMoNode::to_RETAR_TYPE(sync_type);
 
 					const char* m_name[3][3] = {
 						{"m11", "m12", "m13"},
@@ -689,7 +689,7 @@ namespace CONF
 #ifdef _DEBUG
 	void CMotionPipeConf::Dump_Dbg() const
 	{
-		LOGIKVar(LogInfoCharPtr, CMoNode::from_TM_TYPE(sync));
+		LOGIKVar(LogInfoCharPtr, CMoNode::from_RETAR_TYPE(sync));
 		LOGIKVar(LogInfoFloat3x3_m, m);
 		Source.Dump_Dbg();
 		Destination.Dump_Dbg();

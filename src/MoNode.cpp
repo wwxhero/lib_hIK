@@ -2,11 +2,11 @@
 #include "MoNode.hpp"
 
 
-BEGIN_ENUM_STR(CMoNode, TM_TYPE)
+BEGIN_ENUM_STR(CMoNode, RETAR_TYPE)
 	ENUM_ITEM(homo)
 	ENUM_ITEM(cross)
 	ENUM_ITEM(unknown)
-END_ENUM_STR(CMoNode, TM_TYPE)
+END_ENUM_STR(CMoNode, RETAR_TYPE)
 
 
 CMoNode::CMoNode(CArtiBodyNode* body)
@@ -26,7 +26,7 @@ CMoNode::~CMoNode()
 
 
 
-bool CMoNode::MoCNN_Initialize(TM_TYPE tm_type, const Real p2c_w[3][3])
+bool CMoNode::MoCNN_Initialize(RETAR_TYPE tm_type, const Real p2c_w[3][3])
 {
 	m_tmType = tm_type;
 	CMoNode* parent = GetParent();
@@ -63,8 +63,6 @@ bool CMoNode::MoCNN_Initialize(TM_TYPE tm_type, const Real p2c_w[3][3])
 	}
 	return ok;
 }
-
-
 
 bool CMoTree::Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const wchar_t* pairs[][2], int n_pairs, const Real p2c_w[3][3])
 {

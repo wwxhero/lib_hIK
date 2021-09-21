@@ -8,8 +8,8 @@
 class CMoNode : public TreeNode<CMoNode>
 {
 public:
-	enum TM_TYPE { homo = 0, cross, unknown };
-	DECLARE_ENUM_STR(TM_TYPE)
+	enum RETAR_TYPE { homo = 0, cross, unknown };
+	DECLARE_ENUM_STR(RETAR_TYPE)
 private:
 	struct JointPair
 	{
@@ -19,7 +19,7 @@ private:
 		Eigen::Matrix3r to2from;
 	};
 
-	inline bool InitJointPair(JointPair* pair, const CArtiBodyNode* artiPair[2], TM_TYPE tm_type, const Real mf2t_w[3][3])
+	inline bool InitJointPair(JointPair* pair, const CArtiBodyNode* artiPair[2], RETAR_TYPE tm_type, const Real mf2t_w[3][3])
 	{
 		// static Real s_f2t[3][3] = {
 		// 	{1,	0,	0,	0},
@@ -66,8 +66,8 @@ private:
 		// (cross == tm_type && has_parent_1) -> !pair->from2to.HasTT()
 #if defined _DEBUG || defined SMOOTH_LOGGING
 		std::stringstream logInfo;
-		logInfo << "Binding:" << CMoNode::from_TM_TYPE(tm_type) << "\t"
-				<< pair->j_from->GetName_c() << " => " << pair->j_to->GetName_c() << ":\n" 
+		logInfo << "Binding:" << CMoNode::from_RETAR_TYPE(tm_type) << "\t"
+				<< pair->j_from->GetName_c() << " => " << pair->j_to->GetName_c() << ":\n"
 				<< pair->from2to;
 		LOGIK(logInfo.str().c_str());
 #endif
@@ -83,9 +83,9 @@ public:
 	~CMoNode();
 
 
-	bool MoCNN_Initialize(TM_TYPE tm_type, const Real p2c_w[3][3]);
+	bool MoCNN_Initialize(RETAR_TYPE tm_type, const Real p2c_w[3][3]);
 	template<typename CHAR, typename LAMBDA_name>
-	bool MoCNN_Initialize(TM_TYPE tm_type, const CHAR* name_pairs[][2], int n_pairs, LAMBDA_name GetName, const Real f2t_w[3][3])
+	bool MoCNN_Initialize(RETAR_TYPE tm_type, const CHAR* name_pairs[][2], int n_pairs, LAMBDA_name GetName, const Real f2t_w[3][3])
 	{
 		assert(n_pairs > 0);
 		m_tmType = tm_type;
@@ -191,7 +191,7 @@ public:
 	}
 private:
 	std::vector<JointPair*> m_jointPairs;
-	TM_TYPE m_tmType;
+	RETAR_TYPE m_tmType;
 	CArtiBodyNode* m_hostee;
 
 };

@@ -211,7 +211,7 @@ namespace CONF
 		static CMotionPipeConf* Load(const wchar_t* confXML);
 		static void UnLoad(CMotionPipeConf* conf);
 	public:
-		CMoNode::TM_TYPE sync;
+		CMoNode::RETAR_TYPE sync;
 		Real m[3][3];
 		Real m_inv[3][3];
 		CBodyConf Source, Destination;
