@@ -82,6 +82,9 @@ typedef void* HCONFMOPIPE;
 
 const Real c_epsilon = 1e-5f;
 const Real c_2epsilon = 2e-5f;
+const Real c_5epsilon = 5e-5f;
+const Real c_10epsilon = 2e-4f;
+const Real c_100epsilon = 2e-3f;
 const Real c_rotm_epsilon = (Real)0.005;
 
 #include <crtdbg.h>

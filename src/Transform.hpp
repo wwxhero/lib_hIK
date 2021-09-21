@@ -8,9 +8,9 @@ inline bool NoScale(const _TRANSFORM& tm)
 	auto err_x = tm.s.x - (Real)1;
 	auto err_y = tm.s.y - (Real)1;
 	auto err_z = tm.s.z - (Real)1;
-	return (-c_epsilon < err_x && err_x < c_epsilon)
-		&& (-c_epsilon < err_y && err_y < c_epsilon)
-		&& (-c_epsilon < err_z && err_z < c_epsilon);
+	return (-c_10epsilon < err_x && err_x < c_10epsilon)
+		&& (-c_10epsilon < err_y && err_y < c_10epsilon)
+		&& (-c_10epsilon < err_z && err_z < c_10epsilon);
 
 }
 
