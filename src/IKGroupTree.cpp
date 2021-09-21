@@ -9,10 +9,10 @@ CIKGroupNode::CIKGroupNode()
 {
 }
 
-CIKGroupNode::CIKGroupNode(const CIKGroupNode& src)
+CIKGroupNode::CIKGroupNode(CIKGroupNode& src)
 	: m_nSpecMax(0)
 {
-	m_kChains = src.m_kChains;
+	m_kChains = std::move(src.m_kChains);
 }
 
 CIKGroupNode::~CIKGroupNode()
@@ -387,7 +387,7 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
 #endif
 				auto GenerateNode = [](const CIKGroupNodeGen* src, CIKGroupNode** dst) -> bool
 					{
-						*dst = new CIKGroupNode(*src);
+						*dst = new CIKGroupNode(*(const_cast<CIKGroupNodeGen*>(src)));
 						return true;
 					};
 				bool constructed = CIKGroupTreeGen::Construct(root_gen, &root_G, GenerateNode);

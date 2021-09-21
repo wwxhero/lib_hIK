@@ -6,7 +6,7 @@ class CIKGroupNode : public TreeNode<CIKGroupNode>
 {
 public:
 	CIKGroupNode();
-	CIKGroupNode(const CIKGroupNode& src);
+	explicit CIKGroupNode(CIKGroupNode& src);
 	~CIKGroupNode();
 
 	void Joint(CIKChain* chain)

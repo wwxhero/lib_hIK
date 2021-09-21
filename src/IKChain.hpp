@@ -82,6 +82,7 @@ class CIKChainProj : public CIKChain
 {
 public:
 	CIKChainProj(const Real norm[3]);
+	virtual ~CIKChainProj();
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>&) override;
 	virtual void Dump(std::stringstream& info) const override;
 	virtual void UpdateNext(int step) override;

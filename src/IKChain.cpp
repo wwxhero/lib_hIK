@@ -115,6 +115,10 @@ CIKChainProj::CIKChainProj(const Real norm[3])
 	UnitVec(m_terrain.n);
 }
 
+CIKChainProj::~CIKChainProj()
+{
+}
+
 bool CIKChainProj::Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>& joints_conf)
 {
 	bool initialized = (1 == len)
