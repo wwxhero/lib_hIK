@@ -86,6 +86,8 @@ const Real c_5epsilon = 5e-5f;
 const Real c_10epsilon = 2e-4f;
 const Real c_100epsilon = 2e-3f;
 const Real c_rotm_epsilon = (Real)0.005;
+const Real c_pos_epsilon = (Real)1.0; //in centimeter
+const Real c_rotq_epsilon = (Real)1e-4;
 
 #include <crtdbg.h>
 #if defined LEAK_CHECK

@@ -50,6 +50,7 @@ public:
 	virtual IJoint* GetJoint() = 0;
 	virtual const IJoint* GetJoint() const = 0;
 
+	virtual void SetTransformLocal2Parent0(const _TRANSFORM& tm, _TRANSFORM& tm_m) const = 0;
 
 protected:
 	std::list<CArtiBodyNode*> m_kinalst;
@@ -134,6 +135,15 @@ public:
 		return &m_joint;
 	}
 
+	virtual void SetTransformLocal2Parent0(const _TRANSFORM &tm_restore,_TRANSFORM &tm_backup) const
+	{
+		m_local2parent0.CopyTo(tm_backup);
+		TTransform& local2parent0 = const_cast<TTransform&>(m_local2parent0);
+		TTransform& parent2local0 = const_cast<TTransform&>(m_parent2local0);
+		local2parent0.CopyFrom(tm_restore);
+		parent2local0 = local2parent0.inverse();
+	}
+
 protected:
 	const TTransform m_local2parent0;
 	const TTransform m_parent2local0;
@@ -163,12 +173,13 @@ public:
 	{
 	}
 private:
+	template<bool IS_ROOT>
 	inline void FK_UpdateNode()
 	{
 		m_local2parent_cached = m_local2parent0 * m_joint.m_tm;
 		m_parent2local_cached = m_local2parent_cached.inverse();
 		CArtiBodyNode_anim* parent = static_cast<CArtiBodyNode_anim*>(GetParent());
-		bool is_root = (NULL == parent);
+		bool is_root = (IS_ROOT || NULL == parent);
 
 		if (is_root)
 		{
@@ -207,14 +218,14 @@ public:
 	{
 	}
 private:
-
+	template<bool IS_ROOT>
 	inline void FK_UpdateNode()
 	{
 		// this function is performance sensitive
 		this->m_local2parent_cached.Update(this->m_local2parent0, this->m_joint.m_tm);
 		this->m_parent2local_cached = this->m_local2parent_cached.inverse();
 		CArtiBodyNode* parent0 = this->GetParent();
-		bool is_root = (NULL == parent0);
+		bool is_root = (IS_ROOT || NULL == parent0);
 		if (is_root)
 		{
 			this->m_local2world_cached = this->m_local2parent_cached;

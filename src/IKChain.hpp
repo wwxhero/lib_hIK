@@ -34,7 +34,7 @@ public:
 
 	virtual void Dump(std::stringstream& info) const;
 
-	virtual void BeginUpdate();
+	virtual bool BeginUpdate(const Transform_TR& groot_w2l);
 
 	virtual void UpdateNext(int step)
 	{
@@ -59,6 +59,15 @@ public:
 	int NBodies() const
 	{
 		return (int)m_nodes.size();
+	}
+protected:
+	inline bool UpdateComplete() const
+	{
+		_TRANSFORM goal_w, eef_w;
+		m_eefSrc->GetGoal(goal_w);
+		const Transform* eef_w_tm = m_eefSrc->GetTransformLocal2World();
+		eef_w_tm->CopyTo(eef_w);
+		return Equal(goal_w, eef_w);
 	}
 public:
 	const Algor c_algor;

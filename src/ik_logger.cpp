@@ -174,6 +174,31 @@ void LogInfoFloat(const char* file, unsigned int line, const char* token, float 
 #endif
 }
 
+void LogInfoTM(const char *file, unsigned int line, const char *token, const _TRANSFORM *v)
+{
+	std::stringstream v_out;
+#ifndef SMOOTH_LOGGING
+	fprintf(stdout
+		, "[%s:%d] %s = {tt:[%.4f\t%.4f\t%.4f]\tr:[%.4f\t%.4f\t%.4f\t%.4f]\ts:[%.4f\t%.4f\t%.4f]}\n"
+		, file_short(file)
+		, line
+		, token
+		, v->tt.x, v->tt.y, v->tt.z
+		, v->r.w, v->r.x, v->r.y, v->r.z
+		, v->s.x, v->s.y, v->s.z);
+	fflush(stdout);
+#else
+	g_LoggerFast.OutFmt(
+		  "[%s:%d] %s = {tt:[%.4f\t%.4f\t%.4f]\tr:[%.4f\t%.4f\t%.4f\t%.4f]\ts:[%.4f\t%.4f\t%.4f]}\n"
+		, file_short(file)
+		, line
+		, token
+		, v->tt.x, v->tt.y, v->tt.z
+		, v->r.w, v->r.x, v->r.y, v->r.z
+		, v->s.x, v->s.y, v->s.z);
+#endif
+}
+
 void LOGIKFlush()
 {
 #if defined SMOOTH_LOGGING

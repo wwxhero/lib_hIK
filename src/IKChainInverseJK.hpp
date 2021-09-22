@@ -161,9 +161,10 @@ public:
 		CIKChain::Dump(info);
 	}
 
-	virtual void BeginUpdate() override
+	virtual bool BeginUpdate(const Transform_TR& groot_w2l) override
 	{
-		CIKChain::BeginUpdate();
+		if (!CIKChain::BeginUpdate(groot_w2l))
+			return false;;
 		_TRANSFORM goal;
 		m_eefSrc->GetGoal(goal);
 		IKAssert(NoScale(goal));
@@ -178,6 +179,7 @@ public:
 		// Real dt = analyze_time();
 		LOGIKVar(LogInfoFloat, m_scaleNormlize);
 		Scale(m_scaleNormlize, m_tasksReg);
+		return true;
 	}
 
 	// virtual void UpdateNext(int step) override;
@@ -251,6 +253,8 @@ public:
 	virtual void EndUpdate() override
 	{
 		Scale(1.0f / m_scaleNormlize, m_tasksReg);
+		// m_taskP.Complete();
+		// m_taskR.Complete();
 		// analyze_add_run(max_iterations, analyze_time()-dt);
 		LOGIKVar(LogInfoInt, m_jacobian.rows());
 		LOGIKVar(LogInfoInt, m_jacobian.cols());

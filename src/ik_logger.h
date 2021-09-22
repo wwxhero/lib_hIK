@@ -2,6 +2,7 @@
 #ifndef __IK_LOGGER_H__
 #  define __IK_LOGGER_H__
 #  include <string.h>
+#  include "articulated_body.h"
 // #define SMOOTH_LOGGING
 // #define PROFILE_IK
 
@@ -22,6 +23,7 @@ void LogInfoFloat(const char *file, unsigned int line, const char *token, float 
 void LogInfoFloat3x3_m(const char *file, unsigned int line, const char *token, const float m[3][3]);
 void LogInfoDouble3x3(const char *file, unsigned int line, const char *token, const double *m);
 void LogInfoDouble1x3(const char *file, unsigned int line, const char *token, const double *v);
+void LogInfoTM(const char *file, unsigned int line, const char *token, const _TRANSFORM *v);
 void LOGIKFlush();
 
 void AssertionFail(const char *file, unsigned int line);

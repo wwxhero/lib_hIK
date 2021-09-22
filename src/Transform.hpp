@@ -14,6 +14,75 @@ inline bool NoScale(const _TRANSFORM& tm)
 
 }
 
+inline bool NoRot(const _TRANSFORM& tm)
+{
+	auto err_w = tm.r.w - (Real)1;
+	auto err_x = tm.r.x - (Real)0;
+	auto err_y = tm.r.y - (Real)0;
+	auto err_z = tm.r.z - (Real)0;
+	return (-c_10epsilon < err_w && err_w < c_10epsilon)
+		&& (-c_10epsilon < err_x && err_x < c_10epsilon)
+		&& (-c_10epsilon < err_y && err_y < c_10epsilon)
+		&& (-c_10epsilon < err_z && err_z < c_10epsilon);
+}
+
+inline bool NoTT(const _TRANSFORM& tm)
+{
+	return (-c_10epsilon < tm.tt.x && tm.tt.x < c_10epsilon)
+		&& (-c_10epsilon < tm.tt.y && tm.tt.y < c_10epsilon)
+		&& (-c_10epsilon < tm.tt.z && tm.tt.z < c_10epsilon);
+}
+
+inline bool Is_ID(const _TRANSFORM& tm)
+{
+	return NoScale(tm) && NoRot(tm) && NoTT(tm);
+}
+
+inline void SetID(_TRANSFORM& tm)
+{
+	tm.s.x = (Real)1; tm.s.y = (Real)1; tm.s.z = (Real)1;
+	tm.r.x = (Real)0; tm.r.y = (Real)0; tm.r.z = (Real)0; tm.r.w = (Real)1;
+	tm.tt.x = (Real)0; tm.tt.y = (Real)0; tm.tt.z = (Real)0;
+}
+
+inline bool Equal(const _TRANSFORM& tm_1, const _TRANSFORM& tm_2)
+{
+	Real err_s_x = tm_1.s.x - tm_2.s.x;
+	Real err_s_y = tm_1.s.y - tm_2.s.y;
+	Real err_s_z = tm_1.s.z - tm_2.s.z;
+
+	bool s_eq = (-c_10epsilon < err_s_x && err_s_x < c_10epsilon)
+			 && (-c_10epsilon < err_s_y && err_s_y < c_10epsilon)
+			 && (-c_10epsilon < err_s_z && err_s_z < c_10epsilon);
+
+	if (!s_eq)
+		return false;
+
+	Real err_tt_x = tm_1.tt.x - tm_2.tt.x;
+	Real err_tt_y = tm_1.tt.y - tm_2.tt.y;
+	Real err_tt_z = tm_1.tt.z - tm_2.tt.z;
+
+	bool tt_eq = (-c_10epsilon < err_tt_x && err_tt_x < c_10epsilon)
+			  && (-c_10epsilon < err_tt_y && err_tt_y < c_10epsilon)
+			  && (-c_10epsilon < err_tt_z && err_tt_z < c_10epsilon);
+
+	if (!tt_eq)
+		return false;
+
+	Real err_r =  tm_1.r.w * tm_2.r.w
+				+ tm_1.r.x * tm_2.r.x
+				+ tm_1.r.y * tm_2.r.y
+				+ tm_1.r.z * tm_2.r.z;
+
+	Real err_r_0 = err_r - (Real)1;
+	Real err_r_1 = err_r + (Real)1;
+
+	bool r_eq = (-c_rotq_epsilon < err_r_0 && err_r_0 < c_rotq_epsilon)
+			 || (-c_rotq_epsilon < err_r_1 && err_r_1 < c_rotq_epsilon);
+
+	return r_eq;
+}
+
 class Transform
 {
 public:
@@ -122,18 +191,13 @@ class Transform_R : public Transform
 
 	void Init(const _TRANSFORM& tm)
 	{
-		assert(1 == tm.s.x
-			&& 1 == tm.s.y
-			&& 1 == tm.s.z);
+		IKAssert(NoScale(tm)
+				&& NoTT(tm));
 
 		m_rotq.w() = tm.r.w;
 		m_rotq.x() = tm.r.x;
 		m_rotq.y() = tm.r.y;
 		m_rotq.z() = tm.r.z;
-
-		assert(0 == tm.tt.x
-			&& 0 == tm.tt.y
-			&& 0 == tm.tt.z);
 	}
 public:
 	Transform_R(const _TRANSFORM& tm)

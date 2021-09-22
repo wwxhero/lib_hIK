@@ -4,8 +4,9 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKGroupNode:
 
-CIKGroupNode::CIKGroupNode()
-	: m_nSpecMax(0)
+CIKGroupNode::CIKGroupNode(const CArtiBodyNode* root)
+	: m_rootBody(root)
+	, m_nSpecMax(0)
 {
 }
 
@@ -13,6 +14,8 @@ CIKGroupNode::CIKGroupNode(CIKGroupNode& src)
 	: m_nSpecMax(0)
 {
 	m_kChains = std::move(src.m_kChains);
+	m_updating.resize(m_kChains.size(), false);
+	m_rootBody = src.m_rootBody;
 }
 
 CIKGroupNode::~CIKGroupNode()
@@ -261,7 +264,8 @@ class CIKGroupNodeGen 		// G
 {
 public:
 	CIKGroupNodeGen(const CArtiBodyClrNode* jTree)
-		: c_jTree(jTree)
+		: CIKGroupNode(jTree->c_body)
+		, c_jTree(jTree)
 	{
 	}
 	virtual void Dump(int n_indents) const override

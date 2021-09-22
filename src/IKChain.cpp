@@ -41,7 +41,7 @@ bool CIKChain::Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::C
 		node_i.body = body_p;
 	}
 
-	bool initialized = (i == i_end);
+	bool initialized = (i == i_end && len > 0);
 	IKAssert(initialized);
 	return initialized;
 }
@@ -65,7 +65,7 @@ void CIKChain::SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc
 	m_src2dstW_Offset = offsetDst * src2dst_w;
 }
 
-void CIKChain::BeginUpdate()
+bool CIKChain::BeginUpdate(const Transform_TR& groot_w2l)
 {
 	IKAssert(NULL != m_eefSrc
 		&& NULL != m_targetDst);
@@ -79,7 +79,7 @@ void CIKChain::BeginUpdate()
 	target_src_w.linear() = target_linear_src_w;
 	target_src_w.translation() = target_tt_src_w;
 	m_eefSrc->SetGoal(target_src_w);
-
+	bool valid_update = !UpdateComplete();
 #ifdef _DEBUG
 	const Transform* eef_src_w = m_eefSrc->GetTransformLocal2World();
 	Eigen::Vector3r offset_T = eef_src_w->getTranslation() - target_src_w.getTranslation();
@@ -90,8 +90,10 @@ void CIKChain::BeginUpdate()
 		<<    "\n\t   eef_src = [" << eef_src_w->ToString().c_str() << "]"
 		<< "\n\tOffset_T = \n[" << offset_T << "]";
 	LOGIK(logInfo.str().c_str());
+	LOGIKVar(LogInfoBool, valid_update);
 	LOGIKFlush();
 #endif
+	return valid_update;
 }
 
 void CIKChain::Dump(std::stringstream& info) const
