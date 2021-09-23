@@ -164,7 +164,7 @@ public:
 	virtual bool BeginUpdate(const Transform_TR& groot_w2l) override
 	{
 		if (!CIKChain::BeginUpdate(groot_w2l))
-			return false;;
+			return false;
 		_TRANSFORM goal;
 		m_eefSrc->GetGoal(goal);
 		IKAssert(NoScale(goal));
@@ -253,8 +253,8 @@ public:
 	virtual void EndUpdate() override
 	{
 		Scale(1.0f / m_scaleNormlize, m_tasksReg);
-		// m_taskP.Complete();
-		// m_taskR.Complete();
+		m_taskP.Complete();
+		m_taskR.Complete();
 		// analyze_add_run(max_iterations, analyze_time()-dt);
 		LOGIKVar(LogInfoInt, m_jacobian.rows());
 		LOGIKVar(LogInfoInt, m_jacobian.cols());

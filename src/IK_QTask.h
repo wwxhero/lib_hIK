@@ -96,6 +96,9 @@ class IK_QPositionTask : public IK_QTask {
     m_goal = goal;
   }
 
+  void Complete(){}
+
+
  private:
   Eigen::Vector3r m_goal;
   Real m_clamp_length;
@@ -110,10 +113,14 @@ class IK_QOrientationTask : public IK_QTask {
   void SetGoal(const Eigen::Quaternionr& goal)
   {
     m_goal = goal;
+    m_complted = false;
   }
+
+  void Complete();
 
  private:
   Eigen::Matrix3r m_goal;
+  bool m_complted;
 };
 
 

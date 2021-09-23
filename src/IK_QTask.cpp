@@ -96,6 +96,7 @@ void IK_QPositionTask::ComputeJacobian(IK_QJacobian &jacobian)
 IK_QOrientationTask::IK_QOrientationTask(bool primary,
 										const std::vector<IK_QSegment*>& segment)
 		: IK_QTask(Orientation, 3, primary, segment)
+		, m_complted(false)
 {
 }
 
@@ -136,6 +137,19 @@ void IK_QOrientationTask::ComputeJacobian(IK_QJacobian &jacobian)
 				jacobian.SetDerivatives(m_id, seg->DoFId() + i, axis);
 			}
 		}
+	}
+	m_complted = true;
+}
+
+void IK_QOrientationTask::Complete()
+{
+	if (m_complted)
+		return;
+	int n_segs = (int)m_segments.size();
+	if (n_segs > 0)
+	{
+		Eigen::Quaternionr goal(m_goal);
+		m_segments[n_segs - 1]->SetTipGlobalOri(goal);
 	}
 }
 

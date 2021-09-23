@@ -95,6 +95,7 @@ public:
 	virtual void CopyFrom(const _TRANSFORM& tm) = 0;
 	virtual Eigen::Matrix3r getRotation_m() const;
 	virtual Eigen::Affine3r getAffine() const;
+	static Eigen::Quaternionr getRotation_q(const Transform*);
 	TM_TYPE Type() const
 	{
 		return c_type;
@@ -174,6 +175,11 @@ public:
 	inline void setRotation(const Eigen::Quaternionr& rotq)
 	{
 		linear() = rotq.matrix();
+	}
+	inline Eigen::Quaternionr getRotation_q() const
+	{
+		Eigen::Quaternionr q(getRotation_m());
+		return q;
 	}
 };
 

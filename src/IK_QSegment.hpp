@@ -146,6 +146,11 @@ public:
 		return tm_l2w_end;
 	}
 
+	void SetTipGlobalOri(const Eigen::Quaternionr& q)
+	{
+		m_joints[1]->SetRotation_w(q);
+	}
+
 protected:
 	Real m_scale;
 	CArtiBodyNode* m_bodies[2];

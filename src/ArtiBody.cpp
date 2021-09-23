@@ -229,41 +229,21 @@ void CArtiBodyTree::FK_Update(CArtiBodyNode* root)
 	bool is_an_anim = (root->c_type&anim);
 	if (is_an_anim)
 	{
-		auto it = root->m_kinalst.begin();
-		auto it_end = root->m_kinalst.end();
-		if (it != it_end)
-		{
-			static_cast<CArtiBodyNode_anim*>(*it)->FK_UpdateNode<true>();
-			for (it ++; it != it_end; it ++)
-				static_cast<CArtiBodyNode_anim*>(*it)->FK_UpdateNode<false>();
-		}
+		for (auto body : root->m_kinalst)
+			static_cast<CArtiBodyNode_anim*>(body)->FK_UpdateNode();
 	}
 	else // not an anim
 	{
-		auto it = root->m_kinalst.begin();
-		auto it_end = root->m_kinalst.end();
-		if (it != it_end)
+		for (auto body : root->m_kinalst)
 		{
-			switch ((*it)->c_jtmflag)
+			switch (body->c_jtmflag)
 			{
 				case t_r:
-					static_cast<CArtiBodyNode_sim_r*>(*it)->FK_UpdateNode<true>();
+					static_cast<CArtiBodyNode_sim_r*>(body)->FK_UpdateNode();
 					break;
 				case t_tr:
-					static_cast<CArtiBodyNode_sim_tr*>(*it)->FK_UpdateNode<true>();
+					static_cast<CArtiBodyNode_sim_tr*>(body)->FK_UpdateNode();
 					break;
-			}
-			for (it ++; it != it_end; it ++)
-			{
-				switch ((*it)->c_jtmflag)
-				{
-					case t_r:
-						static_cast<CArtiBodyNode_sim_r*>((*it))->FK_UpdateNode<false>();
-						break;
-					case t_tr:
-						static_cast<CArtiBodyNode_sim_tr*>((*it))->FK_UpdateNode<false>();
-						break;
-				}
 			}
 		}
 	}
@@ -312,7 +292,6 @@ CArtiBodyNode::CArtiBodyNode(const wchar_t *name, BODY_TYPE type, TM_TYPE jtmfla
 	m_namew = name;
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 	m_namec = converter.to_bytes(m_namew);
-	SetID(m_goal);
 }
 
 CArtiBodyNode::CArtiBodyNode(const char *name, BODY_TYPE type, TM_TYPE jtmflag)
@@ -323,7 +302,6 @@ CArtiBodyNode::CArtiBodyNode(const char *name, BODY_TYPE type, TM_TYPE jtmflag)
 	m_namec = name;
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 	m_namew = converter.from_bytes(m_namec);
-	SetID(m_goal);
 }
 
 CArtiBodyNode::~CArtiBodyNode()
