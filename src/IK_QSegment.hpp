@@ -107,7 +107,7 @@ public:
  	// is the global transformation from the parent segment
 	virtual void FK_Update()
 	{
-		CArtiBodyTree::FK_Update(m_bodies[0]);
+		CArtiBodyTree::FK_Update<true>(m_bodies[0]);
 	}
 
 	// get axis from rotation matrix for derivative computation

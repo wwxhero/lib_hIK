@@ -306,12 +306,37 @@ public:
 		m_tt = tm0.m_rotq*delta.m_tt + tm0.m_tt;
 	}
 
+	inline Eigen::Vector3r Apply_p(const Eigen::Vector3r& p) const
+	{
+		return m_rotq * p + m_tt;
+	}
+
+	inline Eigen::Vector3r Apply_v(const Eigen::Vector3r& v) const
+	{
+		return m_rotq * v;
+	}
+
+	inline Plane Apply(const Plane& plane) const
+	{
+		Eigen::Vector3r p_0 = Apply_p(plane.p);
+		Eigen::Vector3r n = Apply_v(plane.n);
+		return Plane(n, p_0);
+	}
+
 	bool Valid() const
 	{
 		auto abs_rotq = m_rotq.squaredNorm();
 		Real err = abs_rotq - (Real)1;
 		return -c_2epsilon < err && err < +c_2epsilon;
 	}
+
+	Transform_TR operator=(const Transform_TR& other)
+	{
+		m_tt = other.m_tt;
+		m_rotq = other.m_rotq;
+		return *this;
+	}
+
 private:
 	Eigen::Vector3r m_tt;
 };

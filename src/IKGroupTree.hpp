@@ -24,33 +24,41 @@ public:
 		if (m_nSpecMax < n_steps_i)
 			m_nSpecMax = n_steps_i;
 
-		m_updating.push_back(false);
 	}
 
 	void IKUpdate()
 	{
 		int n_chains = (int)m_kChains.size();
-		IKAssert(n_chains == m_updating.size());
 		if (n_chains < 1)
 			return;
-		const Transform* tm_w2l = m_rootBody->GetTransformWorld2Local();
-		IKAssert(t_tr == tm_w2l->Type());
-		const Transform_TR* tm_w2l_tr = static_cast<const Transform_TR*>(tm_w2l);
+		Transform_TR tm_w2g_tr;
+		Transform_TR tm_g2w_tr;
+		CArtiBodyNode* g_parent = m_rootBody->GetParent();
+		if (NULL != g_parent)
+		{
+			const Transform* tm_w2g = g_parent->GetTransformWorld2Local();
+			IKAssert(t_tr == tm_w2g->Type());
+			tm_w2g_tr = *static_cast<const Transform_TR*>(tm_w2g);
+			const Transform* tm_g2w = g_parent->GetTransformLocal2World();
+			IKAssert(t_tr == tm_g2w->Type());
+			tm_g2w_tr = *static_cast<const Transform_TR*>(tm_g2w);
+		}
+
 		bool exist_an_update = false;
 		for (int i_chain = 0; i_chain < n_chains; i_chain ++)
 		{
-			bool updating_i = m_kChains[i_chain]->BeginUpdate(*tm_w2l_tr);
+			bool updating_i = m_kChains[i_chain]->BeginUpdate(tm_w2g_tr);
 			exist_an_update = (exist_an_update || updating_i);
-			m_updating[i_chain] = updating_i;
 		}
 
 		if (!exist_an_update)
 			return;
-
+		if (NULL != g_parent) //for root of the three FK_Update<G_SPACE=true> has no effect but waist computational resource
+			CArtiBodyTree::FK_Update<true>(const_cast<CArtiBodyNode*>(m_rootBody));
+		
 		if (1 == n_chains)
 		{
-			if (m_updating[0])
-				m_kChains[0]->UpdateAll();
+			m_kChains[0]->UpdateAll();
 		}
 		else
 		{
@@ -58,16 +66,16 @@ public:
 			{
 				for (int i_chain = 0; i_chain < n_chains; i_chain ++)
 				{
-					if (m_updating[i_chain])
-						m_kChains[i_chain]->UpdateNext(i_step);
+					m_kChains[i_chain]->UpdateNext(i_step);
 				}
 			}
 		}
 		for (int i_chain = 0; i_chain < n_chains; i_chain ++)
 		{
-			if (m_updating[i_chain])
-				m_kChains[i_chain]->EndUpdate();
+			m_kChains[i_chain]->EndUpdate(tm_g2w_tr);
 		}
+
+		CArtiBodyTree::FK_Update<false>(const_cast<CArtiBodyNode*>(m_rootBody));
 	}
 
 	void SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
@@ -75,7 +83,6 @@ public:
 protected:
 	const CArtiBodyNode* m_rootBody;
 	std::vector<CIKChain*> m_kChains;
-	std::vector<bool> m_updating;
 	int m_nSpecMax;
 };
 

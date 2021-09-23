@@ -213,7 +213,7 @@ bool CArtiBodyTree::Clone_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, con
 	if (cloned_tree)
 	{
 		KINA_Initialize(*dst);
-		FK_Update(*dst);
+		FK_Update<false>(*dst);
 	}
 	else
 	{
@@ -223,31 +223,6 @@ bool CArtiBodyTree::Clone_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, con
 }
 
 
-
-void CArtiBodyTree::FK_Update(CArtiBodyNode* root)
-{
-	bool is_an_anim = (root->c_type&anim);
-	if (is_an_anim)
-	{
-		for (auto body : root->m_kinalst)
-			static_cast<CArtiBodyNode_anim*>(body)->FK_UpdateNode();
-	}
-	else // not an anim
-	{
-		for (auto body : root->m_kinalst)
-		{
-			switch (body->c_jtmflag)
-			{
-				case t_r:
-					static_cast<CArtiBodyNode_sim_r*>(body)->FK_UpdateNode();
-					break;
-				case t_tr:
-					static_cast<CArtiBodyNode_sim_tr*>(body)->FK_UpdateNode();
-					break;
-			}
-		}
-	}
-}
 
 void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 {

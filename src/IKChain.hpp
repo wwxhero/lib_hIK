@@ -34,7 +34,7 @@ public:
 
 	virtual void Dump(std::stringstream& info) const;
 
-	virtual bool BeginUpdate(const Transform_TR& groot_w2l);
+	virtual bool BeginUpdate(const Transform_TR& w2g);
 
 	virtual void UpdateNext(int step)
 	{
@@ -46,7 +46,7 @@ public:
 
 	}
 
-	virtual void EndUpdate()
+	virtual void EndUpdate(const Transform_TR& g2w)
 	{
 
 	}
@@ -60,15 +60,7 @@ public:
 	{
 		return (int)m_nodes.size();
 	}
-protected:
-	inline bool UpdateComplete() const
-	{
-		_TRANSFORM goal_w, eef_w;
-		m_eefSrc->GetGoal(goal_w);
-		const Transform* eef_w_tm = m_eefSrc->GetTransformLocal2World();
-		eef_w_tm->CopyTo(eef_w);
-		return Equal(goal_w, eef_w);
-	}
+
 public:
 	const Algor c_algor;
 	struct IKNode
@@ -94,12 +86,13 @@ public:
 	virtual ~CIKChainProj();
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>&) override;
 	virtual void Dump(std::stringstream& info) const override;
+	virtual bool BeginUpdate(const Transform_TR& w2g);
 	virtual void UpdateNext(int step) override;
-
 	// this is a quick IK update solution
 	virtual void UpdateAll() override;
 private:
 	void Update();
-	Plane m_terrain;
+	Plane m_terrainW;
+	Plane m_terrainG;
 };
 

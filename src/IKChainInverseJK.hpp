@@ -250,7 +250,7 @@ public:
 
 	}
 
-	virtual void EndUpdate() override
+	virtual void EndUpdate(const Transform_TR& g2w) override
 	{
 		Scale(1.0f / m_scaleNormlize, m_tasksReg);
 		m_taskP.Complete();

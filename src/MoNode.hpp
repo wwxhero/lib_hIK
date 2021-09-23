@@ -187,7 +187,7 @@ public:
 			LOGIK(logInfo.str().c_str());
 #endif
 		}
-		CArtiBodyTree::FK_Update(m_hostee);
+		CArtiBodyTree::FK_Update<false>(m_hostee);
 	}
 private:
 	std::vector<JointPair*> m_jointPairs;

@@ -14,7 +14,6 @@ CIKGroupNode::CIKGroupNode(CIKGroupNode& src)
 	: m_nSpecMax(0)
 {
 	m_kChains = std::move(src.m_kChains);
-	m_updating.resize(m_kChains.size(), false);
 	m_rootBody = src.m_rootBody;
 }
 

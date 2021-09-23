@@ -28,6 +28,6 @@ void initialize_kina(HBODY root)
 void update_fk(HBODY root)
 {
 	CArtiBodyNode* artiBody = CAST_2PBODY(root);
-	CArtiBodyTree::FK_Update(artiBody);
+	CArtiBodyTree::FK_Update<false>(artiBody);
 }
 

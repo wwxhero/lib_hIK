@@ -65,7 +65,7 @@ void CIKChain::SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc
 	m_src2dstW_Offset = offsetDst * src2dst_w;
 }
 
-bool CIKChain::BeginUpdate(const Transform_TR& groot_w2l)
+bool CIKChain::BeginUpdate(const Transform_TR& w2g)
 {
 	IKAssert(NULL != m_eefSrc
 		&& NULL != m_targetDst);
@@ -78,8 +78,22 @@ bool CIKChain::BeginUpdate(const Transform_TR& groot_w2l)
 	Eigen::Vector3r target_tt_src_w = m_dst2srcW * target_dst_w.getTranslation();
 	target_src_w.linear() = target_linear_src_w;
 	target_src_w.translation() = target_tt_src_w;
-	m_eefSrc->SetGoal(target_src_w);
-	bool valid_update = !UpdateComplete();
+
+	_TRANSFORM target_src_w_tm;
+	target_src_w.CopyTo(target_src_w_tm);
+	_TRANSFORM eef_src_w_tm;
+	m_eefSrc->GetTransformLocal2World()->CopyTo(eef_src_w_tm);
+	bool valid_update = !Equal(eef_src_w_tm, target_src_w_tm);
+	if (valid_update)
+	{
+		Transform_TR target_src_g;
+		Transform_TR target_src_w_tr(target_src_w_tm);
+		target_src_g.Update(w2g, target_src_w_tr);
+		_TRANSFORM target_src_g_tm;
+		target_src_g.CopyTo(target_src_g_tm);
+		m_eefSrc->SetGoal(target_src_g_tm);
+	}
+
 #ifdef _DEBUG
 	const Transform* eef_src_w = m_eefSrc->GetTransformLocal2World();
 	Eigen::Vector3r offset_T = eef_src_w->getTranslation() - target_src_w.getTranslation();
@@ -113,8 +127,8 @@ void CIKChain::Dump(std::stringstream& info) const
 CIKChainProj::CIKChainProj(const Real norm[3])
 	: CIKChain(Proj, 1)
 {
-	m_terrain.n << norm[0], norm[1], norm[2];
-	UnitVec(m_terrain.n);
+	m_terrainW.n << norm[0], norm[1], norm[2];
+	IKAssert(UnitVec(m_terrainW.n));
 }
 
 CIKChainProj::~CIKChainProj()
@@ -128,7 +142,7 @@ bool CIKChainProj::Init(const CArtiBodyNode* eef, int len, const std::vector<CON
 	if (initialized)
 	{
 		const Transform* l2w_0 = m_nodes[0].body->GetTransformLocal2World();
-		m_terrain.p = l2w_0->getTranslation();
+		m_terrainW.p = l2w_0->getTranslation();
 	}
 	return initialized;
 }
@@ -137,6 +151,14 @@ void CIKChainProj::Dump(std::stringstream& info) const
 {
 	info << "CIKChainProj:";
 	CIKChain::Dump(info);
+}
+
+bool CIKChainProj::BeginUpdate(const Transform_TR& w2g)
+{
+	if (!CIKChain::BeginUpdate(w2g))
+		return false;
+	m_terrainG = w2g.Apply(m_terrainW);
+	return true;
 }
 
 void CIKChainProj::UpdateNext(int step)
@@ -148,6 +170,8 @@ void CIKChainProj::UpdateAll()
 {
 	Update();
 }
+
+
 
 // make it to be inline
 void CIKChainProj::Update()
@@ -162,7 +186,7 @@ void CIKChainProj::Update()
 	Eigen::Quaternionr R_0 = Eigen::Quaternionr::Identity();
 	Eigen::Quaternionr R_1 = R;
 
-	Eigen::Vector3r T_0 = m_terrain.ProjP(T);
+	Eigen::Vector3r T_0 = m_terrainG.ProjP(T);
 	Eigen::Vector3r T_1 = T - T_0;
 
 	Eigen::Quaternionr* Rs[] = {&R_0, &R_1};
@@ -188,5 +212,5 @@ void CIKChainProj::Update()
 		joint_i->SetTranslation(delta_i.getTranslation());
 	}
 
-	CArtiBodyTree::FK_Update(m_nodes[0].body);
+	// CArtiBodyTree::FK_Update<true>(m_nodes[0].body);
 }

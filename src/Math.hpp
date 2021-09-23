@@ -79,6 +79,16 @@ struct Plane
 {
 	Eigen::Vector3r n;
 	Eigen::Vector3r p;
+	Plane(const Eigen::Vector3r& a_n, const Eigen::Vector3r& a_p)
+		: n(a_n)
+		, p(a_p)
+	{
+	}
+	Plane()
+		: n(Eigen::Vector3r::Zero())
+		, p(Eigen::Vector3r::Zero())
+	{
+	}
 	Eigen::Vector3r ProjP(const Eigen::Vector3r& a_p) const
 	{
 		Real t = (p - a_p).transpose() * n;
@@ -101,4 +111,5 @@ struct Plane
 		Real err = a_v.transpose() * n;
 		return -epsilon < err && err < epsilon;
 	}
+
 };
