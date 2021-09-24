@@ -338,11 +338,11 @@ void fk_update(MotionPipe* a_mopipe, unsigned int i_frame)
 	motion_sync(mopipe->mo_nodes[c_idxSim]);
 }
 
-void ik_task(HBODY body_t, const _TRANSFORM* l2w)
+bool ik_task_update(HBODY body_t, const _TRANSFORM* l2w)
 {
 	CArtiBodyNode* body_tar = CAST_2PBODY(body_t);
 	Transform_TRS l2w_trs(*l2w);
-	body_tar->SetGoal(l2w_trs);
+	return body_tar->UpdateGoal(l2w_trs);
 }
 
 void ik_update(MotionPipe* mopipe)

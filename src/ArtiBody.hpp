@@ -25,18 +25,16 @@ public:
 		return m_namec.c_str();
 	}
 
-	bool SetGoal(const Transform_TRS& tm_w)
+	bool UpdateGoal(const Transform_TRS& tm_w)
 	{
 		_TRANSFORM goal_w;
 		tm_w.CopyTo(goal_w);
-		return SetGoal(goal_w);
+		return UpdateGoal(goal_w);
 	}
 
-	bool SetGoal(const _TRANSFORM& tm_w)
+	bool UpdateGoal(const _TRANSFORM& tm_w)
 	{
-		const Transform* tm_w_current = GetTransformLocal2World();
-		_TRANSFORM tm_w_current_tm;
-		tm_w_current->CopyTo(tm_w_current_tm);
+		const _TRANSFORM& tm_w_current_tm = m_goal;
 		bool update = !Equal(tm_w, tm_w_current_tm);
 		if (update)
 			m_goal = tm_w;

@@ -91,7 +91,7 @@ bool CIKChain::BeginUpdate(const Transform_TR& w2g)
 		target_src_g.Update(w2g, target_src_w_tr);
 		_TRANSFORM target_src_g_tm;
 		target_src_g.CopyTo(target_src_g_tm);
-		m_eefSrc->SetGoal(target_src_g_tm);
+		m_eefSrc->UpdateGoal(target_src_g_tm);
 	}
 
 #ifdef _DEBUG

@@ -51,9 +51,9 @@ inline bool Equal(const _TRANSFORM& tm_1, const _TRANSFORM& tm_2)
 	Real err_s_y = tm_1.s.y - tm_2.s.y;
 	Real err_s_z = tm_1.s.z - tm_2.s.z;
 
-	bool s_eq = (-c_10epsilon < err_s_x && err_s_x < c_10epsilon)
-			 && (-c_10epsilon < err_s_y && err_s_y < c_10epsilon)
-			 && (-c_10epsilon < err_s_z && err_s_z < c_10epsilon);
+	bool s_eq = (-c_100epsilon < err_s_x && err_s_x < c_100epsilon)
+			 && (-c_100epsilon < err_s_y && err_s_y < c_100epsilon)
+			 && (-c_100epsilon < err_s_z && err_s_z < c_100epsilon);
 
 	if (!s_eq)
 		return false;
@@ -62,9 +62,9 @@ inline bool Equal(const _TRANSFORM& tm_1, const _TRANSFORM& tm_2)
 	Real err_tt_y = tm_1.tt.y - tm_2.tt.y;
 	Real err_tt_z = tm_1.tt.z - tm_2.tt.z;
 
-	bool tt_eq = (-c_10epsilon < err_tt_x && err_tt_x < c_10epsilon)
-			  && (-c_10epsilon < err_tt_y && err_tt_y < c_10epsilon)
-			  && (-c_10epsilon < err_tt_z && err_tt_z < c_10epsilon);
+	bool tt_eq = (-c_tt_epsilon < err_tt_x && err_tt_x < c_tt_epsilon)
+			  && (-c_tt_epsilon < err_tt_y && err_tt_y < c_tt_epsilon)
+			  && (-c_tt_epsilon < err_tt_z && err_tt_z < c_tt_epsilon);
 
 	if (!tt_eq)
 		return false;
