@@ -9,7 +9,7 @@ public:
 	explicit CIKGroupNode(CIKGroupNode& src);
 	~CIKGroupNode();
 
-	void Joint(CIKChain* chain)
+	void Join(CIKChain* chain)
 	{
 		int len = chain->NBodies();
 		auto it_chain = m_kChains.begin();
@@ -55,18 +55,26 @@ public:
 			return;
 		if (NULL != g_parent) //for root of the three FK_Update<G_SPACE=true> has no effect but waist computational resource
 			CArtiBodyTree::FK_Update<true>(const_cast<CArtiBodyNode*>(m_rootBody));
-		
+
 		if (1 == n_chains)
 		{
 			m_kChains[0]->UpdateAll();
 		}
 		else
 		{
-			for (int i_step = 0; i_step < m_nSpecMax; i_step ++)
+			//for (int i_step = 0; i_step < m_nSpecMax; i_step ++)
+			bool solved_all = false;
+			for (int i_update = 0; i_update < 4 && !solved_all; i_update ++)
 			{
-				for (int i_chain = 0; i_chain < n_chains; i_chain ++)
+				solved_all = true;
+				for (int i_chain = 0
+					; i_chain < n_chains
+					; i_chain ++)
 				{
-					m_kChains[i_chain]->UpdateNext(i_step);
+					auto& chain_i = m_kChains[i_chain];
+					//if (i_step < chain_i->NIters())
+					//	chain_i->UpdateAll(i_step);
+					solved_all = solved_all && chain_i->UpdateAll();
 				}
 			}
 		}

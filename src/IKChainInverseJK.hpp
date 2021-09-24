@@ -161,9 +161,9 @@ public:
 		CIKChain::Dump(info);
 	}
 
-	virtual bool BeginUpdate(const Transform_TR& groot_w2l) override
+	virtual bool BeginUpdate(const Transform_TR& w2g) override
 	{
-		if (!CIKChain::BeginUpdate(groot_w2l))
+		if (!CIKChain::BeginUpdate(w2g))
 			return false;
 		_TRANSFORM goal;
 		m_eefSrc->GetGoal(goal);
@@ -184,13 +184,15 @@ public:
 
 	// virtual void UpdateNext(int step) override;
 	// this is a quick IK update solution
-	virtual void UpdateAll() override
+	template<bool SINGLE_STEP>
+	bool Update(int i_step)
 	{
 		// m_segments[0]->FK_Update();
 		// iterate
+		bool quit = false;
 		bool solved = false;
-		int iterations = 0;
-		for (; iterations < m_nIters && !solved; iterations++)
+		int iterations = i_step;
+		for (; iterations < m_nIters && !quit; iterations++)
 		{
 			// root->UpdateTransform(Eigen::Affine3d::Identity());
 			std::vector<IK_QTask *>::iterator task;
@@ -221,7 +223,7 @@ public:
 				{
 					const char* err = "IK Exception\n";
 					LOGIKVarErr(LogInfoCharPtr, err);
-					return;
+					return false;
 				}
 				// update angles and check limits
 			} while (UpdateAngles(norm));
@@ -243,11 +245,23 @@ public:
 			}
 
 			m_segments[0]->FK_Update();
+			quit = SINGLE_STEP || solved;
 		}
 
 		LOGIKVar(LogInfoBool, solved);
 		LOGIKVar(LogInfoInt, iterations);
+		return solved;
+	}
 
+	virtual void UpdateNext(int step)
+	{
+		IKAssert(step < m_nIters);
+		Update<true>(step);
+	}
+
+	virtual bool UpdateAll()
+	{
+		return Update<false>(0);
 	}
 
 	virtual void EndUpdate(const Transform_TR& g2w) override

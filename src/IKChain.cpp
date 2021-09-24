@@ -166,9 +166,10 @@ void CIKChainProj::UpdateNext(int step)
 	Update();
 }
 
-void CIKChainProj::UpdateAll()
+bool CIKChainProj::UpdateAll()
 {
 	Update();
+	return true;
 }
 
 

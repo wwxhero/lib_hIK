@@ -11,10 +11,10 @@ CIKGroupNode::CIKGroupNode(const CArtiBodyNode* root)
 }
 
 CIKGroupNode::CIKGroupNode(CIKGroupNode& src)
-	: m_nSpecMax(0)
 {
-	m_kChains = std::move(src.m_kChains);
 	m_rootBody = src.m_rootBody;
+	m_kChains = std::move(src.m_kChains);
+	m_nSpecMax = src.m_nSpecMax;
 }
 
 CIKGroupNode::~CIKGroupNode()
@@ -342,7 +342,7 @@ void CIKGroupTreeGen::InitKChain(CIKGroupNodeGen* root, const std::vector<CIKCha
 					{
 						CIKChain *chain = chainclr.Generate();
 						if (NULL != chain)
-							node_this_gen->Joint(chain);
+							node_this_gen->Join(chain);
 						else
 						{
 							std::stringstream err;

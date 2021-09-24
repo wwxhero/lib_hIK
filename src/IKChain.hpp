@@ -36,20 +36,11 @@ public:
 
 	virtual bool BeginUpdate(const Transform_TR& w2g);
 
-	virtual void UpdateNext(int step)
-	{
-	}
-
+	virtual void UpdateNext(int step) = 0;
 	// this is a quick IK update solution
-	virtual void UpdateAll()
-	{
+	virtual bool UpdateAll() = 0;
+	virtual void EndUpdate(const Transform_TR& g2w) {};
 
-	}
-
-	virtual void EndUpdate(const Transform_TR& g2w)
-	{
-
-	}
 
 	int NIters() const
 	{
@@ -86,10 +77,10 @@ public:
 	virtual ~CIKChainProj();
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>&) override;
 	virtual void Dump(std::stringstream& info) const override;
-	virtual bool BeginUpdate(const Transform_TR& w2g);
-	virtual void UpdateNext(int step) override;
+	virtual bool BeginUpdate(const Transform_TR& w2g) override;
+	virtual void UpdateNext(int step) ;
 	// this is a quick IK update solution
-	virtual void UpdateAll() override;
+	virtual bool UpdateAll() ;
 private:
 	void Update();
 	Plane m_terrainW;
