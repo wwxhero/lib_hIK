@@ -416,6 +416,7 @@
     <ClCompile Include="..\..\src\IK_QTask.cpp" />
     <ClCompile Include="..\..\src\Joint.cpp" />
     <ClCompile Include="..\..\src\ik_logger.cpp" />
+    <ClCompile Include="..\..\src\JointConf.cpp" />
     <ClCompile Include="..\..\src\loggerfast_win.cpp" />
     <ClCompile Include="..\..\src\loggerSrv_i.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='DebugGame_Editor|x64'">NotUsing</PrecompiledHeader>

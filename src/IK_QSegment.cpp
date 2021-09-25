@@ -36,9 +36,9 @@ bool IK_QSegment::Initialize(CArtiBodyNode* from, CArtiBodyNode* to)
 	return m_max_extension > c_epsilon;
 }
 
-IK_QIxyzSegment::IK_QIxyzSegment()
+IK_QIxyzSegment::IK_QIxyzSegment(const Real weight[3])
 	: IK_QSegment(R_xyz, 3)
-	, m_weight{(Real)1, (Real)1, (Real)1}
+	, m_weight{weight[0], weight[1], weight[2]}
 	, m_axis {Eigen::Vector3r::UnitX(), Eigen::Vector3r::UnitY(), Eigen::Vector3r::UnitZ()}
 	, m_locked {false, false, false}
 	, m_theta(Eigen::Vector3r::Zero())
@@ -104,7 +104,7 @@ bool IK_QIxyzSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r 
 	bool zero_d_theta = ((m_locked[0] || FuzzyZero(delta.x()))
 					  && (m_locked[1] || FuzzyZero(delta.y()))
 					  && (m_locked[2] || FuzzyZero(delta.z())));
-	if (!zero_d_theta) 
+	if (!zero_d_theta)
 	{
 
 		m_theta += delta;

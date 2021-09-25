@@ -35,8 +35,8 @@ public:
 			delete seg;
 		m_segments.clear();
 
-		std::map<std::string, CONF::CJointConf*> name2confJoint;
-		for (auto confJoint : joint_confs)
+		std::map<std::string, const CONF::CJointConf*> name2confJoint;
+		for (auto& confJoint : joint_confs)
 			name2confJoint[confJoint.name] = &confJoint;
 
 		int n_nodes = (int)m_nodes.size();
@@ -59,14 +59,26 @@ public:
 		for (i_node = 0; i_node < n_nodes; i_node ++)
 		{
 			auto it_conf_j = name2confJoint.find(seg_from[i_node]->GetName_c());
-			IK_QSegment::Type type = (name2confJoint.end() != it_conf_j)
-									? it_conf_j->second->type
-									: IK_QSegment::R_xyz;
+			const auto type_default = IK_QSegment::R_xyz;
+			const Real dex_default[3] = { (Real)1, (Real)1, (Real)1 };
+
+			IK_QSegment::Type type;
+			const Real(*p_dex)[3] = NULL;
+			if (name2confJoint.end() != it_conf_j)
+			{
+				type = it_conf_j->second->type;
+				p_dex = &it_conf_j->second->dexterity;
+			}
+			else
+			{
+				type = IK_QSegment::R_xyz;
+				p_dex = &dex_default;
+			}
 			IK_QSegment* seg = NULL;
 			switch (type)
 			{
 				case IK_QSegment::R_xyz:
-					seg = new IK_QIxyzSegment();
+					seg = new IK_QIxyzSegment(*p_dex);
 					break;
 				default:
 					break;
@@ -149,8 +161,14 @@ public:
 		int i;
 
 		for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
+		{
 			for (i = 0; i < (*seg)->NumberOfDoF(); i++)
+			{
 				m_jacobian.SetDoFWeight((*seg)->DoFId() + i, (*seg)->Weight(i));
+				LOGIKVar(LogInfoCharPtr, (*seg)->GetName_c());
+				LOGIKVar(LogInfoFloat, (*seg)->Weight(i));
+			}
+		}
 
 		return true;
 	}

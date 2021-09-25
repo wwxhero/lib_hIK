@@ -43,6 +43,11 @@ public:
 	virtual ~IK_QSegment();
 	bool Initialize(CArtiBodyNode* from, CArtiBodyNode* to);
 
+	const char* GetName_c() const
+	{
+		return m_bodies[0]->GetName_c();
+	}
+
 	//to unify the segment positions within [0, 1], for better numerical computation performance
 	void Scale(Real s)
 	{
@@ -168,7 +173,7 @@ public:
 class IK_QIxyzSegment : public IK_QSegment
 {
 public:
-	IK_QIxyzSegment();
+	IK_QIxyzSegment(const Real weight[3]);
 	virtual Real Weight(int dof_l) const;
 	virtual void SetWeight(int dof_l, Real w);
 	virtual Eigen::Vector3r Axis(int dof_l) const;

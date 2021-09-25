@@ -27,23 +27,6 @@ namespace CONF
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////
-	// CJointConf:
-
-	CJointConf::CJointConf(const char* a_name, IK_QSegment::Type a_type, Real a_stiffness[3])
-		: name(a_name)
-		, type(a_type)
-		, stiffness{a_stiffness[0], a_stiffness[1], a_stiffness[2]}
-	{
-	}
-
-#ifdef _DEBUG
-	void CJointConf::Dump_Dbg() const
-	{
-		LOGIKVar(LogInfoCharPtr, name.c_str());
-	}
-#endif
-
-	////////////////////////////////////////////////////////////////////////////////////////////
 	//CIKChainConf:
 
 	CIKChainConf::CIKChainConf(const char* a_eef_name
@@ -104,12 +87,12 @@ namespace CONF
 		IK_QSegment::Type type = (NULL == attri_values[1])
 							? IK_QSegment::R_xyz
 							: IK_QSegment::to_Type(attri_values[1]);
-		Real stiffness[] = {
-			(NULL == attri_values[2]) ? 0 : (Real)atof(attri_values[2]),
-			(NULL == attri_values[3]) ? 0 : (Real)atof(attri_values[3]),
-			(NULL == attri_values[4]) ? 0 : (Real)atof(attri_values[4]),
+		Real dexterity[] = {
+			(NULL == attri_values[2]) ? 1 : (Real)atof(attri_values[2]),
+			(NULL == attri_values[3]) ? 1 : (Real)atof(attri_values[3]),
+			(NULL == attri_values[4]) ? 1 : (Real)atof(attri_values[4]),
 		};
-		CJointConf joint_conf(name, type, stiffness);
+		CJointConf joint_conf(name, type, dexterity);
 		Joints.push_back(joint_conf);
 	}
 
@@ -655,9 +638,9 @@ namespace CONF
 					} names_attri[] = {
 						  { "name",			false }		// 0
 						, { "type",			true }		// 1
-						, { "Stiffness_x",	true }		// 2
-						, { "Stiffness_y",	true }		// 3
-						, { "Stiffness_z",	true }		// 4
+						, { "Dexterity_x",	true }		// 2
+						, { "Dexterity_y",	true }		// 3
+						, { "Dexterity_z",	true }		// 4
 					};
 					const char* value_attri[] = {
 						  ele->Attribute(names_attri[0].str)
