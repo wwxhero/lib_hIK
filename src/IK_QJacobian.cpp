@@ -387,7 +387,7 @@ void IK_QJacobianDLS::Invert()
   if (lambda > 10)
     lambda = 10;
 
-  LOGIKVar(LogInfoFloat, lambda);
+  LOGIKVar(LogInfoReal, lambda);
   // immediately multiply with Beta, so we can do matrix*vector products
   // rather than matrix*matrix products
 

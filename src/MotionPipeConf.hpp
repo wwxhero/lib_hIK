@@ -12,7 +12,7 @@ namespace CONF
 	class B_ScaleEx : public B_Scale
 	{
 	public:
-		B_ScaleEx(const char* name, float x, float y, float z)
+		B_ScaleEx(const char* name, Real x, Real y, Real z)
 		{
 			std::string strname_c(name);
 			std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;

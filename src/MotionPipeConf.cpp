@@ -26,6 +26,22 @@ namespace CONF
 	    return dir;
 	}
 
+	class TiXMLHelper
+	{
+	public:
+		static int QueryRealAttribute(const TiXmlElement* ele, const char* name, Real* _value );
+	};
+
+	int TiXMLHelper::QueryRealAttribute(const TiXmlElement* ele, const char* name, Real* _value )
+	{
+		double d;
+		int result = ele->QueryDoubleAttribute( name, &d );
+		if ( result == TIXML_SUCCESS ) {
+			*_value = (Real)d;
+		}
+		return result;
+	}
+
 	////////////////////////////////////////////////////////////////////////////////////////////
 	//CIKChainConf:
 
@@ -102,8 +118,8 @@ namespace CONF
 		LOGIKVar(LogInfoCharPtr, eef.c_str());
 		LOGIKVar(LogInfoInt, len);
 		LOGIKVar(LogInfoCharPtr, CIKChain::from_Algor(algor));
-		LOGIKVar(LogInfoFloat, weight_p);
-		LOGIKVar(LogInfoFloat, weight_r);
+		LOGIKVar(LogInfoReal, weight_p);
+		LOGIKVar(LogInfoReal, weight_r);
 		LOGIKVar(LogInfoInt, n_iter);
 		LOGIKVar(LogInfoCharPtr, P_Graph.c_str());
 
@@ -199,9 +215,9 @@ namespace CONF
 		{
 			const B_Scale& scale_i = scales[i_scale];
 			LOGIKVar(LogInfoWCharPtr, scale_i.bone_name);
-			LOGIKVar(LogInfoFloat, scale_i.scaleX);
-			LOGIKVar(LogInfoFloat, scale_i.scaleY);
-			LOGIKVar(LogInfoFloat, scale_i.scaleZ);
+			LOGIKVar(LogInfoReal, scale_i.scaleX);
+			LOGIKVar(LogInfoReal, scale_i.scaleY);
+			LOGIKVar(LogInfoReal, scale_i.scaleZ);
 		}
 		CBodyConf::Scale_free(scales, n_scales);
 
@@ -500,10 +516,10 @@ namespace CONF
 				{
 					const char* b_name = ele->Attribute("b_name");
 					bool valid_name = (NULL != b_name);
-					float x, y, z;
-					bool valid_x_scale = (TIXML_SUCCESS == ele->QueryFloatAttribute("x", &x));
-					bool valid_y_scale = (TIXML_SUCCESS == ele->QueryFloatAttribute("y", &y));
-					bool valid_z_scale = (TIXML_SUCCESS == ele->QueryFloatAttribute("z", &z));
+					Real x, y, z;
+					bool valid_x_scale = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "x", &x));
+					bool valid_y_scale = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "y", &y));
+					bool valid_z_scale = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "z", &z));
 					ret = (valid_name
 						&& valid_x_scale
 						&& valid_y_scale
@@ -533,14 +549,14 @@ namespace CONF
 					{
 						for (int i_c = 0; i_c < 3 && all_entry_ij; i_c++)
 						{
-							all_entry_ij = (TIXML_SUCCESS == ele->QueryFloatAttribute(m_name[i_r][i_c], &m[i_r][i_c]));
+							all_entry_ij = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, m_name[i_r][i_c], &m[i_r][i_c]));
 						}
 					}
 					ret = all_entry_ij;
 					IKAssert(all_entry_ij);
 					if (ret)
 					{
-						LOGIKVar(LogInfoFloat3x3_m, m);
+						LOGIKVar(LogInfoReal3x3_m, m);
 						Eigen::Matrix3r src2dst_w;
 						src2dst_w << m[0][0], m[0][1], m[0][2],
 									 m[1][0], m[1][1], m[1][2],
@@ -595,13 +611,13 @@ namespace CONF
 					bool valid_algor = (NULL != (algor_str = ele->Attribute("algor"))
 									&& CIKChain::Unknown != (algor = CIKChain::to_Algor(algor_str)));
 					Real weight_p = 0;
-					bool valid_weight_p = (TIXML_SUCCESS == ele->QueryFloatAttribute("weight_p", &weight_p));
+					bool valid_weight_p = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "weight_p", &weight_p));
 					Real weight_r = 0;
-					bool valid_weight_r = (TIXML_SUCCESS == ele->QueryFloatAttribute("weight_r", &weight_r));
+					bool valid_weight_r = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "weight_r", &weight_r));
 					Real up[3];
-					bool valid_up =   (TIXML_SUCCESS == ele->QueryFloatAttribute("up_x", &up[0])
-									&& TIXML_SUCCESS == ele->QueryFloatAttribute("up_y", &up[1])
-									&& TIXML_SUCCESS == ele->QueryFloatAttribute("up_z", &up[2]));
+					bool valid_up =   (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "up_x", &up[0])
+									&& TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "up_y", &up[1])
+									&& TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "up_z", &up[2]));
 
 					IKAssert(valid_len);
 					IKAssert(valid_algor);
@@ -673,7 +689,7 @@ namespace CONF
 	void CMotionPipeConf::Dump_Dbg() const
 	{
 		LOGIKVar(LogInfoCharPtr, CMoNode::from_RETAR_TYPE(sync));
-		LOGIKVar(LogInfoFloat3x3_m, m);
+		LOGIKVar(LogInfoReal3x3_m, m);
 		Source.Dump_Dbg();
 		Destination.Dump_Dbg();
 		Pair.Dump_Dbg();

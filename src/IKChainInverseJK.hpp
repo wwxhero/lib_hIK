@@ -166,7 +166,7 @@ public:
 			{
 				m_jacobian.SetDoFWeight((*seg)->DoFId() + i, (*seg)->Weight(i));
 				LOGIKVar(LogInfoCharPtr, (*seg)->GetName_c());
-				LOGIKVar(LogInfoFloat, (*seg)->Weight(i));
+				LOGIKVar(LogInfoReal, (*seg)->Weight(i));
 			}
 		}
 
@@ -195,7 +195,7 @@ public:
 
 		m_scaleNormlize = ComputeScale();
 		// Real dt = analyze_time();
-		LOGIKVar(LogInfoFloat, m_scaleNormlize);
+		LOGIKVar(LogInfoReal, m_scaleNormlize);
 		Scale(m_scaleNormlize, m_tasksReg);
 		return true;
 	}

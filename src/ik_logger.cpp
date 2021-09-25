@@ -155,7 +155,7 @@ void LogInfoBool(const char* file, unsigned int line, const char* token, bool v)
 #endif
 }
 
-void LogInfoFloat(const char* file, unsigned int line, const char* token, float v)
+void LogInfoReal(const char* file, unsigned int line, const char* token, Real v)
 {
 #ifndef SMOOTH_LOGGING
 	fprintf(stdout
@@ -230,9 +230,9 @@ void LogInfo3x3_m(const char* file, unsigned int line, const char* token, const 
 #endif
 }
 
-void LogInfoFloat3x3_m(const char* file, unsigned int line, const char* token, const float m[3][3])
+void LogInfoReal3x3_m(const char* file, unsigned int line, const char* token, const Real m[3][3])
 {
-	LogInfo3x3_m<float>(file, line, token, m);
+	LogInfo3x3_m<Real>(file, line, token, m);
 }
 
 void LogInfoDouble3x3(const char* file, unsigned int line, const char* token, const double* m)

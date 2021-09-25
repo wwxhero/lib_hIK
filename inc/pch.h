@@ -31,7 +31,7 @@
 	__declspec(dllimport) rtype __stdcall func
 #endif
 
-typedef float Real;
+typedef double Real;
 
 #ifdef _DEBUG
 

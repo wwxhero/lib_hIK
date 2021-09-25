@@ -15,9 +15,9 @@ struct MotionPipe
 typedef struct _B_Scale
 {
 	const wchar_t* bone_name;
-	float scaleX;
-	float scaleY;
-	float scaleZ;
+	Real scaleX;
+	Real scaleY;
+	Real scaleZ;
 } B_Scale;
 
 typedef HIKLIB_CB(HBODY, *FuncBodyInit)(void* paramProc
