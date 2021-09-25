@@ -184,15 +184,13 @@ public:
 
 	// virtual void UpdateNext(int step) override;
 	// this is a quick IK update solution
-	template<bool SINGLE_STEP>
-	bool Update(int i_step)
+	virtual bool UpdateAll()
 	{
 		// m_segments[0]->FK_Update();
 		// iterate
-		bool quit = false;
 		bool solved = false;
-		int iterations = i_step;
-		for (; iterations < m_nIters && !quit; iterations++)
+		int iterations = 0;
+		for (; iterations < m_nIters && !solved; iterations++)
 		{
 			// root->UpdateTransform(Eigen::Affine3d::Identity());
 			std::vector<IK_QTask *>::iterator task;
@@ -245,23 +243,11 @@ public:
 			}
 
 			m_segments[0]->FK_Update();
-			quit = SINGLE_STEP || solved;
 		}
 
 		LOGIKVar(LogInfoBool, solved);
 		LOGIKVar(LogInfoInt, iterations);
 		return solved;
-	}
-
-	virtual void UpdateNext(int step)
-	{
-		IKAssert(step < m_nIters);
-		Update<true>(step);
-	}
-
-	virtual bool UpdateAll()
-	{
-		return Update<false>(0);
 	}
 
 	virtual void EndUpdate(const Transform_TR& g2w) override

@@ -23,6 +23,9 @@ public:
 		int n_steps_i = chain->NIters();
 		if (m_nSpecMax < n_steps_i)
 			m_nSpecMax = n_steps_i;
+
+		bool multiple_chain = (m_kChains.size() > 1);
+		LOGIKVarWarning(LogInfoBool, multiple_chain);
 	}
 
 	void IKUpdate()

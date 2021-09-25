@@ -162,21 +162,7 @@ bool CIKChainProj::BeginUpdate(const Transform_TR& w2g)
 	return true;
 }
 
-void CIKChainProj::UpdateNext(int step)
-{
-	Update();
-}
-
 bool CIKChainProj::UpdateAll()
-{
-	Update();
-	return true;
-}
-
-
-
-// make it to be inline
-void CIKChainProj::Update()
 {
 	_TRANSFORM goal;
 	m_eefSrc->GetGoal(goal);
@@ -215,4 +201,5 @@ void CIKChainProj::Update()
 	}
 
 	// CArtiBodyTree::FK_Update<true>(m_nodes[0].body);
+	return true;
 }
