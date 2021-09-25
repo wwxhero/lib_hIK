@@ -215,6 +215,7 @@ public:
 		}
 		else
 		{
+			body_to->m_nextSibling = body_from->m_nextSibling;
 			hook[forward] = &body_from->m_nextSibling;
 			target[forward] = body_to;
 			hook[inverse] = &body_to->m_parent;
