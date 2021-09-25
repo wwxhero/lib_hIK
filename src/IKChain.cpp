@@ -11,11 +11,12 @@ END_ENUM_STR(CIKChain, Algor)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKChain:
 
-CIKChain::CIKChain(Algor algor, int n_iters)
+CIKChain::CIKChain(Algor algor, int n_iters, int n_predecessor)
 	: c_algor(algor)
 	, m_eefSrc(NULL)
 	, m_targetDst(NULL)
 	, m_nIters(n_iters)
+	, m_nPredecessors(n_predecessor)
 {
 }
 
@@ -124,8 +125,8 @@ void CIKChain::Dump(std::stringstream& info) const
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKChainProj:
 
-CIKChainProj::CIKChainProj(const Real norm[3])
-	: CIKChain(Proj, 1)
+CIKChainProj::CIKChainProj(const Real norm[3], int n_predecessor)
+	: CIKChain(Proj, 1, n_predecessor)
 {
 	m_terrainW.n << norm[0], norm[1], norm[2];
 	IKAssert(UnitVec(m_terrainW.n));

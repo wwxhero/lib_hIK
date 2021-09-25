@@ -11,11 +11,11 @@ public:
 
 	void Join(CIKChain* chain)
 	{
-		int len = chain->NBodies();
+		int n_predcessors = chain->NPredecessors();
 		auto it_chain = m_kChains.begin();
 		for (
 			; it_chain != m_kChains.end()
-				&& (*it_chain)->NBodies() < len
+				&& (*it_chain)->NPredecessors() < n_predcessors
 			; it_chain ++);
 		m_kChains.insert(it_chain, chain);
 
@@ -23,7 +23,6 @@ public:
 		int n_steps_i = chain->NIters();
 		if (m_nSpecMax < n_steps_i)
 			m_nSpecMax = n_steps_i;
-
 	}
 
 	void IKUpdate()
@@ -62,22 +61,19 @@ public:
 		}
 		else
 		{
-			//for (int i_step = 0; i_step < m_nSpecMax; i_step ++)
 			bool solved_all = false;
-			for (int i_update = 0; i_update < 4 && !solved_all; i_update ++)
+			for (int i_update = 0; i_update < n_chains && !solved_all; i_update ++)
 			{
 				solved_all = true;
-				for (int i_chain = 0
-					; i_chain < n_chains
-					; i_chain ++)
+				for (auto& chain_i : m_kChains)
 				{
-					auto& chain_i = m_kChains[i_chain];
-					//if (i_step < chain_i->NIters())
-					//	chain_i->UpdateAll(i_step);
-					solved_all = solved_all && chain_i->UpdateAll();
+					bool solved_i = chain_i->UpdateAll();
+					solved_all = solved_all && solved_i;
+					LOGIKVar(LogInfoBool, solved_i);
 				}
 			}
 		}
+
 		for (int i_chain = 0; i_chain < n_chains; i_chain ++)
 		{
 			m_kChains[i_chain]->EndUpdate(tm_g2w_tr);

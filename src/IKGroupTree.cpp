@@ -142,17 +142,19 @@ public:
 		switch(c_conf->algor)
 		{
 			case CIKChain::Proj:
-				chain = new CIKChainProj(c_conf->up);
+				chain = new CIKChainProj(c_conf->up, c_dist2root);
 				break;
 			case CIKChain::DLS:
 				chain = new CIKChainInverseJK_DLS(c_conf->weight_p
 												, c_conf->weight_r
-												, c_conf->n_iter);
+												, c_conf->n_iter
+												, c_dist2root);
 				break;
 			case CIKChain::SDLS:
 				chain = new CIKChainInverseJK_SDLS(c_conf->weight_p
 												, c_conf->weight_r
-												, c_conf->n_iter);
+												, c_conf->n_iter
+												, c_dist2root);
 				break;
 		}
 
@@ -234,10 +236,10 @@ void CArtiBodyClrTree::ColorGid(CArtiBodyClrNode* root_clr
 	{
 		int clr = chain.GetColor();
 		int n = chain.c_conf->len;
-		int i_end = n + 1;
+		int i_end = n;
 		CArtiBodyClrNode* p_i_node = NULL;
 		int i = 0;
-		for (i = 0, p_i_node = chain.c_eef
+		for (i = 0, p_i_node = chain.c_eef->GetParent()
 			; i < i_end && NULL != p_i_node
 			; i ++, p_i_node = p_i_node->GetParent())
 		{
@@ -246,7 +248,7 @@ void CArtiBodyClrTree::ColorGid(CArtiBodyClrNode* root_clr
 				clr = clr_prime;
 		}
 
-		for (i = 0, p_i_node = chain.c_eef
+		for (i = 0, p_i_node = chain.c_eef->GetParent()
 			; i < i_end && NULL != p_i_node
 			; i ++, p_i_node = p_i_node->GetParent())
 		{

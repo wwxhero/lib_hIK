@@ -7,8 +7,8 @@ template<typename IK_QJacobianX>
 class CIKChainInverseJK : public CIKChain
 {
 public:
-	CIKChainInverseJK(CIKChain::Algor algor, Real weight_p, Real weight_r, int n_iter)
-		: CIKChain(algor, n_iter)
+	CIKChainInverseJK(CIKChain::Algor algor, Real weight_p, Real weight_r, int n_iter, int n_predecessor)
+		: CIKChain(algor, n_iter, n_predecessor)
 		, m_taskP(true, m_segments)
 		, m_taskR(true, m_segments)
 	{
@@ -386,13 +386,13 @@ private:
 class CIKChainInverseJK_DLS : public CIKChainInverseJK<IK_QJacobianDLS>
 {
 public:
-	CIKChainInverseJK_DLS(Real weight_p, Real weight_r, int n_iter);
+	CIKChainInverseJK_DLS(Real weight_p, Real weight_r, int n_iter, int n_predecessors);
 	virtual ~CIKChainInverseJK_DLS();
 };
 
 class CIKChainInverseJK_SDLS : public CIKChainInverseJK<IK_QJacobianSDLS>
 {
 public:
-	CIKChainInverseJK_SDLS(Real weight_p, Real weight_r, int n_iter);
+	CIKChainInverseJK_SDLS(Real weight_p, Real weight_r, int n_iter, int n_predecessors);
 	virtual ~CIKChainInverseJK_SDLS();
 };

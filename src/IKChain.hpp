@@ -25,7 +25,7 @@ public:
 	// static const char* from_Algor(Algor);
 	DECLARE_ENUM_STR(Algor)
 public:
-	CIKChain(Algor algor, int n_iters);
+	CIKChain(Algor algor, int n_iters, int n_predecessor);
 	virtual ~CIKChain();
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>& joint_confs);
 	void SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst
@@ -52,6 +52,10 @@ public:
 		return (int)m_nodes.size();
 	}
 
+	int NPredecessors() const
+	{
+		return m_nPredecessors;
+	}
 public:
 	const Algor c_algor;
 	struct IKNode
@@ -67,13 +71,14 @@ private:
 	CArtiBodyNode* m_targetDst;
 	Eigen::Matrix3r m_src2dstW_Offset;
 	Eigen::Matrix3r m_dst2srcW;
+	int m_nPredecessors;
 
 };
 
 class CIKChainProj : public CIKChain
 {
 public:
-	CIKChainProj(const Real norm[3]);
+	CIKChainProj(const Real norm[3], int n_predecessor);
 	virtual ~CIKChainProj();
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>&) override;
 	virtual void Dump(std::stringstream& info) const override;
