@@ -64,11 +64,6 @@ class IK_QTask {
   // Update Jacobian
   virtual void ComputeJacobian(IK_QJacobian &jacobian) = 0;
 
-
-  virtual void Scale(Real)
-  {
-  }
-
   virtual bool Completed() const = 0;
 
 public:
@@ -87,12 +82,6 @@ class IK_QPositionTask : public IK_QTask {
   IK_QPositionTask(bool primary, const std::vector<IK_QSegment*> &segment, CArtiBodyNode*& eef);
 
   void ComputeJacobian(IK_QJacobian &jacobian);
-
-  virtual void Scale(Real scale) override
-  {
-    m_goal *= scale;
-    m_clamp_length *= scale;
-  }
 
   void SetGoal(const Eigen::Vector3r& goal)
   {
@@ -123,7 +112,6 @@ class IK_QOrientationTask : public IK_QTask {
   void SetGoal(const Eigen::Quaternionr& goal)
   {
     m_goal = goal;
-    m_complted = false;
   }
 
   void Complete();
@@ -136,7 +124,6 @@ class IK_QOrientationTask : public IK_QTask {
 
  private:
   Eigen::Matrix3r m_goal;
-  bool m_complted;
 };
 
 

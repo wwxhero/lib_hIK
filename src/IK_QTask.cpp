@@ -27,7 +27,11 @@
 
 // IK_QTask
 
-IK_QTask::IK_QTask(Type type, int size, bool primary, const std::vector<IK_QSegment*> &segment, CArtiBodyNode*& eef)
+IK_QTask::IK_QTask(Type type
+				, int size
+				, bool primary
+				, const std::vector<IK_QSegment*> &segment
+				, CArtiBodyNode*& eef)
 		: c_type(type)
 		, m_size(size)
 		, m_primary(primary)
@@ -39,7 +43,9 @@ IK_QTask::IK_QTask(Type type, int size, bool primary, const std::vector<IK_QSegm
 
 // IK_QPositionTask
 
-IK_QPositionTask::IK_QPositionTask(bool primary, const std::vector<IK_QSegment*> &segment, CArtiBodyNode*& eef)
+IK_QPositionTask::IK_QPositionTask(bool primary
+								, const std::vector<IK_QSegment*> &segment
+								, CArtiBodyNode*& eef)
 		: IK_QTask(Position, 3, primary, segment, eef)
 {
 	// computing clamping length
@@ -59,9 +65,7 @@ IK_QPositionTask::IK_QPositionTask(bool primary, const std::vector<IK_QSegment*>
 void IK_QPositionTask::ComputeJacobian(IK_QJacobian &jacobian)
 {
 	// compute beta
-	int n_segs = (int)m_segments.size();
-	IKAssert(n_segs > 0);
-	const Eigen::Vector3r &pos = m_segments[n_segs - 1]->GlobalEnd();
+	Eigen::Vector3r pos = m_eef->GetTransformLocal2World()->getTranslation();
 
 	Eigen::Vector3r d_pos = m_goal - pos;
 	double length = d_pos.norm();
@@ -72,13 +76,11 @@ void IK_QPositionTask::ComputeJacobian(IK_QJacobian &jacobian)
 	jacobian.SetBetas(m_id, m_size, m_weight * d_pos);
 
 	// compute derivatives
-	int i;
-
-	for (int i_seg = 0; i_seg < n_segs; i_seg ++) {
-		const IK_QSegment* seg = m_segments[i_seg];
+	for (const IK_QSegment* seg : m_segments)
+	{
 		Eigen::Vector3r p = seg->GlobalStart() - pos;
 
-		for (i = 0; i < seg->NumberOfDoF(); i++) {
+		for (int i = 0; i < seg->NumberOfDoF(); i++) {
 			Eigen::Vector3r axis = seg->Axis(i) * m_weight;
 			bool translational = seg->Translational();
 			IKAssert(!translational);  // currently we don't have tranlational segement supported
@@ -98,7 +100,6 @@ IK_QOrientationTask::IK_QOrientationTask(bool primary
 									, const std::vector<IK_QSegment*>& segment
 									, CArtiBodyNode*& eef)
 		: IK_QTask(Orientation, 3, primary, segment, eef)
-		, m_complted(false)
 {
 }
 
@@ -140,18 +141,17 @@ void IK_QOrientationTask::ComputeJacobian(IK_QJacobian &jacobian)
 			}
 		}
 	}
-	m_complted = true;
 }
 
 void IK_QOrientationTask::Complete()
 {
-	if (m_complted)
+	if (Completed())
 		return;
 	int n_segs = (int)m_segments.size();
 	if (n_segs > 0)
 	{
 		Eigen::Quaternionr goal(m_goal);
-		m_segments[n_segs - 1]->SetTipGlobalOri(goal);
+		m_eef->GetJoint()->SetRotation_w(goal);
 	}
 }
 
