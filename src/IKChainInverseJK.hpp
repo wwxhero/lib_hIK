@@ -193,10 +193,7 @@ public:
 		m_taskP.SetGoal(T);
 		m_taskR.SetGoal(R);
 
-		m_scaleNormlize = (Real)1.0; // ComputeScale();
 		// Real dt = analyze_time();
-		LOGIKVar(LogInfoReal, m_scaleNormlize);
-		// Scale(m_scaleNormlize, m_tasksReg);
 		return true;
 	}
 
@@ -289,7 +286,6 @@ public:
 
 	virtual void EndUpdate(const Transform_TR& g2w) override
 	{
-		// Scale(1.0f / m_scaleNormlize, m_tasksReg);
 		m_taskP.Complete();
 		m_taskR.Complete();
 		// analyze_add_run(max_iterations, analyze_time()-dt);
@@ -364,33 +360,6 @@ protected:
 		return locked;
 	}
 
-	Real ComputeScale()
-	{
-		std::vector<IK_QSegment *>::iterator seg;
-		Real length = (Real)0.0f;
-
-		for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
-			length += (*seg)->MaxExtension();
-
-		if (length == 0.0)
-			return 1.0;
-		else
-			return (Real)1.0 / length;
-	}
-
-	void Scale(Real scale, std::vector<IK_QTask *> &tasks)
-	{
-		std::vector<IK_QTask *>::iterator task;
-		std::vector<IK_QSegment *>::iterator seg;
-
-		for (task = tasks.begin(); task != tasks.end(); task++)
-			(*task)->Scale(scale);
-
-		for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
-			(*seg)->Scale(scale);
-
-	}
-
 private:
 	IK_QJacobianX m_jacobian;
 	IK_QJacobianX m_jacobian_sub;
@@ -398,7 +367,6 @@ private:
 	IK_QPositionTask m_taskP;
 	IK_QOrientationTask m_taskR;
 	std::vector<IK_QTask*> m_tasksReg;
-	Real m_scaleNormlize;
 
 	bool m_secondary_enabled;
 

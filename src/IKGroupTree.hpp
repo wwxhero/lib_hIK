@@ -58,14 +58,14 @@ public:
 			return;
 		if (NULL != g_parent) //for root of the three FK_Update<G_SPACE=true> has no effect but waist computational resource
 			CArtiBodyTree::FK_Update<true>(m_rootBody);
-
+		
+		bool solved_all = false;
 		if (1 == n_chains)
 		{
-			m_kChains[0]->UpdateAll();
+			solved_all = m_kChains[0]->UpdateAll();
 		}
 		else
 		{
-			bool solved_all = false;
 			for (int i_update = 0; i_update < n_chains && !solved_all; i_update ++)
 			{
 				for (auto& chain_i : m_kChains)
@@ -77,8 +77,8 @@ public:
 					; chain_i ++)
 					solved_all = (*chain_i)->UpdateCompleted();
 			}
-			LOGIKVar(LogInfoBool, solved_all);
 		}
+		LOGIKVar(LogInfoBool, solved_all);
 
 		for (int i_chain = 0; i_chain < n_chains; i_chain ++)
 		{
