@@ -54,10 +54,21 @@ inline bool UnitVec(const Eigen::Vector3r& v)
 					&& err < c_2epsilon;
 }
 
+inline bool Equal(const Eigen::Quaternionr& q_this, const Eigen::Quaternionr& q_other)
+{
+	Real err = q_this.dot(q_other);
+    Real err_r_0 = err - (Real)1;
+    Real err_r_1 = err + (Real)1;
+    bool r_eq = (-c_rotq_epsilon < err_r_0 && err_r_0 < c_rotq_epsilon)
+              || (-c_rotq_epsilon < err_r_1 && err_r_1 < c_rotq_epsilon);
+    return r_eq;
+}
+
 inline bool FuzzyZero(Real x)
 {
 	return fabs(x) < c_epsilon;
 }
+
 
 template<typename T>
 T wrap_pi(T rad)

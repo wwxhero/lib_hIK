@@ -63,6 +63,11 @@ public:
 	}
 };
 
+class Quaternion : public Eigen::Quaternionr
+{
+
+};
+
 
 
 

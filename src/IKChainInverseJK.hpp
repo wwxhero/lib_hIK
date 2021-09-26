@@ -4,13 +4,13 @@
 #include "IK_QTask.h"
 
 template<typename IK_QJacobianX>
-class CIKChainInverseJK : public CIKChain
+class IKChainInverseJK : public CIKChain
 {
 public:
-	CIKChainInverseJK(CIKChain::Algor algor, Real weight_p, Real weight_r, int n_iter, int n_predecessor)
+	IKChainInverseJK(CIKChain::Algor algor, Real weight_p, Real weight_r, int n_iter, int n_predecessor)
 		: CIKChain(algor, n_iter, n_predecessor)
-		, m_taskP(true, m_segments)
-		, m_taskR(true, m_segments)
+		, m_taskP(true, m_segments, m_eefSrc)
+		, m_taskR(true, m_segments, m_eefSrc)
 	{
 		if (weight_p > 0)
 			m_tasksReg.push_back(&m_taskP);
@@ -20,7 +20,7 @@ public:
 		m_taskR.SetWeight(weight_r);
 	}
 
-	virtual ~CIKChainInverseJK()
+	virtual ~IKChainInverseJK()
 	{
 		for (auto seg : m_segments)
 			delete seg;
@@ -193,10 +193,10 @@ public:
 		m_taskP.SetGoal(T);
 		m_taskR.SetGoal(R);
 
-		m_scaleNormlize = ComputeScale();
+		m_scaleNormlize = (Real)1.0; // ComputeScale();
 		// Real dt = analyze_time();
 		LOGIKVar(LogInfoReal, m_scaleNormlize);
-		Scale(m_scaleNormlize, m_tasksReg);
+		// Scale(m_scaleNormlize, m_tasksReg);
 		return true;
 	}
 
@@ -206,8 +206,13 @@ public:
 	{
 		// iterate
 		bool solved = false;
-		int iterations = 0;
-		for (; iterations < m_nIters && !solved; iterations++)
+		bool updating = true;
+		int i_iter = 0;
+		for (
+			; i_iter < m_nIters
+				&& !solved
+				&& updating
+			; i_iter++)
 		{
 			// root->UpdateTransform(Eigen::Affine3d::Identity());
 			std::vector<IK_QTask *>::iterator task;
@@ -254,25 +259,27 @@ public:
 				norm = maxnorm;
 
 			// check for convergence
-			if (norm < 1e-3 && iterations > 10)
-			{
-				solved = true;
-			}
-
 			CArtiBodyTree::FK_Update<true>(m_rootG);
+
+			updating = (norm > 1e-3 || i_ter < 10);
+			solved = true;
+			for (task = m_tasksReg.begin()
+				; task != m_tasksReg.end() && solved
+				; task++)
+				solved = (*task)->Completed();
 		}
 
 		auto it_eef_seg = m_segments.end();
 		it_eef_seg --;
 		LOGIKVar(LogInfoCharPtr, (*it_eef_seg)->GetName_c(1));
 		LOGIKVar(LogInfoBool, solved);
-		LOGIKVar(LogInfoInt, iterations);
+		LOGIKVar(LogInfoInt, i_iter);
 		return solved;
 	}
 
 	virtual void EndUpdate(const Transform_TR& g2w) override
 	{
-		Scale(1.0f / m_scaleNormlize, m_tasksReg);
+		// Scale(1.0f / m_scaleNormlize, m_tasksReg);
 		m_taskP.Complete();
 		m_taskR.Complete();
 		// analyze_add_run(max_iterations, analyze_time()-dt);
@@ -389,14 +396,14 @@ private:
 
 };
 
-class CIKChainInverseJK_DLS : public CIKChainInverseJK<IK_QJacobianDLS>
+class CIKChainInverseJK_DLS : public IKChainInverseJK<IK_QJacobianDLS>
 {
 public:
 	CIKChainInverseJK_DLS(Real weight_p, Real weight_r, int n_iter, int n_predecessors);
 	virtual ~CIKChainInverseJK_DLS();
 };
 
-class CIKChainInverseJK_SDLS : public CIKChainInverseJK<IK_QJacobianSDLS>
+class CIKChainInverseJK_SDLS : public IKChainInverseJK<IK_QJacobianSDLS>
 {
 public:
 	CIKChainInverseJK_SDLS(Real weight_p, Real weight_r, int n_iter, int n_predecessors);

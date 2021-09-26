@@ -27,19 +27,20 @@
 
 // IK_QTask
 
-IK_QTask::IK_QTask(Type type, int size, bool primary, const std::vector<IK_QSegment*> &segment)
+IK_QTask::IK_QTask(Type type, int size, bool primary, const std::vector<IK_QSegment*> &segment, CArtiBodyNode*& eef)
 		: c_type(type)
 		, m_size(size)
 		, m_primary(primary)
 		, m_segments(segment)
 		, m_weight(1.0)
+		, m_eef(eef)
 {
 }
 
 // IK_QPositionTask
 
-IK_QPositionTask::IK_QPositionTask(bool primary, const std::vector<IK_QSegment*> &segment)
-		: IK_QTask(Position, 3, primary, segment)
+IK_QPositionTask::IK_QPositionTask(bool primary, const std::vector<IK_QSegment*> &segment, CArtiBodyNode*& eef)
+		: IK_QTask(Position, 3, primary, segment, eef)
 {
 	// computing clamping length
 	int num;
@@ -93,9 +94,10 @@ void IK_QPositionTask::ComputeJacobian(IK_QJacobian &jacobian)
 
 // IK_QOrientationTask
 
-IK_QOrientationTask::IK_QOrientationTask(bool primary,
-										const std::vector<IK_QSegment*>& segment)
-		: IK_QTask(Orientation, 3, primary, segment)
+IK_QOrientationTask::IK_QOrientationTask(bool primary
+									, const std::vector<IK_QSegment*>& segment
+									, CArtiBodyNode*& eef)
+		: IK_QTask(Orientation, 3, primary, segment, eef)
 		, m_complted(false)
 {
 }

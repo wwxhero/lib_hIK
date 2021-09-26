@@ -32,7 +32,7 @@ class IK_QTask {
  public:
   enum Type { Position, Orientation };
   // segment: is the one prior to end effector
-  IK_QTask(Type type, int size, bool primary, const std::vector<IK_QSegment*> &segment);
+  IK_QTask(Type type, int size, bool primary, const std::vector<IK_QSegment*> &segment, CArtiBodyNode*& eef);
   virtual ~IK_QTask()
   {
   }
@@ -69,6 +69,8 @@ class IK_QTask {
   {
   }
 
+  virtual bool Completed() const = 0;
+
 public:
   const Type c_type;
 protected:
@@ -76,12 +78,13 @@ protected:
   int m_size;
   bool m_primary;
   const std::vector<IK_QSegment*>& m_segments;
+  CArtiBodyNode*& m_eef;
   Real m_weight;
 };
 
 class IK_QPositionTask : public IK_QTask {
  public:
-  IK_QPositionTask(bool primary, const std::vector<IK_QSegment*> &segment);
+  IK_QPositionTask(bool primary, const std::vector<IK_QSegment*> &segment, CArtiBodyNode*& eef);
 
   void ComputeJacobian(IK_QJacobian &jacobian);
 
@@ -97,6 +100,13 @@ class IK_QPositionTask : public IK_QTask {
   }
 
   void Complete(){}
+  virtual bool Completed() const
+  {
+    const Transform* l2w = m_eef->GetTransformLocal2World();
+    Eigen::Vector3r tt_eef = l2w->getTranslation();
+    Real dist_sqr = (tt_eef - m_goal).squaredNorm();
+    return dist_sqr < c_tt_epsilon_sqr;
+  }
 
 
  private:
@@ -106,7 +116,7 @@ class IK_QPositionTask : public IK_QTask {
 
 class IK_QOrientationTask : public IK_QTask {
  public:
-  IK_QOrientationTask(bool primary, const std::vector<IK_QSegment*>& segment);
+  IK_QOrientationTask(bool primary, const std::vector<IK_QSegment*>& segment, CArtiBodyNode*& eef);
 
   void ComputeJacobian(IK_QJacobian &jacobian);
 
@@ -117,6 +127,12 @@ class IK_QOrientationTask : public IK_QTask {
   }
 
   void Complete();
+  virtual bool Completed() const
+  {
+    Eigen::Quaternionr rot_goal(m_goal);
+    Eigen::Quaternionr rot_eef = Transform::getRotation_q(m_eef->GetTransformLocal2World());
+    return Equal(rot_goal, rot_eef);
+  }
 
  private:
   Eigen::Matrix3r m_goal;

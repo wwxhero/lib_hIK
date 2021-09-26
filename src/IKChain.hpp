@@ -43,7 +43,6 @@ public:
 	{
 		m_rootG = root_g;
 	}
-	
 	int NIters() const
 	{
 		return m_nIters;
