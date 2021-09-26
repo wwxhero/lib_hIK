@@ -261,7 +261,7 @@ public:
 			// check for convergence
 			CArtiBodyTree::FK_Update<true>(m_rootG);
 
-			updating = (norm > 1e-3 || i_ter < 10);
+			updating = (norm > 1e-3 || i_iter < 10);
 			solved = true;
 			for (task = m_tasksReg.begin()
 				; task != m_tasksReg.end() && solved
@@ -275,6 +275,16 @@ public:
 		LOGIKVar(LogInfoBool, solved);
 		LOGIKVar(LogInfoInt, i_iter);
 		return solved;
+	}
+
+	virtual bool UpdateCompleted() const
+	{
+		bool completed = true;
+		for (auto task = m_tasksReg.begin()
+			; task != m_tasksReg.end() && completed
+			; task ++)
+				completed = (*task)->Completed();
+		return completed;
 	}
 
 	virtual void EndUpdate(const Transform_TR& g2w) override

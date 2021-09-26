@@ -37,6 +37,7 @@ public:
 	virtual bool BeginUpdate(const Transform_TR& w2g);
 	// this is a quick IK update solution
 	virtual bool UpdateAll() = 0;
+	virtual bool UpdateCompleted() const = 0;
 	virtual void EndUpdate(const Transform_TR& g2w) {};
 
 	void SegGRoot(CArtiBodyNode* root_g)
@@ -87,6 +88,10 @@ public:
 	virtual bool BeginUpdate(const Transform_TR& w2g) override;
 	// this is a quick IK update solution
 	virtual bool UpdateAll();
+	virtual bool UpdateCompleted() const
+	{
+		return true;
+	}
 private:
 	Plane m_terrainW;
 	Plane m_terrainG;

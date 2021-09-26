@@ -68,14 +68,16 @@ public:
 			bool solved_all = false;
 			for (int i_update = 0; i_update < n_chains && !solved_all; i_update ++)
 			{
-				solved_all = true;
 				for (auto& chain_i : m_kChains)
-				{
-					bool solved_i = chain_i->UpdateAll();
-					solved_all = solved_all && solved_i;
-					LOGIKVar(LogInfoBool, solved_i);
-				}
+					chain_i->UpdateAll();
+
+				solved_all = true;
+				for (auto chain_i = m_kChains.begin()
+					; solved_all && chain_i != m_kChains.end()
+					; chain_i ++)
+					solved_all = (*chain_i)->UpdateCompleted();
 			}
+			LOGIKVar(LogInfoBool, solved_all);
 		}
 
 		for (int i_chain = 0; i_chain < n_chains; i_chain ++)
