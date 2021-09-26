@@ -114,10 +114,10 @@ void IK_QOrientationTask::ComputeJacobian(IK_QJacobian &jacobian)
 	// => d_rotm = rot * m_goal^-1
 	// => rot^-1 * d_rotm = m_goal^-1
 	// => d_rotm^-1 * rot = m_goal
-	Eigen::Matrix3r d_rotm = (m_goal * rot.transpose()).transpose();
+	Eigen::Matrix3r d_rotm = m_goal * rot.transpose();
 
 	Eigen::Vector3r d_rot;
-	d_rot = -0.5 * Eigen::Vector3r(d_rotm(2, 1) - d_rotm(1, 2),
+	d_rot = 0.5 * Eigen::Vector3r(d_rotm(2, 1) - d_rotm(1, 2),
 								d_rotm(0, 2) - d_rotm(2, 0),
 								d_rotm(1, 0) - d_rotm(0, 1));
 
