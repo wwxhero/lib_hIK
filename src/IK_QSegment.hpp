@@ -43,9 +43,9 @@ public:
 	virtual ~IK_QSegment();
 	bool Initialize(CArtiBodyNode* from, CArtiBodyNode* to);
 
-	const char* GetName_c() const
+	const char* GetName_c(int side = 0) const
 	{
-		return m_bodies[0]->GetName_c();
+		return m_bodies[side]->GetName_c();
 	}
 
 	//to unify the segment positions within [0, 1], for better numerical computation performance

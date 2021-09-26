@@ -4,7 +4,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKGroupNode:
 
-CIKGroupNode::CIKGroupNode(const CArtiBodyNode* root)
+CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
 	: m_rootBody(root)
 	, m_nSpecMax(0)
 {
@@ -265,7 +265,7 @@ class CIKGroupNodeGen 		// G
 {
 public:
 	CIKGroupNodeGen(const CArtiBodyClrNode* jTree)
-		: CIKGroupNode(jTree->c_body)
+		: CIKGroupNode(const_cast<CArtiBodyNode*>(jTree->c_body))
 		, c_jTree(jTree)
 	{
 	}

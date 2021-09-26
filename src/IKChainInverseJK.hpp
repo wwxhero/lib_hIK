@@ -204,7 +204,6 @@ public:
 	// this is a quick IK update solution
 	virtual bool UpdateAll()
 	{
-		// m_segments[0]->FK_Update();
 		// iterate
 		bool solved = false;
 		int iterations = 0;
@@ -260,9 +259,12 @@ public:
 				solved = true;
 			}
 
-			m_segments[0]->FK_Update();
+			CArtiBodyTree::FK_Update<true>(m_rootG);
 		}
 
+		auto it_eef_seg = m_segments.end();
+		it_eef_seg --;
+		LOGIKVar(LogInfoCharPtr, (*it_eef_seg)->GetName_c(1));
 		LOGIKVar(LogInfoBool, solved);
 		LOGIKVar(LogInfoInt, iterations);
 		return solved;

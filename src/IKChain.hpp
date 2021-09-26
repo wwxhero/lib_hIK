@@ -39,7 +39,11 @@ public:
 	virtual bool UpdateAll() = 0;
 	virtual void EndUpdate(const Transform_TR& g2w) {};
 
-
+	void SegGRoot(CArtiBodyNode* root_g)
+	{
+		m_rootG = root_g;
+	}
+	
 	int NIters() const
 	{
 		return m_nIters;
@@ -65,6 +69,7 @@ protected:
 	std::vector<IKNode> m_nodes;
 	CArtiBodyNode* m_eefSrc;
 	int m_nIters;
+	CArtiBodyNode* m_rootG;
 private:
 	CArtiBodyNode* m_targetDst;
 	Eigen::Matrix3r m_src2dstW_Offset;
@@ -82,7 +87,7 @@ public:
 	virtual void Dump(std::stringstream& info) const override;
 	virtual bool BeginUpdate(const Transform_TR& w2g) override;
 	// this is a quick IK update solution
-	virtual bool UpdateAll() ;
+	virtual bool UpdateAll();
 private:
 	Plane m_terrainW;
 	Plane m_terrainG;

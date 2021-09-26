@@ -5,7 +5,7 @@
 class CIKGroupNode : public TreeNode<CIKGroupNode>
 {
 public:
-	CIKGroupNode(const CArtiBodyNode* root);
+	CIKGroupNode(CArtiBodyNode* root);
 	explicit CIKGroupNode(CIKGroupNode& src);
 	~CIKGroupNode();
 
@@ -26,6 +26,7 @@ public:
 
 		bool multiple_chain = (m_kChains.size() > 1);
 		LOGIKVarWarning(LogInfoBool, multiple_chain);
+		chain->SegGRoot(m_rootBody);
 	}
 
 	void IKUpdate()
@@ -56,7 +57,7 @@ public:
 		if (!exist_an_update)
 			return;
 		if (NULL != g_parent) //for root of the three FK_Update<G_SPACE=true> has no effect but waist computational resource
-			CArtiBodyTree::FK_Update<true>(const_cast<CArtiBodyNode*>(m_rootBody));
+			CArtiBodyTree::FK_Update<true>(m_rootBody);
 
 		if (1 == n_chains)
 		{
@@ -82,13 +83,13 @@ public:
 			m_kChains[i_chain]->EndUpdate(tm_g2w_tr);
 		}
 
-		CArtiBodyTree::FK_Update<false>(const_cast<CArtiBodyNode*>(m_rootBody));
+		CArtiBodyTree::FK_Update<false>(m_rootBody);
 	}
 
 	void SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
 	virtual void Dump(int indent) const override;
 protected:
-	const CArtiBodyNode* m_rootBody;
+	CArtiBodyNode* m_rootBody;
 	std::vector<CIKChain*> m_kChains;
 	int m_nSpecMax;
 };
