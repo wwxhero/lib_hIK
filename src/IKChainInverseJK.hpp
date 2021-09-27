@@ -301,28 +301,29 @@ protected:
 	{
 		// assing each segment a unique id for the jacobian
 		std::vector<IK_QSegment *>::iterator seg;
-		IK_QSegment *qseg, *minseg = NULL;
+		IK_QSegment *minseg = NULL;
 		Real minabsdelta = 1e10, absdelta;
 		Eigen::Vector3r delta, mindelta;
 		bool locked = false, clamp[3];
-		int i, mindof = 0;
+		int mindof = 0;
 
 		// here we check if any angle limits were violated. angles whose clamped
 		// position is the same as it was before, are locked immediate. of the
 		// other violation angles the most violating angle is rememberd
-		for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
+		bool locked_dofs[6] = { false };
+		for (auto qseg : m_segments)
 		{
-			qseg = *seg;
 			if (qseg->UpdateAngle(m_jacobian, delta, clamp))
 			{
-				for (i = 0; i < qseg->NumberOfDoF(); i++)
+				int n_dofs = qseg->Locked(locked_dofs);
+				for (int i_dof = 0; i_dof < n_dofs; i_dof++)
 				{
-					if (clamp[i] && !qseg->Locked(i))
+					if (clamp[i_dof] && !locked_dofs[i_dof])
 					{
-						absdelta = fabs(delta[i]);
+						absdelta = fabs(delta[i_dof]);
 						if (absdelta < c_epsilon)
 						{
-							qseg->Lock(i, m_jacobian, delta);
+							qseg->Lock(i_dof, m_jacobian, delta);
 							locked = true;
 						}
 						else if (absdelta < minabsdelta)
@@ -330,7 +331,7 @@ protected:
 							minabsdelta = absdelta;
 							mindelta = delta;
 							minseg = qseg;
-							mindof = i;
+							mindof = i_dof;
 						}
 					}
 				}

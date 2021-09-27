@@ -5,14 +5,14 @@ BEGIN_ENUM_STR(IK_QSegment, Type)
 	ENUM_ITEM(R_xyz)
 END_ENUM_STR(IK_QSegment, Type)
 
-IK_QSegment::IK_QSegment(Type a_type, int n_dof)
+IK_QSegment::IK_QSegment(Type a_type, int n_dofs)
 	: m_scale((Real)1.0)
 	, m_bodies{NULL, NULL}
 	, m_joints{NULL, NULL}
 	, m_max_extension((Real)0)
 	, m_DoF_id(-1)
 	, c_type(a_type)
-	, c_num_DoF(n_dof)
+	, c_num_DoFs(n_dofs)
 	, c_idxFrom(0)
 	, c_idxTo(1)
 {
@@ -46,9 +46,8 @@ IK_QIxyzSegment::IK_QIxyzSegment(const Real weight[3])
 
 int IK_QIxyzSegment::Weight(Real w[6]) const
 {
-	const int n_dofs = 3;
-	memcpy(w, m_weight, n_dofs * sizeof(Real));
-	return n_dofs;
+	memcpy(w, m_weight, c_num_DoFs * sizeof(Real));
+	return c_num_DoFs;
 }
 
 void IK_QIxyzSegment::SetWeight(int dof_l, Real w)
@@ -61,16 +60,15 @@ int IK_QIxyzSegment::Axis(Eigen::Vector3r axis[6]) const
 {
 	const Transform* tm_l2w = m_bodies[0]->GetTransformLocal2World();
 	Eigen::Matrix3r linear = tm_l2w->getLinear();
-	const int n_dofs = 3;
-	for (int i_dof = 0; i_dof < n_dofs; i_dof ++)
+	for (int i_dof = 0; i_dof < c_num_DoFs; i_dof ++)
 		axis[i_dof] = linear.col(i_dof);
-	return n_dofs;
+	return c_num_DoFs;
 }
 
-bool IK_QIxyzSegment::Locked(int dof_l) const
+int IK_QIxyzSegment::Locked(bool lock[6]) const
 {
-	IKAssert(-1 < dof_l && dof_l < 3);
-	return m_locked[dof_l];
+	memcpy(lock, m_locked, c_num_DoFs * sizeof(bool));
+	return c_num_DoFs;
 }
 
 void IK_QIxyzSegment::UnLock()

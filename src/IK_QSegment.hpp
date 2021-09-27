@@ -58,7 +58,7 @@ public:
 	// number of degrees of freedom
 	int NumberOfDoF() const
 	{
-    	return c_num_DoF;
+    	return c_num_DoFs;
 	}
 
 	// unique id for this segment, for identification in the jacobian
@@ -101,7 +101,7 @@ public:
 	}
 
 	// locking (during inner clamping loop)
-	virtual bool Locked(int dof) const = 0;
+	virtual int Locked(bool locked[6]) const = 0;
 
 	virtual void UnLock() = 0;
 
@@ -133,7 +133,7 @@ protected:
 	int m_DoF_id;
 public:
 	const Type c_type;
-	const int c_num_DoF;
+	const int c_num_DoFs;
 	const int c_idxFrom;
 	const int c_idxTo;
 };
@@ -147,7 +147,7 @@ public:
 	virtual int Weight(Real w[6]) const;
 	virtual int Axis(Eigen::Vector3r axis[6]) const;
 	virtual bool UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp);
-	virtual bool Locked(int dof_l) const;
+	virtual int Locked(bool lock[6]) const;
 	virtual void UnLock();
 	virtual void Lock(int dofId, IK_QJacobian &jacobian, Eigen::Vector3r &delta);
 private:
