@@ -11,11 +11,10 @@ public:
 
 	void Join(CIKChain* chain)
 	{
-		int n_predcessors = chain->NPredecessors();
 		auto it_chain = m_kChains.begin();
 		for (
 			; it_chain != m_kChains.end()
-				&& (*it_chain)->NPredecessors() < n_predcessors
+				&& (*it_chain) < chain
 			; it_chain ++);
 		m_kChains.insert(it_chain, chain);
 
@@ -58,7 +57,7 @@ public:
 			return;
 		if (NULL != g_parent) //for root of the three FK_Update<G_SPACE=true> has no effect but waist computational resource
 			CArtiBodyTree::FK_Update<true>(m_rootBody);
-		
+
 		bool solved_all = false;
 		if (1 == n_chains)
 		{

@@ -142,19 +142,17 @@ public:
 		switch(c_conf->algor)
 		{
 			case CIKChain::Proj:
-				chain = new CIKChainProj(c_conf->up, c_dist2root);
+				chain = new CIKChainProj(c_conf->up);
 				break;
 			case CIKChain::DLS:
 				chain = new CIKChainInverseJK_DLS(c_conf->weight_p
 												, c_conf->weight_r
-												, c_conf->n_iter
-												, c_dist2root);
+												, c_conf->n_iter);
 				break;
 			case CIKChain::SDLS:
 				chain = new CIKChainInverseJK_SDLS(c_conf->weight_p
 												, c_conf->weight_r
-												, c_conf->n_iter
-												, c_dist2root);
+												, c_conf->n_iter);
 				break;
 		}
 

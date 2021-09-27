@@ -25,7 +25,7 @@ public:
 	// static const char* from_Algor(Algor);
 	DECLARE_ENUM_STR(Algor)
 public:
-	CIKChain(Algor algor, int n_iters, int n_predecessor);
+	CIKChain(Algor algor, int n_iters);
 	virtual ~CIKChain();
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>& joint_confs);
 	void SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst
@@ -54,10 +54,22 @@ public:
 		return (int)m_nodes.size();
 	}
 
-	int NPredecessors() const
+	bool operator < (const CIKChain& other)
 	{
-		return m_nPredecessors;
+		int n_dist2root_this = 0;
+		for (CArtiBodyNode* parent = m_rootG->GetParent()
+			; NULL != parent
+			; parent = parent->GetParent(), n_dist2root_this ++);
+
+		int n_dist2root_other = 0;
+		for (CArtiBodyNode* parent = other.m_rootG->GetParent()
+			; NULL != parent
+			; parent = parent->GetParent(), n_dist2root_other ++);
+
+		return n_dist2root_this < n_dist2root_other
+			|| (n_dist2root_this == n_dist2root_other && NBodies() < other.NBodies());
 	}
+
 public:
 	const Algor c_algor;
 	struct IKNode
@@ -74,14 +86,13 @@ private:
 	CArtiBodyNode* m_targetDst;
 	Eigen::Matrix3r m_src2dstW_Offset;
 	Eigen::Matrix3r m_dst2srcW;
-	int m_nPredecessors;
 
 };
 
 class CIKChainProj : public CIKChain
 {
 public:
-	CIKChainProj(const Real norm[3], int n_predecessor);
+	CIKChainProj(const Real norm[3]);
 	virtual ~CIKChainProj();
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>&) override;
 	virtual void Dump(std::stringstream& info) const override;
