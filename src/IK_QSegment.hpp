@@ -110,13 +110,9 @@ public:
 
 	// recursively update the global coordinates of this segment, 'global'
  	// is the global transformation from the parent segment
-	virtual void FK_Update()
-	{
-		CArtiBodyTree::FK_Update<true>(m_bodies[0]);
-	}
 
 	// get axis from rotation matrix for derivative computation
-	virtual Eigen::Vector3r Axis(int dof) const = 0;
+	virtual int Axis(Eigen::Vector3r axis[6]) const = 0;
 
 	// update the angles using the dTheta's computed using the jacobian matrix
 	virtual bool UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp) = 0;
@@ -172,15 +168,13 @@ public:
 	IK_QIxyzSegment(const Real weight[3]);
 	virtual Real Weight(int dof_l) const;
 	virtual void SetWeight(int dof_l, Real w);
-	virtual Eigen::Vector3r Axis(int dof_l) const;
-	virtual void FK_Update() override;
+	virtual int Axis(Eigen::Vector3r axis[6]) const;
 	virtual bool UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp);
 	virtual bool Locked(int dof_l) const;
 	virtual void UnLock();
 	virtual void Lock(int dofId, IK_QJacobian &jacobian, Eigen::Vector3r &delta);
 private:
 	Real m_weight[3];
-	Eigen::Vector3r m_axis[3];
 	bool m_locked[3];
 	Eigen::Vector3r m_theta;
 };

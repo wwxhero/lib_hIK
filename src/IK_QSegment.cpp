@@ -39,7 +39,6 @@ bool IK_QSegment::Initialize(CArtiBodyNode* from, CArtiBodyNode* to)
 IK_QIxyzSegment::IK_QIxyzSegment(const Real weight[3])
 	: IK_QSegment(R_xyz, 3)
 	, m_weight{weight[0], weight[1], weight[2]}
-	, m_axis {Eigen::Vector3r::UnitX(), Eigen::Vector3r::UnitY(), Eigen::Vector3r::UnitZ()}
 	, m_locked {false, false, false}
 	, m_theta(Eigen::Vector3r::Zero())
 {
@@ -57,10 +56,14 @@ void IK_QIxyzSegment::SetWeight(int dof_l, Real w)
 	m_weight[dof_l] = w;
 }
 
-Eigen::Vector3r IK_QIxyzSegment::Axis(int dof_l) const
+int IK_QIxyzSegment::Axis(Eigen::Vector3r axis[6]) const
 {
-	IKAssert(-1 < dof_l && dof_l < 3);
-	return m_axis[dof_l];
+	const Transform* tm_l2w = m_bodies[0]->GetTransformLocal2World();
+	Eigen::Matrix3r linear = tm_l2w->getLinear();
+	const int n_dofs = 3;
+	for (int i_dof = 0; i_dof < n_dofs; i_dof ++)
+		axis[i_dof] = linear.col(i_dof);
+	return n_dofs;
 }
 
 bool IK_QIxyzSegment::Locked(int dof_l) const
@@ -79,15 +82,6 @@ void IK_QIxyzSegment::Lock(int dof_l, IK_QJacobian &jacobian, Eigen::Vector3r &d
 	LOGIK("Lock");
 	m_locked[dof_l] = true;
 	jacobian.Lock(m_DoF_id + dof_l, delta[dof_l]);
-}
-
-void IK_QIxyzSegment::FK_Update()
-{
-	IK_QSegment::FK_Update();
-	const Transform* tm_l2w = m_bodies[0]->GetTransformLocal2World();
-	Eigen::Matrix3r linear = tm_l2w->getLinear();
-	for (int dof_l = 0; dof_l < c_num_DoF; dof_l ++)
-		m_axis[dof_l] = linear.col(dof_l);
 }
 
 bool IK_QIxyzSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp)

@@ -76,18 +76,19 @@ void IK_QPositionTask::ComputeJacobian(IK_QJacobian &jacobian)
 	jacobian.SetBetas(m_id, m_size, m_weight * d_pos);
 
 	// compute derivatives
+	Eigen::Vector3r axis[6];
 	for (const IK_QSegment* seg : m_segments)
 	{
 		Eigen::Vector3r p = seg->GlobalStart() - pos;
-
-		for (int i = 0; i < seg->NumberOfDoF(); i++) {
-			Eigen::Vector3r axis = seg->Axis(i) * m_weight;
+		int n_dof = seg->Axis(axis);
+		for (int i = 0; i < n_dof; i++) {
+			Eigen::Vector3r axis_i = axis[i] * m_weight;
 			bool translational = seg->Translational();
 			IKAssert(!translational);  // currently we don't have tranlational segement supported
 			if (translational)
-				jacobian.SetDerivatives(m_id, seg->DoFId() + i, axis);
+				jacobian.SetDerivatives(m_id, seg->DoFId() + i, axis_i);
 			else {
-				Eigen::Vector3r pa = p.cross(axis);
+				Eigen::Vector3r pa = p.cross(axis_i);
 				jacobian.SetDerivatives(m_id, seg->DoFId() + i, pa);
 			}
 		}
@@ -116,18 +117,20 @@ void IK_QOrientationTask::ComputeJacobian(IK_QJacobian &jacobian)
 
 	jacobian.SetBetas(m_id, m_size, m_weight * d_rot_rv);
 	// compute derivatives
+	Eigen::Vector3r axis[6];
 	for (auto seg : m_segments)
 	{
 		bool translational = seg->Translational();
 		IKAssert(!translational);  // currently we don't have tranlational segement supported
-		for (int i = 0; i < seg->NumberOfDoF(); i++)
+		int n_dof = seg->Axis(axis);
+		for (int i = 0; i < n_dof; i++)
 		{
 			if (translational)
 				jacobian.SetDerivatives(m_id, seg->DoFId() + i, Eigen::Vector3r(0, 0, 0));
 			else
 			{
-				Eigen::Vector3r axis = seg->Axis(i) * m_weight;
-				jacobian.SetDerivatives(m_id, seg->DoFId() + i, axis);
+				Eigen::Vector3r axis_i = axis[i] * m_weight;
+				jacobian.SetDerivatives(m_id, seg->DoFId() + i, axis_i);
 			}
 		}
 	}
