@@ -111,19 +111,18 @@ class IK_QOrientationTask : public IK_QTask {
 
   void SetGoal(const Eigen::Quaternionr& goal)
   {
-    m_goal = goal;
+    m_goalQ = goal;
   }
 
   void Complete();
   virtual bool Completed() const
   {
-    Eigen::Quaternionr rot_goal(m_goal);
     Eigen::Quaternionr rot_eef = Transform::getRotation_q(m_eef->GetTransformLocal2World());
-    return Equal(rot_goal, rot_eef);
+    return Equal(m_goalQ, rot_eef);
   }
 
  private:
-  Eigen::Matrix3r m_goal;
+  Eigen::Quaternionr m_goalQ;
 };
 
 

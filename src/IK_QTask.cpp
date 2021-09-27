@@ -105,32 +105,22 @@ IK_QOrientationTask::IK_QOrientationTask(bool primary
 
 void IK_QOrientationTask::ComputeJacobian(IK_QJacobian &jacobian)
 {
-	int n_segs = (int)m_segments.size();
-	IKAssert(n_segs > 0);
-	// replace this code with quaternion
-	// compute betas
-	const Eigen::Matrix3r &rot = m_segments[n_segs-1]->GlobalTransform().linear();
 	//d_rotm^-1 = m_goal * rot ^-1
 	// => d_rotm = rot * m_goal^-1
 	// => rot^-1 * d_rotm = m_goal^-1
 	// => d_rotm^-1 * rot = m_goal
-	Eigen::Matrix3r d_rotm = m_goal * rot.transpose();
+	Eigen::Quaternionr rot_eef = Transform::getRotation_q(m_eef->GetTransformLocal2World());
+	Eigen::Quaternionr rot_eef_inv = rot_eef.conjugate(); // conjugate of a normalized quaternion is the same as invert
+	Eigen::Quaternionr d_rotq = m_goalQ * rot_eef_inv;
+	Eigen::Vector3r d_rot_rv = 2 * d_rotq.w() * Eigen::Vector3r(d_rotq.x(), d_rotq.y(), d_rotq.z());
 
-	Eigen::Vector3r d_rot;
-	d_rot = 0.5 * Eigen::Vector3r(d_rotm(2, 1) - d_rotm(1, 2),
-								d_rotm(0, 2) - d_rotm(2, 0),
-								d_rotm(1, 0) - d_rotm(0, 1));
-
-	jacobian.SetBetas(m_id, m_size, m_weight * d_rot);
-
+	jacobian.SetBetas(m_id, m_size, m_weight * d_rot_rv);
 	// compute derivatives
-	int i;
-	for (int i_seg = 0; i_seg < n_segs; i_seg ++)
+	for (auto seg : m_segments)
 	{
-		const IK_QSegment* seg = m_segments[i_seg];
 		bool translational = seg->Translational();
 		IKAssert(!translational);  // currently we don't have tranlational segement supported
-		for (i = 0; i < seg->NumberOfDoF(); i++)
+		for (int i = 0; i < seg->NumberOfDoF(); i++)
 		{
 			if (translational)
 				jacobian.SetDerivatives(m_id, seg->DoFId() + i, Eigen::Vector3r(0, 0, 0));
@@ -150,7 +140,7 @@ void IK_QOrientationTask::Complete()
 	int n_segs = (int)m_segments.size();
 	if (n_segs > 0)
 	{
-		Eigen::Quaternionr goal(m_goal);
+		Eigen::Quaternionr goal(m_goalQ);
 		m_eef->GetJoint()->SetRotation_w(goal);
 	}
 }
