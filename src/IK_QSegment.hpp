@@ -48,13 +48,6 @@ public:
 		return m_bodies[side]->GetName_c();
 	}
 
-	//to unify the segment positions within [0, 1], for better numerical computation performance
-	void Scale(Real s)
-	{
-		m_scale = s;
-		m_max_extension *= s;
-	}
-
 	// number of degrees of freedom
 	int NumberOfDoF() const
 	{
