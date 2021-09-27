@@ -155,7 +155,7 @@ void LogInfoBool(const char* file, unsigned int line, const char* token, bool v)
 #endif
 }
 
-void LogInfoFloat(const char* file, unsigned int line, const char* token, float v)
+void LogInfoReal(const char* file, unsigned int line, const char* token, Real v)
 {
 #ifndef SMOOTH_LOGGING
 	fprintf(stdout
@@ -171,6 +171,31 @@ void LogInfoFloat(const char* file, unsigned int line, const char* token, float 
 						, line
 						, token
 						, v);
+#endif
+}
+
+void LogInfoTM(const char *file, unsigned int line, const char *token, const _TRANSFORM *v)
+{
+	std::stringstream v_out;
+#ifndef SMOOTH_LOGGING
+	fprintf(stdout
+		, "[%s:%d] %s = {tt:[%.4f\t%.4f\t%.4f]\tr:[%.4f\t%.4f\t%.4f\t%.4f]\ts:[%.4f\t%.4f\t%.4f]}\n"
+		, file_short(file)
+		, line
+		, token
+		, v->tt.x, v->tt.y, v->tt.z
+		, v->r.w, v->r.x, v->r.y, v->r.z
+		, v->s.x, v->s.y, v->s.z);
+	fflush(stdout);
+#else
+	g_LoggerFast.OutFmt(
+		  "[%s:%d] %s = {tt:[%.4f\t%.4f\t%.4f]\tr:[%.4f\t%.4f\t%.4f\t%.4f]\ts:[%.4f\t%.4f\t%.4f]}\n"
+		, file_short(file)
+		, line
+		, token
+		, v->tt.x, v->tt.y, v->tt.z
+		, v->r.w, v->r.x, v->r.y, v->r.z
+		, v->s.x, v->s.y, v->s.z);
 #endif
 }
 
@@ -205,9 +230,9 @@ void LogInfo3x3_m(const char* file, unsigned int line, const char* token, const 
 #endif
 }
 
-void LogInfoFloat3x3_m(const char* file, unsigned int line, const char* token, const float m[3][3])
+void LogInfoReal3x3_m(const char* file, unsigned int line, const char* token, const Real m[3][3])
 {
-	LogInfo3x3_m<float>(file, line, token, m);
+	LogInfo3x3_m<Real>(file, line, token, m);
 }
 
 void LogInfoDouble3x3(const char* file, unsigned int line, const char* token, const double* m)

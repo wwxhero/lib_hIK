@@ -2,6 +2,7 @@
 #ifndef __IK_LOGGER_H__
 #  define __IK_LOGGER_H__
 #  include <string.h>
+#  include "articulated_body.h"
 // #define SMOOTH_LOGGING
 // #define PROFILE_IK
 
@@ -18,10 +19,11 @@ void LogInfoCharPtr(const char *file, unsigned int line, const char *token, cons
 void LogInfoPtr(const char *file, unsigned int line, const char *token, const void* v);
 void LogInfoInt(const char *file, unsigned int line, const char *token, int v);
 void LogInfoBool(const char *file, unsigned int line, const char *token, bool v);
-void LogInfoFloat(const char *file, unsigned int line, const char *token, float v);
-void LogInfoFloat3x3_m(const char *file, unsigned int line, const char *token, const float m[3][3]);
-void LogInfoDouble3x3(const char *file, unsigned int line, const char *token, const double *m);
-void LogInfoDouble1x3(const char *file, unsigned int line, const char *token, const double *v);
+void LogInfoReal(const char *file, unsigned int line, const char *token, Real v);
+void LogInfoReal3x3_m(const char *file, unsigned int line, const char *token, const Real m[3][3]);
+// void LogInfoDouble3x3(const char *file, unsigned int line, const char *token, const double *m);
+// void LogInfoDouble1x3(const char *file, unsigned int line, const char *token, const double *v);
+void LogInfoTM(const char *file, unsigned int line, const char *token, const _TRANSFORM *v);
 void LOGIKFlush();
 
 void AssertionFail(const char *file, unsigned int line);
@@ -36,6 +38,8 @@ void AssertionFail(const char *file, unsigned int line);
 #  if defined _DEBUG || defined SMOOTH_LOGGING
 
 #    define LOGIKVar(func, var) func(__FILE__, __LINE__, #    var, var);
+#    define LOGIKVarErr(func, var) func(__FILE__, __LINE__, "ERROR: "#var, var);
+#    define LOGIKVarWarning(func, var) func(__FILE__, __LINE__, "WARNING: "#var, var);
 #    define LOGIK(msg) LogInfo(__FILE__, __LINE__, msg);
 #	if defined HARDASSERTION
 #		define IKAssert assert
@@ -51,6 +55,8 @@ void AssertionFail(const char *file, unsigned int line);
 #    endif
 
 #    define LOGIKVar(func, var)
+#    define LogIKVarErr(func, var)
+#    define LOGIKVarWarning(func, var)
 #    define LOGIK(msg)
 #    define IKAssert(v)
 

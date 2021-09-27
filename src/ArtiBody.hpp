@@ -25,14 +25,20 @@ public:
 		return m_namec.c_str();
 	}
 
-	void SetGoal(const Transform_TRS& tm_w)
+	bool UpdateGoal(const Transform_TRS& tm_w)
 	{
-		tm_w.CopyTo(m_goal);
+		_TRANSFORM goal_w;
+		tm_w.CopyTo(goal_w);
+		return UpdateGoal(goal_w);
 	}
 
-	void SetGoal(const _TRANSFORM& tm_w)
+	bool UpdateGoal(const _TRANSFORM& tm_w)
 	{
-		m_goal = tm_w;
+		const _TRANSFORM& tm_w_current_tm = m_goal;
+		bool update = !Equal(tm_w, tm_w_current_tm);
+		if (update)
+			m_goal = tm_w;
+		return update;
 	}
 
 	void GetGoal(_TRANSFORM& tm_w) const
@@ -163,12 +169,13 @@ public:
 	{
 	}
 private:
+	template<bool G_ROOT>
 	inline void FK_UpdateNode()
 	{
 		m_local2parent_cached = m_local2parent0 * m_joint.m_tm;
 		m_parent2local_cached = m_local2parent_cached.inverse();
 		CArtiBodyNode_anim* parent = static_cast<CArtiBodyNode_anim*>(GetParent());
-		bool is_root = (NULL == parent);
+		bool is_root = (G_ROOT || NULL == parent);
 
 		if (is_root)
 		{
@@ -207,14 +214,14 @@ public:
 	{
 	}
 private:
-
+	template<bool G_ROOT>
 	inline void FK_UpdateNode()
 	{
 		// this function is performance sensitive
 		this->m_local2parent_cached.Update(this->m_local2parent0, this->m_joint.m_tm);
 		this->m_parent2local_cached = this->m_local2parent_cached.inverse();
 		CArtiBodyNode* parent0 = this->GetParent();
-		bool is_root = (NULL == parent0);
+		bool is_root = (G_ROOT || NULL == parent0);
 		if (is_root)
 		{
 			this->m_local2world_cached = this->m_local2parent_cached;
@@ -383,7 +390,7 @@ public:
 		if (cloned)
 		{
 			KINA_Initialize(*dst);
-			FK_Update(*dst);
+			FK_Update<false>(*dst);
 		}
 		else
 		{
@@ -395,7 +402,54 @@ public:
 	}
 
 	static void KINA_Initialize(CArtiBodyNode* root);
-	static void FK_Update(CArtiBodyNode* root);
+
+	template<bool G_SPACE>
+	static void FK_Update(CArtiBodyNode* root)
+	{
+		bool is_an_anim = (root->c_type&anim);
+		if (is_an_anim)
+		{
+			auto it = root->m_kinalst.begin();
+			auto it_end = root->m_kinalst.end();
+			if (it != it_end)
+			{
+				const bool G_ROOT = G_SPACE;
+				static_cast<CArtiBodyNode_anim*>(*it)->FK_UpdateNode<G_ROOT>();
+				for (it ++; it != it_end; it ++)
+					static_cast<CArtiBodyNode_anim*>(*it)->FK_UpdateNode<false>();
+			}
+		}
+		else // not an anim
+		{
+			auto it = root->m_kinalst.begin();
+			auto it_end = root->m_kinalst.end();
+			if (it != it_end)
+			{
+				const bool G_ROOT = G_SPACE;
+				switch ((*it)->c_jtmflag)
+				{
+					case t_r:
+						static_cast<CArtiBodyNode_sim_r*>(*it)->FK_UpdateNode<G_ROOT>();
+						break;
+					case t_tr:
+						static_cast<CArtiBodyNode_sim_tr*>(*it)->FK_UpdateNode<G_ROOT>();
+						break;
+				}
+				for (it ++; it != it_end; it ++)
+				{
+					switch ((*it)->c_jtmflag)
+					{
+						case t_r:
+							static_cast<CArtiBodyNode_sim_r*>((*it))->FK_UpdateNode<false>();
+							break;
+						case t_tr:
+							static_cast<CArtiBodyNode_sim_tr*>((*it))->FK_UpdateNode<false>();
+							break;
+					}
+				}
+			}
+		}
+	}
 
 #ifdef _DEBUG
 	static void Connect(CArtiBodyNode* from, CArtiBodyNode* to, CNN type);

@@ -26,20 +26,21 @@ namespace CONF
 	    return dir;
 	}
 
-	////////////////////////////////////////////////////////////////////////////////////////////
-	// CJointConf:
-
-	CJointConf::CJointConf(const char* a_name)
-		: name(a_name)
+	class TiXMLHelper
 	{
-	}
+	public:
+		static int QueryRealAttribute(const TiXmlElement* ele, const char* name, Real* _value );
+	};
 
-#ifdef _DEBUG
-	void CJointConf::Dump_Dbg() const
+	int TiXMLHelper::QueryRealAttribute(const TiXmlElement* ele, const char* name, Real* _value )
 	{
-		LOGIKVar(LogInfoCharPtr, name.c_str());
+		double d;
+		int result = ele->QueryDoubleAttribute( name, &d );
+		if ( result == TIXML_SUCCESS ) {
+			*_value = (Real)d;
+		}
+		return result;
 	}
-#endif
 
 	////////////////////////////////////////////////////////////////////////////////////////////
 	//CIKChainConf:
@@ -96,9 +97,18 @@ namespace CONF
 	{
 	}
 
-	void CIKChainConf::AddJoint(const char* name)
+	void CIKChainConf::AddJoint(const char* attri_values[5])
 	{
-		CJointConf joint_conf(name);
+		const char* name = attri_values[0];
+		IK_QSegment::Type type = (NULL == attri_values[1])
+							? IK_QSegment::R_xyz
+							: IK_QSegment::to_Type(attri_values[1]);
+		Real dexterity[] = {
+			(NULL == attri_values[2]) ? 1 : (Real)atof(attri_values[2]),
+			(NULL == attri_values[3]) ? 1 : (Real)atof(attri_values[3]),
+			(NULL == attri_values[4]) ? 1 : (Real)atof(attri_values[4]),
+		};
+		CJointConf joint_conf(name, type, dexterity);
 		Joints.push_back(joint_conf);
 	}
 
@@ -108,8 +118,8 @@ namespace CONF
 		LOGIKVar(LogInfoCharPtr, eef.c_str());
 		LOGIKVar(LogInfoInt, len);
 		LOGIKVar(LogInfoCharPtr, CIKChain::from_Algor(algor));
-		LOGIKVar(LogInfoFloat, weight_p);
-		LOGIKVar(LogInfoFloat, weight_r);
+		LOGIKVar(LogInfoReal, weight_p);
+		LOGIKVar(LogInfoReal, weight_r);
 		LOGIKVar(LogInfoInt, n_iter);
 		LOGIKVar(LogInfoCharPtr, P_Graph.c_str());
 
@@ -205,9 +215,9 @@ namespace CONF
 		{
 			const B_Scale& scale_i = scales[i_scale];
 			LOGIKVar(LogInfoWCharPtr, scale_i.bone_name);
-			LOGIKVar(LogInfoFloat, scale_i.scaleX);
-			LOGIKVar(LogInfoFloat, scale_i.scaleY);
-			LOGIKVar(LogInfoFloat, scale_i.scaleZ);
+			LOGIKVar(LogInfoReal, scale_i.scaleX);
+			LOGIKVar(LogInfoReal, scale_i.scaleY);
+			LOGIKVar(LogInfoReal, scale_i.scaleZ);
 		}
 		CBodyConf::Scale_free(scales, n_scales);
 
@@ -506,10 +516,10 @@ namespace CONF
 				{
 					const char* b_name = ele->Attribute("b_name");
 					bool valid_name = (NULL != b_name);
-					float x, y, z;
-					bool valid_x_scale = (TIXML_SUCCESS == ele->QueryFloatAttribute("x", &x));
-					bool valid_y_scale = (TIXML_SUCCESS == ele->QueryFloatAttribute("y", &y));
-					bool valid_z_scale = (TIXML_SUCCESS == ele->QueryFloatAttribute("z", &z));
+					Real x, y, z;
+					bool valid_x_scale = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "x", &x));
+					bool valid_y_scale = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "y", &y));
+					bool valid_z_scale = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "z", &z));
 					ret = (valid_name
 						&& valid_x_scale
 						&& valid_y_scale
@@ -526,7 +536,7 @@ namespace CONF
 				else if ("MotionPipe" == name)
 				{
 					const char* sync_type = ele->Attribute("sync");
-					sync = CMoNode::to_TM_TYPE(sync_type);
+					sync = CMoNode::to_RETAR_TYPE(sync_type);
 
 					const char* m_name[3][3] = {
 						{"m11", "m12", "m13"},
@@ -539,14 +549,14 @@ namespace CONF
 					{
 						for (int i_c = 0; i_c < 3 && all_entry_ij; i_c++)
 						{
-							all_entry_ij = (TIXML_SUCCESS == ele->QueryFloatAttribute(m_name[i_r][i_c], &m[i_r][i_c]));
+							all_entry_ij = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, m_name[i_r][i_c], &m[i_r][i_c]));
 						}
 					}
 					ret = all_entry_ij;
 					IKAssert(all_entry_ij);
 					if (ret)
 					{
-						LOGIKVar(LogInfoFloat3x3_m, m);
+						LOGIKVar(LogInfoReal3x3_m, m);
 						Eigen::Matrix3r src2dst_w;
 						src2dst_w << m[0][0], m[0][1], m[0][2],
 									 m[1][0], m[1][1], m[1][2],
@@ -601,13 +611,13 @@ namespace CONF
 					bool valid_algor = (NULL != (algor_str = ele->Attribute("algor"))
 									&& CIKChain::Unknown != (algor = CIKChain::to_Algor(algor_str)));
 					Real weight_p = 0;
-					bool valid_weight_p = (TIXML_SUCCESS == ele->QueryFloatAttribute("weight_p", &weight_p));
+					bool valid_weight_p = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "weight_p", &weight_p));
 					Real weight_r = 0;
-					bool valid_weight_r = (TIXML_SUCCESS == ele->QueryFloatAttribute("weight_r", &weight_r));
+					bool valid_weight_r = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "weight_r", &weight_r));
 					Real up[3];
-					bool valid_up =   (TIXML_SUCCESS == ele->QueryFloatAttribute("up_x", &up[0])
-									&& TIXML_SUCCESS == ele->QueryFloatAttribute("up_y", &up[1])
-									&& TIXML_SUCCESS == ele->QueryFloatAttribute("up_z", &up[2]));
+					bool valid_up =   (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "up_x", &up[0])
+									&& TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "up_y", &up[1])
+									&& TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "up_z", &up[2]));
 
 					IKAssert(valid_len);
 					IKAssert(valid_algor);
@@ -637,11 +647,37 @@ namespace CONF
 				}
 				else if("Joint" == name)
 				{
-					const char* name_j = ele->Attribute("name");
-					IKAssert(NULL != name_j);
+					struct
+					{
+						const char* str;
+						bool is_optional;
+					} names_attri[] = {
+						  { "name",			false }		// 0
+						, { "type",			true }		// 1
+						, { "Dexterity_x",	true }		// 2
+						, { "Dexterity_y",	true }		// 3
+						, { "Dexterity_z",	true }		// 4
+					};
+					const char* value_attri[] = {
+						  ele->Attribute(names_attri[0].str)
+						, ele->Attribute(names_attri[1].str)
+						, ele->Attribute(names_attri[2].str)
+						, ele->Attribute(names_attri[3].str)
+						, ele->Attribute(names_attri[4].str)
+					};
+
+					bool value_valid = true;
+					for (int i_value = 0
+						; i_value < sizeof(value_attri)/sizeof(const char*)
+							&& value_valid
+						; i_value ++)
+						value_valid = (NULL != value_attri[i_value]
+									|| names_attri[i_value].is_optional);
+					IKAssert(value_valid);
+
 					CIKChainConf* chain_conf = P_Chain(node);
 					IKAssert(NULL != chain_conf);
-					chain_conf->AddJoint(name_j);
+					chain_conf->AddJoint(value_attri);
 				}
 			}
 			return ret;
@@ -652,8 +688,8 @@ namespace CONF
 #ifdef _DEBUG
 	void CMotionPipeConf::Dump_Dbg() const
 	{
-		LOGIKVar(LogInfoCharPtr, CMoNode::from_TM_TYPE(sync));
-		LOGIKVar(LogInfoFloat3x3_m, m);
+		LOGIKVar(LogInfoCharPtr, CMoNode::from_RETAR_TYPE(sync));
+		LOGIKVar(LogInfoReal3x3_m, m);
 		Source.Dump_Dbg();
 		Destination.Dump_Dbg();
 		Pair.Dump_Dbg();

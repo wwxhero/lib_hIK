@@ -15,6 +15,7 @@ public:
 	virtual Transform* GetTransform() = 0;
 	virtual void SetLinear(const Eigen::Matrix3r& rotm) = 0;
 	virtual void SetRotation(const Eigen::Quaternionr& rotq) = 0;
+	virtual void SetRotation_w(const Eigen::Quaternionr& rotq) = 0;
 	virtual void SetTranslation(const Eigen::Vector3r& tt) = 0;
 };
 
@@ -62,6 +63,24 @@ public:
 	virtual void SetRotation(const Eigen::Quaternionr& rotq)
 	{
 		m_tm.setRotation(rotq);
+	}
+
+	virtual void SetRotation_w(const Eigen::Quaternionr& rotq)
+	{
+		CArtiBodyNode* parent = m_host->GetParent();
+		if (NULL == parent)
+		{
+			m_tm.setRotation(rotq);
+		}
+		else
+		{
+			Eigen::Quaternionr rot_0_p2l = Transform::getRotation_q(m_host->GetTransformParent2Local0());
+			Eigen::Quaternionr rot_w2p = Transform::getRotation_q(parent->GetTransformWorld2Local());
+			Eigen::Quaternionr rotq_l = rot_0_p2l * rot_w2p * rotq;
+			m_tm.setRotation(rotq_l);
+		}
+
+
 	}
 
 	virtual void SetTranslation(const Eigen::Vector3r& tt)

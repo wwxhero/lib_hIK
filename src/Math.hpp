@@ -3,6 +3,7 @@
 #pragma push_macro("new")
 #undef new
 
+#include <Eigen/Eigenvalues>
 #include <Eigen/Geometry>
 
 namespace Eigen {
@@ -39,6 +40,7 @@ EIGEN_MAKE_TYPEDEFS_ALL_SIZES(std::complex<Real>, c)
 
 typedef Quaternion<Real> Quaternionr;
 typedef Transform<Real,3,Affine> Affine3r;
+typedef AngleAxis<Real> AngleAxisr;
 } // end namespace Eigen
 
 #pragma pop_macro("new")
@@ -52,10 +54,52 @@ inline bool UnitVec(const Eigen::Vector3r& v)
 					&& err < c_2epsilon;
 }
 
+inline bool Equal(const Eigen::Quaternionr& q_this, const Eigen::Quaternionr& q_other)
+{
+	Real err = q_this.dot(q_other);
+    Real err_r_0 = err - (Real)1;
+    Real err_r_1 = err + (Real)1;
+    bool r_eq = (-c_rotq_epsilon < err_r_0 && err_r_0 < c_rotq_epsilon)
+              || (-c_rotq_epsilon < err_r_1 && err_r_1 < c_rotq_epsilon);
+    return r_eq;
+}
+
+inline bool FuzzyZero(Real x)
+{
+	return fabs(x) < c_epsilon;
+}
+
+
+template<typename T>
+T wrap_pi(T rad)
+{
+  const T pi_2 = 2 * M_PI;
+  T rad_wrap = 0;
+  auto k = floor(rad / pi_2);
+  auto r_i_2pi = rad - k * pi_2;
+  assert(r_i_2pi >= 0 && r_i_2pi < pi_2);
+  if (r_i_2pi > M_PI)
+    rad_wrap = r_i_2pi - pi_2;
+  else
+    rad_wrap = r_i_2pi;
+  return rad_wrap;
+}
+
+
 struct Plane
 {
 	Eigen::Vector3r n;
 	Eigen::Vector3r p;
+	Plane(const Eigen::Vector3r& a_n, const Eigen::Vector3r& a_p)
+		: n(a_n)
+		, p(a_p)
+	{
+	}
+	Plane()
+		: n(Eigen::Vector3r::Zero())
+		, p(Eigen::Vector3r::Zero())
+	{
+	}
 	Eigen::Vector3r ProjP(const Eigen::Vector3r& a_p) const
 	{
 		Real t = (p - a_p).transpose() * n;
@@ -78,4 +122,5 @@ struct Plane
 		Real err = a_v.transpose() * n;
 		return -epsilon < err && err < epsilon;
 	}
+
 };

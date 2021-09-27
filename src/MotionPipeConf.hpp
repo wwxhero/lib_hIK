@@ -4,6 +4,7 @@
 #include "tinyxml.h"
 #include "MoNode.hpp"
 #include "motion_pipeline.h"
+#include "JointConf.hpp"
 #include "IKChain.hpp"
 
 namespace CONF
@@ -11,7 +12,7 @@ namespace CONF
 	class B_ScaleEx : public B_Scale
 	{
 	public:
-		B_ScaleEx(const char* name, float x, float y, float z)
+		B_ScaleEx(const char* name, Real x, Real y, Real z)
 		{
 			std::string strname_c(name);
 			std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
@@ -74,16 +75,6 @@ namespace CONF
 		std::wstring m_str;
 	};
 
-	class CJointConf
-	{
-	public:
-		CJointConf(const char* name);
-#ifdef _DEBUG
-		void Dump_Dbg() const;
-#endif
-		std::string name;
-	};
-
 	class CIKChainConf
 	{
 	public:
@@ -100,7 +91,7 @@ namespace CONF
 					, Real up[3]);
 		CIKChainConf(const CIKChainConf& src);
 		~CIKChainConf();
-		void AddJoint(const char* name);
+		void AddJoint(const char* attri_values[5]);
 #ifdef _DEBUG
 		void Dump_Dbg() const;
 #endif
@@ -220,7 +211,7 @@ namespace CONF
 		static CMotionPipeConf* Load(const wchar_t* confXML);
 		static void UnLoad(CMotionPipeConf* conf);
 	public:
-		CMoNode::TM_TYPE sync;
+		CMoNode::RETAR_TYPE sync;
 		Real m[3][3];
 		Real m_inv[3][3];
 		CBodyConf Source, Destination;

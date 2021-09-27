@@ -15,9 +15,9 @@ struct MotionPipe
 typedef struct _B_Scale
 {
 	const wchar_t* bone_name;
-	float scaleX;
-	float scaleY;
-	float scaleZ;
+	Real scaleX;
+	Real scaleY;
+	Real scaleZ;
 } B_Scale;
 
 typedef HIKLIB_CB(HBODY, *FuncBodyInit)(void* paramProc
@@ -32,7 +32,7 @@ typedef HIKLIB_CB(HBODY, *FuncBodyInit)(void* paramProc
 HIKLIB(bool,			load_mopipe)(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit onInitBodyProc[2], void* paramProc);
 HIKLIB(void,			unload_mopipe)(MotionPipe* mopipe);
 HIKLIB(void,			fk_update)(MotionPipe* mopipe, unsigned int i_frame);
-HIKLIB(void,			ik_task)(HBODY body_t, const _TRANSFORM* tm);
+HIKLIB(bool,			ik_task_update)(HBODY body_t, const _TRANSFORM* tm);
 HIKLIB(void,			ik_update)(MotionPipe* mopipe);
 
 // these APIs are not for game engine usage

@@ -8,10 +8,73 @@ inline bool NoScale(const _TRANSFORM& tm)
 	auto err_x = tm.s.x - (Real)1;
 	auto err_y = tm.s.y - (Real)1;
 	auto err_z = tm.s.z - (Real)1;
-	return (-c_epsilon < err_x && err_x < c_epsilon)
-		&& (-c_epsilon < err_y && err_y < c_epsilon)
-		&& (-c_epsilon < err_z && err_z < c_epsilon);
+	return (-c_10epsilon < err_x && err_x < c_10epsilon)
+		&& (-c_10epsilon < err_y && err_y < c_10epsilon)
+		&& (-c_10epsilon < err_z && err_z < c_10epsilon);
 
+}
+
+inline bool NoRot(const _TRANSFORM& tm)
+{
+	auto err_w = tm.r.w - (Real)1;
+	return (-c_10epsilon < err_w && err_w < c_10epsilon);
+}
+
+inline bool NoTT(const _TRANSFORM& tm)
+{
+	return (-c_10epsilon < tm.tt.x && tm.tt.x < c_10epsilon)
+		&& (-c_10epsilon < tm.tt.y && tm.tt.y < c_10epsilon)
+		&& (-c_10epsilon < tm.tt.z && tm.tt.z < c_10epsilon);
+}
+
+inline bool Is_ID(const _TRANSFORM& tm)
+{
+	return NoScale(tm) && NoRot(tm) && NoTT(tm);
+}
+
+inline void SetID(_TRANSFORM& tm)
+{
+	tm.s.x = (Real)1; tm.s.y = (Real)1; tm.s.z = (Real)1;
+	tm.r.x = (Real)0; tm.r.y = (Real)0; tm.r.z = (Real)0; tm.r.w = (Real)1;
+	tm.tt.x = (Real)0; tm.tt.y = (Real)0; tm.tt.z = (Real)0;
+}
+
+inline bool Equal(const _TRANSFORM& tm_1, const _TRANSFORM& tm_2)
+{
+	Real err_s_x = tm_1.s.x - tm_2.s.x;
+	Real err_s_y = tm_1.s.y - tm_2.s.y;
+	Real err_s_z = tm_1.s.z - tm_2.s.z;
+
+	bool s_eq = (-c_100epsilon < err_s_x && err_s_x < c_100epsilon)
+			 && (-c_100epsilon < err_s_y && err_s_y < c_100epsilon)
+			 && (-c_100epsilon < err_s_z && err_s_z < c_100epsilon);
+
+	if (!s_eq)
+		return false;
+
+	Real err_tt_x = tm_1.tt.x - tm_2.tt.x;
+	Real err_tt_y = tm_1.tt.y - tm_2.tt.y;
+	Real err_tt_z = tm_1.tt.z - tm_2.tt.z;
+
+	bool tt_eq = (-c_tt_epsilon < err_tt_x && err_tt_x < c_tt_epsilon)
+			  && (-c_tt_epsilon < err_tt_y && err_tt_y < c_tt_epsilon)
+			  && (-c_tt_epsilon < err_tt_z && err_tt_z < c_tt_epsilon);
+
+	if (!tt_eq)
+		return false;
+
+	Real err_r =  tm_1.r.w * tm_2.r.w
+				+ tm_1.r.x * tm_2.r.x
+				+ tm_1.r.y * tm_2.r.y
+				+ tm_1.r.z * tm_2.r.z;
+
+	Real err_r_0 = err_r - (Real)1;
+	Real err_r_1 = err_r + (Real)1;
+
+	bool r_eq = (-c_rotq_epsilon < err_r_0 && err_r_0 < c_rotq_epsilon)
+			 || (-c_rotq_epsilon < err_r_1 && err_r_1 < c_rotq_epsilon);
+
+	return r_eq;
 }
 
 class Transform
@@ -26,6 +89,7 @@ public:
 	virtual void CopyFrom(const _TRANSFORM& tm) = 0;
 	virtual Eigen::Matrix3r getRotation_m() const;
 	virtual Eigen::Affine3r getAffine() const;
+	static Eigen::Quaternionr getRotation_q(const Transform*);
 	TM_TYPE Type() const
 	{
 		return c_type;
@@ -106,6 +170,11 @@ public:
 	{
 		linear() = rotq.matrix();
 	}
+	inline Eigen::Quaternionr getRotation_q() const
+	{
+		Eigen::Quaternionr q(getRotation_m());
+		return q;
+	}
 };
 
 class Transform_T : public Transform
@@ -122,18 +191,13 @@ class Transform_R : public Transform
 
 	void Init(const _TRANSFORM& tm)
 	{
-		assert(1 == tm.s.x
-			&& 1 == tm.s.y
-			&& 1 == tm.s.z);
+		IKAssert(NoScale(tm)
+				&& NoTT(tm));
 
 		m_rotq.w() = tm.r.w;
 		m_rotq.x() = tm.r.x;
 		m_rotq.y() = tm.r.y;
 		m_rotq.z() = tm.r.z;
-
-		assert(0 == tm.tt.x
-			&& 0 == tm.tt.y
-			&& 0 == tm.tt.z);
 	}
 public:
 	Transform_R(const _TRANSFORM& tm)
@@ -159,7 +223,7 @@ public:
 	inline Transform_R inverse() const
 	{
 		Transform_R t_inv;
-		t_inv.m_rotq = m_rotq.inverse();
+		t_inv.m_rotq = m_rotq.conjugate();
 		return std::move(t_inv);
 	}
 	inline const Eigen::Quaternionr& getRotation_q() const
@@ -212,7 +276,7 @@ public:
 	inline Transform_TR inverse() const
 	{
 		Transform_TR t_inv;
-		t_inv.m_rotq = m_rotq.inverse();
+		t_inv.m_rotq = m_rotq.conjugate();
 		t_inv.m_tt = Eigen::Vector3r::Zero() - t_inv.m_rotq*m_tt;
 		return std::move(t_inv);
 	}
@@ -236,12 +300,37 @@ public:
 		m_tt = tm0.m_rotq*delta.m_tt + tm0.m_tt;
 	}
 
+	inline Eigen::Vector3r Apply_p(const Eigen::Vector3r& p) const
+	{
+		return m_rotq * p + m_tt;
+	}
+
+	inline Eigen::Vector3r Apply_v(const Eigen::Vector3r& v) const
+	{
+		return m_rotq * v;
+	}
+
+	inline Plane Apply(const Plane& plane) const
+	{
+		Eigen::Vector3r p_0 = Apply_p(plane.p);
+		Eigen::Vector3r n = Apply_v(plane.n);
+		return Plane(n, p_0);
+	}
+
 	bool Valid() const
 	{
 		auto abs_rotq = m_rotq.squaredNorm();
 		Real err = abs_rotq - (Real)1;
 		return -c_2epsilon < err && err < +c_2epsilon;
 	}
+
+	Transform_TR operator=(const Transform_TR& other)
+	{
+		m_tt = other.m_tt;
+		m_rotq = other.m_rotq;
+		return *this;
+	}
+
 private:
 	Eigen::Vector3r m_tt;
 };

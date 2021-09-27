@@ -18,7 +18,11 @@ struct MotionPipeInternal : public MotionPipe
 	Type type;
 	union
 	{
-		HBVH bvh;
+		struct
+		{
+			HBVH bvh;
+			int i_frame;
+		};
 		CIKGroupNode* root_ik;
 	};
 };
@@ -32,6 +36,8 @@ void init_mopipe(MotionPipeInternal* mopipe)
 	mopipe->mo_nodes[1] = H_INVALID;
 	mopipe->n_frames = 0;
 	mopipe->root_ik = NULL;
+	mopipe->bvh = H_INVALID;
+	mopipe->i_frame = -1;
 }
 
 bool InitBody_Internal(HBODY bodySrc
@@ -189,6 +195,7 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 				if (VALID_HANDLE(bvh))
 				{
 					mopipe->bvh = bvh;
+					mopipe->i_frame = -1;
 					mopipe->type = MotionPipeInternal::FK;
 				}
 				else
@@ -318,8 +325,11 @@ void unload_mopipe(MotionPipe* a_mopipe)
 	case MotionPipeInternal::FK:
 		unload_bvh(mopipe->bvh);
 		mopipe->bvh = H_INVALID;
+		mopipe->i_frame = 0;
 		break;
 	case MotionPipeInternal::IK:
+		delete mopipe->root_ik;
+		mopipe->root_ik = NULL;
 		break;
 	}
 
@@ -330,17 +340,21 @@ void unload_mopipe(MotionPipe* a_mopipe)
 void fk_update(MotionPipe* a_mopipe, unsigned int i_frame)
 {
 	MotionPipeInternal* mopipe = static_cast<MotionPipeInternal*>(a_mopipe);
-	IKAssert(MotionPipeInternal::FK == mopipe->type);
-	const int c_idxSim = 0;
-	pose_body(mopipe->bvh, mopipe->bodies[c_idxSim], i_frame);
-	motion_sync(mopipe->mo_nodes[c_idxSim]);
+	if (i_frame != mopipe->i_frame)
+	{
+		IKAssert(MotionPipeInternal::FK == mopipe->type);
+		const int c_idxSim = 0;
+		pose_body(mopipe->bvh, mopipe->bodies[c_idxSim], i_frame);
+		motion_sync(mopipe->mo_nodes[c_idxSim]);
+		mopipe->i_frame = i_frame;
+	}
 }
 
-void ik_task(HBODY body_t, const _TRANSFORM* l2w)
+bool ik_task_update(HBODY body_t, const _TRANSFORM* l2w)
 {
 	CArtiBodyNode* body_tar = CAST_2PBODY(body_t);
 	Transform_TRS l2w_trs(*l2w);
-	body_tar->SetGoal(l2w_trs);
+	return body_tar->UpdateGoal(l2w_trs);
 }
 
 void ik_update(MotionPipe* mopipe)

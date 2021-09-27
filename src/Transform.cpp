@@ -21,6 +21,20 @@ Eigen::Affine3r Transform::getAffine() const
 	return std::move(t);
 }
 
+Eigen::Quaternionr Transform::getRotation_q(const Transform* tm)
+{
+	switch(tm->c_type)
+	{
+		case t_trs:
+			return static_cast<const Transform_TRS*>(tm)->getRotation_q();
+		case t_r:
+		case t_tr:
+			return static_cast<const Transform_R*>(tm)->getRotation_q();
+	}
+	IKAssert(0);
+	return Eigen::Quaternionr::Identity();
+}
+
 void Transform_TRS::CopyTo(_TRANSFORM& tm) const
 {
 	Eigen::Matrix3r r_m, s_m;

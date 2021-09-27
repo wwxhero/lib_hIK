@@ -387,10 +387,16 @@
     <ClInclude Include="..\..\src\bvh11_helper.hpp" />
     <ClInclude Include="..\..\src\handle_helper.hpp" />
     <ClInclude Include="..\..\src\IKChain.hpp" />
+    <ClInclude Include="..\..\src\IKChainInverseJK.hpp" />
     <ClInclude Include="..\..\src\IKGroupTree.hpp" />
+    <ClInclude Include="..\..\src\IK_QJacobian.h" />
+    <ClInclude Include="..\..\src\IK_QSegment.hpp" />
+    <ClInclude Include="..\..\src\IK_QTask.h" />
     <ClInclude Include="..\..\src\Joint.hpp" />
     <ClInclude Include="..\..\src\ik_logger.h" />
+    <ClInclude Include="..\..\src\JointConf.hpp" />
     <ClInclude Include="..\..\src\loggerSrv_i.h" />
+    <ClInclude Include="..\..\src\Math.hpp" />
     <ClInclude Include="..\..\src\matrix3.h" />
     <ClInclude Include="..\..\src\MoNode.hpp" />
     <ClInclude Include="..\..\src\MotionPipeConf.hpp" />
@@ -403,9 +409,14 @@
     <ClCompile Include="..\..\src\bvh.cpp" />
     <ClCompile Include="..\..\src\bvh11_helper.cpp" />
     <ClCompile Include="..\..\src\IKChain.cpp" />
+    <ClCompile Include="..\..\src\IKChainInverseJK.cpp" />
     <ClCompile Include="..\..\src\IKGroupTree.cpp" />
+    <ClCompile Include="..\..\src\IK_QJacobian.cpp" />
+    <ClCompile Include="..\..\src\IK_QSegment.cpp" />
+    <ClCompile Include="..\..\src\IK_QTask.cpp" />
     <ClCompile Include="..\..\src\Joint.cpp" />
     <ClCompile Include="..\..\src\ik_logger.cpp" />
+    <ClCompile Include="..\..\src\JointConf.cpp" />
     <ClCompile Include="..\..\src\loggerfast_win.cpp" />
     <ClCompile Include="..\..\src\loggerSrv_i.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='DebugGame_Editor|x64'">NotUsing</PrecompiledHeader>

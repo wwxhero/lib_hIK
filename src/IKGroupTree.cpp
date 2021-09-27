@@ -1,19 +1,28 @@
 #include "pch.h"
 #include "IKGroupTree.hpp"
-
+#include "IKChainInverseJK.hpp"
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKGroupNode:
 
-CIKGroupNode::CIKGroupNode()
-	: m_nSpecMax(0)
+CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
+	: m_rootBody(root)
+	, m_nSpecMax(0)
 {
 }
 
-CIKGroupNode::CIKGroupNode(const CIKGroupNode& src)
-	: m_nSpecMax(0)
+CIKGroupNode::CIKGroupNode(CIKGroupNode& src)
 {
-	m_kChains = src.m_kChains;
+	m_rootBody = src.m_rootBody;
+	m_kChains = std::move(src.m_kChains);
+	m_nSpecMax = src.m_nSpecMax;
 }
+
+CIKGroupNode::~CIKGroupNode()
+{
+	for (auto chain : m_kChains)
+		delete chain;
+}
+
 
 void CIKGroupNode::SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst
 								, const Eigen::Matrix3r& src2dst_w
@@ -135,12 +144,19 @@ public:
 			case CIKChain::Proj:
 				chain = new CIKChainProj(c_conf->up);
 				break;
-			default:
-				chain = new CIKChain(c_conf->algor);
+			case CIKChain::DLS:
+				chain = new CIKChainInverseJK_DLS(c_conf->weight_p
+												, c_conf->weight_r
+												, c_conf->n_iter);
+				break;
+			case CIKChain::SDLS:
+				chain = new CIKChainInverseJK_SDLS(c_conf->weight_p
+												, c_conf->weight_r
+												, c_conf->n_iter);
 				break;
 		}
 
-		if (!chain->Init(c_eef->c_body, c_conf->len))
+		if (!chain->Init(c_eef->c_body, c_conf->len, c_conf->Joints))
 		{
 			delete chain;
 			chain = NULL;
@@ -218,10 +234,10 @@ void CArtiBodyClrTree::ColorGid(CArtiBodyClrNode* root_clr
 	{
 		int clr = chain.GetColor();
 		int n = chain.c_conf->len;
-		int i_end = n + 1;
+		int i_end = n;
 		CArtiBodyClrNode* p_i_node = NULL;
 		int i = 0;
-		for (i = 0, p_i_node = chain.c_eef
+		for (i = 0, p_i_node = chain.c_eef->GetParent()
 			; i < i_end && NULL != p_i_node
 			; i ++, p_i_node = p_i_node->GetParent())
 		{
@@ -230,7 +246,7 @@ void CArtiBodyClrTree::ColorGid(CArtiBodyClrNode* root_clr
 				clr = clr_prime;
 		}
 
-		for (i = 0, p_i_node = chain.c_eef
+		for (i = 0, p_i_node = chain.c_eef->GetParent()
 			; i < i_end && NULL != p_i_node
 			; i ++, p_i_node = p_i_node->GetParent())
 		{
@@ -247,7 +263,8 @@ class CIKGroupNodeGen 		// G
 {
 public:
 	CIKGroupNodeGen(const CArtiBodyClrNode* jTree)
-		: c_jTree(jTree)
+		: CIKGroupNode(const_cast<CArtiBodyNode*>(jTree->c_body))
+		, c_jTree(jTree)
 	{
 	}
 	virtual void Dump(int n_indents) const override
@@ -321,9 +338,18 @@ void CIKGroupTreeGen::InitKChain(CIKGroupNodeGen* root, const std::vector<CIKCha
 					if (!CArtiBodyClrTree::ValidClr(clr_this))
 						return;
 					const GroupChains& g_chains = c_gid2gchains[clr_this];
-					for (const CIKChainClr& chain : g_chains)
+					for (const CIKChainClr& chainclr : g_chains)
 					{
-						node_this_gen->Joint(chain.Generate());
+						CIKChain *chain = chainclr.Generate();
+						if (NULL != chain)
+							node_this_gen->Join(chain);
+						else
+						{
+							std::stringstream err;
+							err << "Chain: " << chainclr.c_eef->c_body->GetName_c() << " failed initialization!!!";
+							LOGIKVarErr(LogInfoCharPtr, err.str().c_str());
+						}
+
 					}
 				};
 
@@ -364,7 +390,7 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
 #endif
 				auto GenerateNode = [](const CIKGroupNodeGen* src, CIKGroupNode** dst) -> bool
 					{
-						*dst = new CIKGroupNode(*src);
+						*dst = new CIKGroupNode(*(const_cast<CIKGroupNodeGen*>(src)));
 						return true;
 					};
 				bool constructed = CIKGroupTreeGen::Construct(root_gen, &root_G, GenerateNode);

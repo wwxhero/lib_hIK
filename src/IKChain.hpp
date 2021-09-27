@@ -2,6 +2,7 @@
 #include <map>
 #include "ArtiBody.hpp"
 #include "macro_helper.h"
+#include "JointConf.hpp"
 
 #define NumericalAlgor(algor)\
 		(algor)&(CIKChain::NUM)
@@ -20,55 +21,67 @@ public:
 
 	// static const char* s_Algor_str[];
 	// static Algor s_Algor_val[];
-	// static Algor toAlgor(const char* algor_str);
+	// static Algor to_Algor(const char* algor_str);
+	// static const char* from_Algor(Algor);
 	DECLARE_ENUM_STR(Algor)
-
 public:
-	CIKChain(Algor algor);
-	virtual bool Init(const CArtiBodyNode* eef, int len);
+	CIKChain(Algor algor, int n_iters);
+	virtual ~CIKChain();
+	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>& joint_confs);
 	void SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst
 					, const Eigen::Matrix3r& src2dst_w
 					, const Eigen::Matrix3r& dst2src_w);
 
 	virtual void Dump(std::stringstream& info) const;
 
-	void BeginUpdate();
-
-	virtual void UpdateNext(int step)
-	{
-	}
-
+	virtual bool BeginUpdate(const Transform_TR& w2g);
 	// this is a quick IK update solution
-	virtual void UpdateAll()
-	{
+	virtual bool UpdateAll() = 0;
+	virtual bool UpdateCompleted() const = 0;
+	virtual void EndUpdate() {};
 
+	void SegGRoot(CArtiBodyNode* root_g)
+	{
+		m_rootG = root_g;
 	}
-
-	void EndUpdate()
+	int NIters() const
 	{
-
-	}
-
-	int NSteps() const
-	{
-		return m_nSteps;
+		return m_nIters;
 	}
 
 	int NBodies() const
 	{
-		return (int)m_segments.size();
+		return (int)m_nodes.size();
 	}
+
+	bool operator < (const CIKChain& other)
+	{
+		int n_dist2root_this = 0;
+		for (CArtiBodyNode* parent = m_rootG->GetParent()
+			; NULL != parent
+			; parent = parent->GetParent(), n_dist2root_this ++);
+
+		int n_dist2root_other = 0;
+		for (CArtiBodyNode* parent = other.m_rootG->GetParent()
+			; NULL != parent
+			; parent = parent->GetParent(), n_dist2root_other ++);
+
+		return n_dist2root_this < n_dist2root_other
+			|| (n_dist2root_this == n_dist2root_other && NBodies() < other.NBodies());
+	}
+
 public:
 	const Algor c_algor;
-protected:
-	struct Segment
+	struct IKNode
 	{
 		CArtiBodyNode* body;
 		IJoint* joint;
 	};
-	std::vector<Segment> m_segments;
+protected:
+	std::vector<IKNode> m_nodes;
 	CArtiBodyNode* m_eefSrc;
-	int m_nSteps;
+	int m_nIters;
+	CArtiBodyNode* m_rootG;
 private:
 	CArtiBodyNode* m_targetDst;
 	Eigen::Matrix3r m_src2dstW_Offset;
@@ -80,13 +93,18 @@ class CIKChainProj : public CIKChain
 {
 public:
 	CIKChainProj(const Real norm[3]);
-	virtual bool Init(const CArtiBodyNode* eef, int len) override;
+	virtual ~CIKChainProj();
+	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>&) override;
 	virtual void Dump(std::stringstream& info) const override;
-	virtual void UpdateNext(int step) override;
-
+	virtual bool BeginUpdate(const Transform_TR& w2g) override;
 	// this is a quick IK update solution
-	virtual void UpdateAll() override;
+	virtual bool UpdateAll();
+	virtual bool UpdateCompleted() const
+	{
+		return true;
+	}
 private:
-	void Update();
-	Plane m_terrain;
+	Plane m_terrainW;
+	Plane m_terrainG;
 };
+
