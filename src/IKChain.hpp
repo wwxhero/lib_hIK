@@ -38,7 +38,7 @@ public:
 	// this is a quick IK update solution
 	virtual bool UpdateAll() = 0;
 	virtual bool UpdateCompleted() const = 0;
-	virtual void EndUpdate(const Transform_TR& g2w) {};
+	virtual void EndUpdate() {};
 
 	void SegGRoot(CArtiBodyNode* root_g)
 	{

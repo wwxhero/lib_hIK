@@ -285,7 +285,7 @@ public:
 		return completed;
 	}
 
-	virtual void EndUpdate(const Transform_TR& g2w) override
+	virtual void EndUpdate() override
 	{
 		m_taskP.Complete();
 		m_taskR.Complete();

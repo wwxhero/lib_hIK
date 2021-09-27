@@ -34,16 +34,12 @@ public:
 		if (n_chains < 1)
 			return;
 		Transform_TR tm_w2g_tr;
-		Transform_TR tm_g2w_tr;
 		CArtiBodyNode* g_parent = m_rootBody->GetParent();
 		if (NULL != g_parent)
 		{
 			const Transform* tm_w2g = g_parent->GetTransformWorld2Local();
 			IKAssert(t_tr == tm_w2g->Type());
 			tm_w2g_tr = *static_cast<const Transform_TR*>(tm_w2g);
-			const Transform* tm_g2w = g_parent->GetTransformLocal2World();
-			IKAssert(t_tr == tm_g2w->Type());
-			tm_g2w_tr = *static_cast<const Transform_TR*>(tm_g2w);
 		}
 
 		bool exist_an_update = false;
@@ -81,7 +77,7 @@ public:
 
 		for (int i_chain = 0; i_chain < n_chains; i_chain ++)
 		{
-			m_kChains[i_chain]->EndUpdate(tm_g2w_tr);
+			m_kChains[i_chain]->EndUpdate();
 		}
 
 		CArtiBodyTree::FK_Update<false>(m_rootBody);
