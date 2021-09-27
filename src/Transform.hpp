@@ -229,7 +229,7 @@ public:
 	inline Transform_R inverse() const
 	{
 		Transform_R t_inv;
-		t_inv.m_rotq = m_rotq.inverse();
+		t_inv.m_rotq = m_rotq.conjugate();
 		return std::move(t_inv);
 	}
 	inline const Eigen::Quaternionr& getRotation_q() const
@@ -282,7 +282,7 @@ public:
 	inline Transform_TR inverse() const
 	{
 		Transform_TR t_inv;
-		t_inv.m_rotq = m_rotq.inverse();
+		t_inv.m_rotq = m_rotq.conjugate();
 		t_inv.m_tt = Eigen::Vector3r::Zero() - t_inv.m_rotq*m_tt;
 		return std::move(t_inv);
 	}
