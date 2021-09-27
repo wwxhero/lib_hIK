@@ -17,13 +17,7 @@ inline bool NoScale(const _TRANSFORM& tm)
 inline bool NoRot(const _TRANSFORM& tm)
 {
 	auto err_w = tm.r.w - (Real)1;
-	auto err_x = tm.r.x - (Real)0;
-	auto err_y = tm.r.y - (Real)0;
-	auto err_z = tm.r.z - (Real)0;
-	return (-c_10epsilon < err_w && err_w < c_10epsilon)
-		&& (-c_10epsilon < err_x && err_x < c_10epsilon)
-		&& (-c_10epsilon < err_y && err_y < c_10epsilon)
-		&& (-c_10epsilon < err_z && err_z < c_10epsilon);
+	return (-c_10epsilon < err_w && err_w < c_10epsilon);
 }
 
 inline bool NoTT(const _TRANSFORM& tm)

@@ -114,4 +114,3 @@ private:
   Eigen::VectorXr m_d_theta_unclamped;
 };
 
-#undef DECLARE_ALGOR

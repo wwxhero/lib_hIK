@@ -24,7 +24,11 @@ public:
 			m_nSpecMax = n_steps_i;
 
 		bool multiple_chain = (m_kChains.size() > 1);
-		LOGIKVarWarning(LogInfoBool, multiple_chain);
+		if (multiple_chain)
+		{
+			const char* warning = "Grouping multiple chain undermines the performance!!!";
+			LOGIKVarWarning(LogInfoBool, warning);
+		}
 		chain->SegGRoot(m_rootBody);
 	}
 
