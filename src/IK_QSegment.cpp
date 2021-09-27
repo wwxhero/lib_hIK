@@ -44,10 +44,11 @@ IK_QIxyzSegment::IK_QIxyzSegment(const Real weight[3])
 {
 }
 
-Real IK_QIxyzSegment::Weight(int dof_l) const
+int IK_QIxyzSegment::Weight(Real w[6]) const
 {
-	IKAssert(-1 < dof_l && dof_l < 3);
-	return m_weight[dof_l];
+	const int n_dofs = 3;
+	memcpy(w, m_weight, n_dofs * sizeof(Real));
+	return n_dofs;
 }
 
 void IK_QIxyzSegment::SetWeight(int dof_l, Real w)

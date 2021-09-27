@@ -106,8 +106,7 @@ public:
 	virtual void UnLock() = 0;
 
 	// per dof joint weighting
-	virtual Real Weight(int dof_l) const = 0;
-
+	virtual int Weight(Real w[6]) const = 0;
 	// recursively update the global coordinates of this segment, 'global'
  	// is the global transformation from the parent segment
 
@@ -118,34 +117,12 @@ public:
 	virtual bool UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp) = 0;
 	virtual void Lock(int dofId, IK_QJacobian &jacobian, Eigen::Vector3r &delta) = 0;
 
-	virtual void UpdateAngleApply()
-	{
-
-	}
-
   	// set joint limits
 	virtual void SetLimit(int, double, double)
 	{
 	}
 	// set joint weights (per axis)
 	virtual void SetWeight(int dof_l, Real w) = 0;
-
-	// Eigen::Quaternionr GlobalTransform() const
-	// {
-	// 	//
-	// 	return Eigen::Quaternionr::Identity();
-	// }
-
-	// the global transformation at the end of the segment
-	// will be changed later
-	Eigen::Affine3r GlobalTransform() const
-	{
-		const Transform* l2w = m_bodies[c_idxTo]->GetTransformLocal2World();
-		Eigen::Affine3r tm_l2w_end;
-		tm_l2w_end.linear() = l2w->getLinear();
-		tm_l2w_end.translation() = m_scale * l2w->getTranslation();
-		return tm_l2w_end;
-	}
 
 
 protected:
@@ -166,8 +143,8 @@ class IK_QIxyzSegment : public IK_QSegment
 {
 public:
 	IK_QIxyzSegment(const Real weight[3]);
-	virtual Real Weight(int dof_l) const;
 	virtual void SetWeight(int dof_l, Real w);
+	virtual int Weight(Real w[6]) const;
 	virtual int Axis(Eigen::Vector3r axis[6]) const;
 	virtual bool UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp);
 	virtual bool Locked(int dof_l) const;

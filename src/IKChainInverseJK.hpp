@@ -158,15 +158,16 @@ public:
 			m_jacobian_sub.ArmMatrices(num_dof, secondary_size);
 
 		// set dof weights
-		int i;
-
-		for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
+		Real weight[6] = {0};
+		for (auto seg : m_segments)
 		{
-			for (i = 0; i < (*seg)->NumberOfDoF(); i++)
+			int n_dofs = seg->Weight(weight);
+			int i_dof_base = seg->DoFId();
+			for (int i_dof = 0; i_dof < n_dofs; i_dof ++)
 			{
-				m_jacobian.SetDoFWeight((*seg)->DoFId() + i, (*seg)->Weight(i));
-				LOGIKVar(LogInfoCharPtr, (*seg)->GetName_c());
-				LOGIKVar(LogInfoReal, (*seg)->Weight(i));
+				m_jacobian.SetDoFWeight(i_dof_base + i_dof, weight[i_dof]);
+				LOGIKVar(LogInfoCharPtr, seg->GetName_c());
+				LOGIKVar(LogInfoReal, weight[i_dof]);
 			}
 		}
 
@@ -352,7 +353,6 @@ protected:
 			for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
 			{
 				(*seg)->UnLock();
-				(*seg)->UpdateAngleApply();
 			}
 		}
 
