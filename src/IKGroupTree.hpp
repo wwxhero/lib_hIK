@@ -26,8 +26,8 @@ public:
 		bool multiple_chain = (m_kChains.size() > 1);
 		if (multiple_chain)
 		{
-			const char* warning = "Grouping multiple chain undermines the performance!!!";
-			LOGIKVarWarning(LogInfoBool, warning);
+			const char* warning = "Grouping multiple chain undermines the IK performance!!!";
+			LOGIKVarWarning(LogInfoCharPtr, warning);
 		}
 		chain->SegGRoot(m_rootBody);
 	}
