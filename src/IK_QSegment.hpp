@@ -33,7 +33,8 @@ class IK_QSegment
 public:
 	enum Type
 	{
-		R_xyz = 0
+		R_xyz = 0,
+		R_Spherical
 	};
 
 	DECLARE_ENUM_STR(Type)
@@ -131,20 +132,28 @@ public:
 	const int c_idxTo;
 };
 
-
-class IK_QIxyzSegment : public IK_QSegment
+class IK_QSegmentDOF3 : public IK_QSegment
 {
 public:
-	IK_QIxyzSegment(const Real weight[3]);
+	IK_QSegmentDOF3(const Real weight[3]);
 	virtual void SetWeight(int dof_l, Real w);
 	virtual int Weight(Real w[6]) const;
 	virtual int Axis(Eigen::Vector3r axis[6]) const;
-	virtual bool UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp);
 	virtual int Locked(bool lock[6]) const;
 	virtual void UnLock();
 	virtual void Lock(int dofId, IK_QJacobian &jacobian, Eigen::Vector3r &delta);
-private:
+protected:
 	Real m_weight[3];
 	bool m_locked[3];
+};
+
+class IK_QIxyzSegment : public IK_QSegmentDOF3
+{
+public:
+	IK_QIxyzSegment(const Real weight[3]);
+	virtual bool UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp);
+private:
 	Eigen::Vector3r m_theta;
 };
+
+
