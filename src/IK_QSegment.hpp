@@ -156,4 +156,13 @@ private:
 	Eigen::Vector3r m_theta;
 };
 
+class IK_QSphericalSegment : public IK_QSegmentDOF3
+{
+public:
+	IK_QSphericalSegment(const Real weight[3]);
+	virtual bool UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp);
+private:
+	Eigen::Quaternionr m_theta;
+};
+
 

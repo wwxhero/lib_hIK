@@ -118,3 +118,38 @@ bool IK_QIxyzSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r 
 	return false;
 }
 
+IK_QSphericalSegment::IK_QSphericalSegment(const Real weight[3])
+	: IK_QSegmentDOF3(weight)
+	, m_theta(Eigen::Quaternionr::Identity())
+{
+
+}
+
+bool IK_QSphericalSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp)
+{
+	if (m_locked[0] && m_locked[1] && m_locked[2])
+		return false;
+
+	delta.x() = jacobian.AngleUpdate(m_DoF_id);
+	delta.y() = jacobian.AngleUpdate(m_DoF_id + 1);
+	delta.z() = jacobian.AngleUpdate(m_DoF_id + 2);
+
+	// Directly update the rotation matrix, with Rodrigues' rotation formula,
+	// to avoid singularities and allow smooth integration.
+	Real delta_theta = delta.norm();
+	if (!FuzzyZero(delta_theta))
+	{
+		Eigen::Vector3r delta_u = delta * (1.0/delta_theta);
+		Real delta_theta_half = (Real)0.5 * delta_theta;
+		Real cos_theta_half = cos(delta_theta_half);
+		Real sin_theta_half = sin(delta_theta_half);
+		Eigen::Quaternionr delta_q(cos_theta_half
+								, sin_theta_half * delta_u.x()
+								, sin_theta_half * delta_u.y()
+								, sin_theta_half * delta_u.z());
+		m_theta = m_theta * delta_q;
+		m_joints[0]->SetRotation(m_theta);
+	}
+
+	return false;
+}
