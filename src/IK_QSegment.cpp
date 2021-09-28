@@ -36,27 +36,26 @@ bool IK_QSegment::Initialize(CArtiBodyNode* from, CArtiBodyNode* to)
 	return m_max_extension > c_epsilon;
 }
 
-IK_QIxyzSegment::IK_QIxyzSegment(const Real weight[3])
+IK_QSegmentDOF3::IK_QSegmentDOF3(const Real weight[3])
 	: IK_QSegment(R_xyz, 3)
 	, m_weight{weight[0], weight[1], weight[2]}
 	, m_locked {false, false, false}
-	, m_theta(Eigen::Vector3r::Zero())
 {
 }
 
-int IK_QIxyzSegment::Weight(Real w[6]) const
+int IK_QSegmentDOF3::Weight(Real w[6]) const
 {
 	memcpy(w, m_weight, c_num_DoFs * sizeof(Real));
 	return c_num_DoFs;
 }
 
-void IK_QIxyzSegment::SetWeight(int dof_l, Real w)
+void IK_QSegmentDOF3::SetWeight(int dof_l, Real w)
 {
 	IKAssert(-1 < dof_l && dof_l < 3);
 	m_weight[dof_l] = w;
 }
 
-int IK_QIxyzSegment::Axis(Eigen::Vector3r axis[6]) const
+int IK_QSegmentDOF3::Axis(Eigen::Vector3r axis[6]) const
 {
 	const Transform* tm_l2w = m_bodies[0]->GetTransformLocal2World();
 	Eigen::Matrix3r linear = tm_l2w->getLinear();
@@ -65,22 +64,29 @@ int IK_QIxyzSegment::Axis(Eigen::Vector3r axis[6]) const
 	return c_num_DoFs;
 }
 
-int IK_QIxyzSegment::Locked(bool lock[6]) const
+int IK_QSegmentDOF3::Locked(bool lock[6]) const
 {
 	memcpy(lock, m_locked, c_num_DoFs * sizeof(bool));
 	return c_num_DoFs;
 }
 
-void IK_QIxyzSegment::UnLock()
+void IK_QSegmentDOF3::UnLock()
 {
 	memset(m_locked, false, sizeof(m_locked));
 }
 
-void IK_QIxyzSegment::Lock(int dof_l, IK_QJacobian &jacobian, Eigen::Vector3r &delta)
+void IK_QSegmentDOF3::Lock(int dof_l, IK_QJacobian &jacobian, Eigen::Vector3r &delta)
 {
 	LOGIK("Lock");
 	m_locked[dof_l] = true;
 	jacobian.Lock(m_DoF_id + dof_l, delta[dof_l]);
+}
+
+IK_QIxyzSegment::IK_QIxyzSegment(const Real weight[3])
+	: IK_QSegmentDOF3(weight)
+	, m_theta(Eigen::Vector3r::Zero())
+{
+
 }
 
 bool IK_QIxyzSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp)
@@ -112,3 +118,38 @@ bool IK_QIxyzSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r 
 	return false;
 }
 
+IK_QSphericalSegment::IK_QSphericalSegment(const Real weight[3])
+	: IK_QSegmentDOF3(weight)
+	, m_theta(Eigen::Quaternionr::Identity())
+{
+
+}
+
+bool IK_QSphericalSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp)
+{
+	if (m_locked[0] && m_locked[1] && m_locked[2])
+		return false;
+
+	delta.x() = jacobian.AngleUpdate(m_DoF_id);
+	delta.y() = jacobian.AngleUpdate(m_DoF_id + 1);
+	delta.z() = jacobian.AngleUpdate(m_DoF_id + 2);
+
+	// Directly update the rotation matrix, with Rodrigues' rotation formula,
+	// to avoid singularities and allow smooth integration.
+	Real delta_theta = delta.norm();
+	if (!FuzzyZero(delta_theta))
+	{
+		Eigen::Vector3r delta_u = delta * (1.0/delta_theta);
+		Real delta_theta_half = (Real)0.5 * delta_theta;
+		Real cos_theta_half = cos(delta_theta_half);
+		Real sin_theta_half = sin(delta_theta_half);
+		Eigen::Quaternionr delta_q(cos_theta_half
+								, sin_theta_half * delta_u.x()
+								, sin_theta_half * delta_u.y()
+								, sin_theta_half * delta_u.z());
+		m_theta = m_theta * delta_q;
+		m_joints[0]->SetRotation(m_theta);
+	}
+
+	return false;
+}

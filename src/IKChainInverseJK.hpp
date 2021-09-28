@@ -80,6 +80,9 @@ public:
 				case IK_QSegment::R_xyz:
 					seg = new IK_QIxyzSegment(*p_dex);
 					break;
+				case IK_QSegment::R_Spherical:
+					seg = new IK_QSphericalSegment(*p_dex);
+					break;
 				default:
 					break;
 			}
