@@ -406,6 +406,7 @@ public:
 	template<bool G_SPACE>
 	static void FK_Update(CArtiBodyNode* root)
 	{
+START_PROFILER(0, root->GetName_c(), 50000)
 		bool is_an_anim = (root->c_type&anim);
 		if (is_an_anim)
 		{
@@ -449,6 +450,7 @@ public:
 				}
 			}
 		}
+STOP_PROFILER
 	}
 
 #ifdef _DEBUG
