@@ -339,6 +339,7 @@ void unload_mopipe(MotionPipe* a_mopipe)
 
 void fk_update(MotionPipe* a_mopipe, unsigned int i_frame)
 {
+	PROFILE_FRAME(i_frame);
 	MotionPipeInternal* mopipe = static_cast<MotionPipeInternal*>(a_mopipe);
 	if (i_frame != mopipe->i_frame)
 	{

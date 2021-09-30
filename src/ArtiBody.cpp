@@ -250,6 +250,80 @@ void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 	Tree<CArtiBodyNode>::TraverseDFS(root, onEnterBody, onLeaveBody);
 }
 
+bool CArtiBodyTree::BodyEQ(const CArtiBodyNode* root_s, const CArtiBodyNode* root_d)
+{
+	std::queue<const CArtiBodyNode*> que_s;
+	std::queue<const CArtiBodyNode*> que_d;
+	auto NodeEQ = [](const CArtiBodyNode* node_s, const CArtiBodyNode* node_d) -> bool
+				{
+					auto oriEQ = [&]() -> bool
+						{
+							const Transform* tm_s = node_s->GetTransformLocal2Parent();
+							const Transform* tm_d = node_d->GetTransformLocal2Parent();
+							Eigen::Quaternionr ori_s = Transform::getRotation_q(tm_s);
+							Eigen::Quaternionr ori_d = Transform::getRotation_q(tm_d);
+							Eigen::Vector3r tt_s = tm_s->getTranslation();
+							Eigen::Vector3r tt_d = tm_d->getTranslation();
+							Real norm_tt_s = tt_s.norm();
+							Real norm_tt_d = tt_d.norm();
+							const Real cos_epsilon = (Real)0.02;
+							bool zero_s = (norm_tt_s < c_epsilon);
+							bool zero_d = (norm_tt_d < c_epsilon);
+							LOGIKVar(LogInfoCharPtr, node_s->GetName_c());
+							bool ori_eq = ori_s.isApprox(ori_d);
+							Real err_tt = tt_s.dot(tt_d);
+							Real cos_err = (Real)1;
+							bool tt_eq = (zero_s == zero_d)
+								&& (zero_s || -cos_epsilon < ((cos_err = err_tt / (norm_tt_d*norm_tt_s)) - 1));
+							bool eq = ori_eq && tt_eq;
+							LOGIKVar(LogInfoBool, ori_eq);
+							LOGIKVar(LogInfoBool, tt_eq);
+							LOGIKVar(LogInfoReal, err_tt);
+							LOGIKVar(LogInfoReal, cos_err);
+							return eq;
+						};
+					auto nameEQ = [&]() -> bool
+						{
+							return 0 == strcmp(node_s->GetName_c(), node_d->GetName_c());
+						};
+					return nameEQ() && oriEQ();
+				};
+	auto NodeCMP = [](const CArtiBodyNode* root_s, const CArtiBodyNode* root_d) -> bool
+				{
+					return strcmp(root_s->GetName_c(), root_d->GetName_c()) < 0;
+				};
+	que_s.push(root_s);
+	que_d.push(root_d);
+	bool body_eq = true;
+	while ((body_eq = (body_eq && (que_s.empty() == que_d.empty())))
+		&& !que_s.empty())
+	{
+		auto node_s = que_s.front();
+		auto node_d = que_d.front();
+		body_eq = NodeEQ(node_s, node_d);
+		std::list<const CArtiBodyNode*> children_s;
+		std::list<const CArtiBodyNode*> children_d;
+		const CArtiBodyNode *child_s, *child_d;
+		for (child_s = node_s->GetFirstChild(), child_d = node_d->GetFirstChild()
+			; (body_eq = (body_eq && ((NULL == child_s) == (NULL == child_d))))
+				&& NULL != child_s
+			; child_s = child_s->GetNextSibling(), child_d = child_d->GetNextSibling())
+		{
+			children_s.push_back(child_s);
+			children_d.push_back(child_d);
+		}
+		children_s.sort(NodeCMP);
+		children_d.sort(NodeCMP);
+		for (auto child_s : children_s)
+			que_s.push(child_s);
+		for (auto child_d : children_d)
+			que_d.push(child_d);
+		que_s.pop();
+		que_d.pop();
+	}
+	return body_eq;
+}
+
 
 #ifdef _DEBUG
 void CArtiBodyTree::Connect(CArtiBodyNode* from, CArtiBodyNode* to, CNN type)

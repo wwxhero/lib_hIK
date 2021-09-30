@@ -84,8 +84,20 @@ void AssertionFail(const char *file, unsigned int line);
 												___token, \
 												___millisec);\
 			LOGIKFlush();
+#		define START_PROFILER_AUTOFRAME(token, rounds) \
+			START_PROFILER(g_profiler.frame_id, token, rounds)
+#		define PROFILE_FRAME(i_frame) \
+			g_profiler.frame_id = i_frame
+
+			typedef struct _Profile
+			{
+				unsigned int frame_id;
+			} Profile;
+			extern Profile g_profiler;
 #	else
 #		define START_PROFILER(frame_id, token, rounds)
+#		define START_PROFILER_AUTOFRAME(token, rounds)
+#		define PROFILE_FRAME(i_frame)
 #		define STOP_PROFILER
 #	endif
 

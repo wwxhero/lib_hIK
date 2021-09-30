@@ -406,7 +406,7 @@ public:
 	template<bool G_SPACE>
 	static void FK_Update(CArtiBodyNode* root)
 	{
-START_PROFILER(0, root->GetName_c(), 50000)
+START_PROFILER_AUTOFRAME(root->GetName_c(), 50000)
 		bool is_an_anim = (root->c_type&anim);
 		if (is_an_anim)
 		{
@@ -452,6 +452,8 @@ START_PROFILER(0, root->GetName_c(), 50000)
 		}
 STOP_PROFILER
 	}
+
+	static bool BodyEQ(const CArtiBodyNode* root_s, const CArtiBodyNode* root_d);
 
 #ifdef _DEBUG
 	static void Connect(CArtiBodyNode* from, CArtiBodyNode* to, CNN type);

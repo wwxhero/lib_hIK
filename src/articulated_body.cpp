@@ -186,3 +186,10 @@ void log_body_node(HBODY body)
 	logInfo << artiBody->GetName_c() << ":" << tm->ToString().c_str();
 	LOGIK(logInfo.str().c_str());
 }
+
+bool body_equal(HBODY body_s, HBODY body_d)
+{
+	CArtiBodyNode* artiBody_s = CAST_2PBODY(body_s);
+	CArtiBodyNode* artiBody_d = CAST_2PBODY(body_d);
+	return CArtiBodyTree::BodyEQ(artiBody_s, artiBody_d);
+}

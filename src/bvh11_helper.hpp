@@ -108,15 +108,11 @@ namespace bvh11
 	public:
 		Joint(const std::string& name, std::shared_ptr<Joint> parent) : name_(name), parent_(parent)
 		{
-#ifdef _DEBUG
-			std::cout << "Joint: " << name_.c_str() << std::endl;
-#endif
+
 		}
 		virtual ~Joint()
 		{
-#ifdef _DEBUG
-			std::cout << "~Joint: " << name_.c_str() << std::endl;
-#endif
+
 
 		}
 

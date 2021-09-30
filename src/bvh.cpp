@@ -500,6 +500,7 @@ bool ResetRestPose(bvh11::BvhObject& bvh, int t)
 			; i_frame < n_frames
 			; i_frame++)
 		{
+			PROFILE_FRAME(i_frame);
 			pose_nonrecur(h_driver, bvh, i_frame, !header_resetted);
 			motion_sync(h_motion_driver);
 			updateBVHAnim(h_drivee, bvh, i_frame, header_resetted);
@@ -586,12 +587,21 @@ unsigned int get_n_frames(HBVH hBvh)
 
 bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double scale)
 {
-	bvh11::BvhObject bvh(path_src, scale);
-	int frame_bvh11 = frame - 1;
-	bool resetted = ResetRestPose(bvh, frame_bvh11);
-	if (resetted)
+	try
+	{
+		bvh11::BvhObject bvh(path_src, scale);
+		int frame_bvh11 = frame - 1;
+		bool resetted = ResetRestPose(bvh, frame_bvh11);
+		if (resetted)
 			bvh.WriteBvhFile(path_dst);
-	return resetted;
+		return resetted;
+	}
+	catch (std::string& exp)
+	{
+		LOGIK(exp.c_str());
+		LOGIKFlush();
+		return false;
+	}
 }
 
 void pose_body(HBVH bvh, HBODY body, int i_frame)
