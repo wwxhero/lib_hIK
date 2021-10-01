@@ -277,12 +277,21 @@ int CArtiBodyTree::BodyCMP(const CArtiBodyNode* root_s, const CArtiBodyNode* roo
 							Real err_tt = tt_s.dot(tt_d);
 							Real cos_err = (Real)1;
 							bool tt_eq = (zero_tt_s == zero_tt_d)
-								&& (zero_tt_s || -cos_epsilon < ((cos_err = err_tt / (norm_tt_d*norm_tt_s)) - 1));
+								&& (zero_tt_s || cos_epsilon < (cos_err = err_tt / (norm_tt_d*norm_tt_s))); // cos_epsilon < cos_err -> epsilon > err
 							bool eq = ori_eq && tt_eq;
-							LOGIKVar(LogInfoBool, ori_eq);
-							LOGIKVar(LogInfoBool, tt_eq);
-							LOGIKVar(LogInfoReal, err_tt);
-							LOGIKVar(LogInfoReal, cos_err);
+							// LOGIKVar(LogInfoBool, ori_eq);
+							// LOGIKVar(LogInfoBool, tt_eq);
+							// LOGIKVar(LogInfoReal, err_tt);
+							// LOGIKVar(LogInfoReal, cos_err);
+							// LOGIKVar(LogInfoReal, norm_tt_d);
+							// LOGIKVar(LogInfoReal, norm_tt_s);
+							// std::stringstream tt_s_str;
+							// tt_s_str << tt_s;
+							// LOGIKVar(LogInfoCharPtr, tt_s_str.str().c_str());
+							// std::stringstream tt_d_str;
+							// tt_d_str << tt_d;
+							// LOGIKVar(LogInfoCharPtr, tt_d_str.str().c_str());
+							// LOGIKFlush();
 							return eq;
 						};
 					auto nameEQ = [&]() -> bool
