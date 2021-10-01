@@ -266,7 +266,7 @@ bool CArtiBodyTree::BodyEQ(const CArtiBodyNode* root_s, const CArtiBodyNode* roo
 							Eigen::Vector3r tt_d = tm_d->getTranslation();
 							Real norm_tt_s = tt_s.norm();
 							Real norm_tt_d = tt_d.norm();
-							const Real cos_epsilon = (Real)0.02;
+							const Real cos_epsilon = (Real)cos(M_PI*(Real)5/(Real)180);
 							bool zero_s = (norm_tt_s < c_epsilon);
 							bool zero_d = (norm_tt_d < c_epsilon);
 							LOGIKVar(LogInfoCharPtr, node_s->GetName_c());
