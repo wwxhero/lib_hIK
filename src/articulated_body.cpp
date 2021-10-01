@@ -187,9 +187,9 @@ void log_body_node(HBODY body)
 	LOGIK(logInfo.str().c_str());
 }
 
-bool body_equal(HBODY body_s, HBODY body_d)
+int body_cmp(HBODY body_s, HBODY body_d, HBODY* err_nodes, int n_err_nodes_cap)
 {
 	CArtiBodyNode* artiBody_s = CAST_2PBODY(body_s);
 	CArtiBodyNode* artiBody_d = CAST_2PBODY(body_d);
-	return CArtiBodyTree::BodyEQ(artiBody_s, artiBody_d);
+	return CArtiBodyTree::BodyCMP(artiBody_s, artiBody_d, err_nodes, n_err_nodes_cap);
 }

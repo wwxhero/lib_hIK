@@ -74,7 +74,7 @@ HIKLIB(const char*,		body_name_c)(HBODY body);
 HIKLIB(void,			get_body_transform_l2w)(HBODY body, _TRANSFORM* tm_l2w);
 HIKLIB(void,			get_body_transform_l2p)(HBODY body, _TRANSFORM* tm_l2w);
 HIKLIB(void,			log_body_node)(HBODY body);
-HIKLIB(bool,			body_equal)(HBODY body_s, HBODY body_d);
+HIKLIB(int,				body_cmp)(HBODY body_s, HBODY body_d, HBODY* err_nodes, int n_err_nodes_cap);
 
 
 

@@ -2,10 +2,12 @@
 #include <queue>
 #include <stack>
 #include <map>
+#include <sstream>
 #include "articulated_body.h"
 #include "ArtiBody.hpp"
 #include "ik_logger.h"
-#include <sstream>
+#include "handle_helper.hpp"
+
 
 
 CArtiBodyNode* CArtiBodyTree::CreateAnimNode(const wchar_t* name, const _TRANSFORM* tm)
@@ -250,11 +252,12 @@ void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 	Tree<CArtiBodyNode>::TraverseDFS(root, onEnterBody, onLeaveBody);
 }
 
-bool CArtiBodyTree::BodyEQ(const CArtiBodyNode* root_s, const CArtiBodyNode* root_d)
+int CArtiBodyTree::BodyCMP(const CArtiBodyNode* root_s, const CArtiBodyNode* root_d, HBODY* err_nodes, int n_err_nodes_cap)
 {
 	std::queue<const CArtiBodyNode*> que_s;
 	std::queue<const CArtiBodyNode*> que_d;
-	auto NodeEQ = [](const CArtiBodyNode* node_s, const CArtiBodyNode* node_d) -> bool
+	int n_err_nodes = 0;
+	auto NodeEQ = [&n_err_nodes, n_err_nodes_cap, err_nodes](const CArtiBodyNode* node_s, const CArtiBodyNode* node_d) -> bool
 				{
 					auto oriEQ = [&]() -> bool
 						{
@@ -267,14 +270,14 @@ bool CArtiBodyTree::BodyEQ(const CArtiBodyNode* root_s, const CArtiBodyNode* roo
 							Real norm_tt_s = tt_s.norm();
 							Real norm_tt_d = tt_d.norm();
 							const Real cos_epsilon = (Real)cos(M_PI*(Real)5/(Real)180);
-							bool zero_s = (norm_tt_s < c_epsilon);
-							bool zero_d = (norm_tt_d < c_epsilon);
+							bool zero_tt_s = (norm_tt_s < c_epsilon);
+							bool zero_tt_d = (norm_tt_d < c_epsilon);
 							LOGIKVar(LogInfoCharPtr, node_s->GetName_c());
 							bool ori_eq = ori_s.isApprox(ori_d);
 							Real err_tt = tt_s.dot(tt_d);
 							Real cos_err = (Real)1;
-							bool tt_eq = (zero_s == zero_d)
-								&& (zero_s || -cos_epsilon < ((cos_err = err_tt / (norm_tt_d*norm_tt_s)) - 1));
+							bool tt_eq = (zero_tt_s == zero_tt_d)
+								&& (zero_tt_s || -cos_epsilon < ((cos_err = err_tt / (norm_tt_d*norm_tt_s)) - 1));
 							bool eq = ori_eq && tt_eq;
 							LOGIKVar(LogInfoBool, ori_eq);
 							LOGIKVar(LogInfoBool, tt_eq);
@@ -286,7 +289,13 @@ bool CArtiBodyTree::BodyEQ(const CArtiBodyNode* root_s, const CArtiBodyNode* roo
 						{
 							return 0 == strcmp(node_s->GetName_c(), node_d->GetName_c());
 						};
-					return nameEQ() && oriEQ();
+					bool eq_node = nameEQ() && oriEQ();
+					if (!eq_node)
+					{
+						if (n_err_nodes < n_err_nodes_cap)
+							err_nodes[n_err_nodes ++] = CAST_2HBODY(const_cast<CArtiBodyNode*>(node_d));
+					}
+					return true;
 				};
 	auto NodeCMP = [](const CArtiBodyNode* root_s, const CArtiBodyNode* root_d) -> bool
 				{
@@ -321,7 +330,7 @@ bool CArtiBodyTree::BodyEQ(const CArtiBodyNode* root_s, const CArtiBodyNode* roo
 		que_s.pop();
 		que_d.pop();
 	}
-	return body_eq;
+	return n_err_nodes;
 }
 
 

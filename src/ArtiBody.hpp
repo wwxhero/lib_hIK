@@ -453,7 +453,7 @@ START_PROFILER_AUTOFRAME(root->GetName_c(), 50000)
 STOP_PROFILER
 	}
 
-	static bool BodyEQ(const CArtiBodyNode* root_s, const CArtiBodyNode* root_d);
+	static int BodyCMP(const CArtiBodyNode* root_s, const CArtiBodyNode* root_d, HBODY* err_nodes, int n_err_nodes_cap);
 
 #ifdef _DEBUG
 	static void Connect(CArtiBodyNode* from, CArtiBodyNode* to, CNN type);
