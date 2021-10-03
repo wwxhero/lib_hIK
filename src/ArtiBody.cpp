@@ -2,6 +2,7 @@
 #include <queue>
 #include <stack>
 #include <map>
+#include <set>
 #include <sstream>
 #include "articulated_body.h"
 #include "ArtiBody.hpp"
@@ -252,14 +253,19 @@ void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 	Tree<CArtiBodyNode>::TraverseDFS(root, onEnterBody, onLeaveBody);
 }
 
-int CArtiBodyTree::BodyCMP(const CArtiBodyNode* root_s, const CArtiBodyNode* root_d, HBODY* err_nodes, int n_err_nodes_cap)
+int CArtiBodyTree::BodyCMP(const char* const pts_interest[], int n_interests, const CArtiBodyNode* root_s, const CArtiBodyNode* root_d, HBODY* err_nodes, Real* err_oris)
 {
+	std::set<std::string> pts;
+	for (int i_interest = 0; i_interest < n_interests; i_interest ++)
+		pts.insert(pts_interest[i_interest]);
+
 	std::queue<const CArtiBodyNode*> que_s;
 	std::queue<const CArtiBodyNode*> que_d;
+	int n_err_nodes_cap = n_interests;
 	int n_err_nodes = 0;
-	auto NodeEQ = [&n_err_nodes, n_err_nodes_cap, err_nodes](const CArtiBodyNode* node_s, const CArtiBodyNode* node_d) -> bool
+	auto NodeEQ = [&n_err_nodes, n_err_nodes_cap, &pts, err_nodes, err_oris](const CArtiBodyNode* node_s, const CArtiBodyNode* node_d) -> bool
 				{
-					auto oriEQ = [&]() -> bool
+					auto tmEQ = [&]() -> bool
 						{
 							const Transform* tm_s = node_s->GetTransformLocal2Parent();
 							const Transform* tm_d = node_d->GetTransformLocal2Parent();
@@ -267,9 +273,10 @@ int CArtiBodyTree::BodyCMP(const CArtiBodyNode* root_s, const CArtiBodyNode* roo
 							Eigen::Quaternionr ori_d = Transform::getRotation_q(tm_d);
 							Eigen::Vector3r tt_s = tm_s->getTranslation();
 							Eigen::Vector3r tt_d = tm_d->getTranslation();
+
 							Real norm_tt_s = tt_s.norm();
 							Real norm_tt_d = tt_d.norm();
-							const Real cos_epsilon = (Real)cos(M_PI*(Real)5/(Real)180);
+							const Real cos_epsilon = (Real)cos(M_PI*(Real)7/(Real)180);
 							bool zero_tt_s = (norm_tt_s < c_epsilon);
 							bool zero_tt_d = (norm_tt_d < c_epsilon);
 							LOGIKVar(LogInfoCharPtr, node_s->GetName_c());
@@ -279,6 +286,11 @@ int CArtiBodyTree::BodyCMP(const CArtiBodyNode* root_s, const CArtiBodyNode* roo
 							bool tt_eq = (zero_tt_s == zero_tt_d)
 								&& (zero_tt_s || cos_epsilon < (cos_err = err_tt / (norm_tt_d*norm_tt_s))); // cos_epsilon < cos_err -> epsilon > err
 							bool eq = ori_eq && tt_eq;
+							if (!tt_eq)
+							{
+								const Real rad2deg = (Real)180 / (Real)M_PI;
+								err_oris[n_err_nodes] = rad2deg*acos(cos_err);
+							}
 							// LOGIKVar(LogInfoBool, ori_eq);
 							// LOGIKVar(LogInfoBool, tt_eq);
 							// LOGIKVar(LogInfoReal, err_tt);
@@ -298,7 +310,12 @@ int CArtiBodyTree::BodyCMP(const CArtiBodyNode* root_s, const CArtiBodyNode* roo
 						{
 							return 0 == strcmp(node_s->GetName_c(), node_d->GetName_c());
 						};
-					bool eq_node = nameEQ() && oriEQ();
+					auto is_an_interest = [&]() -> bool
+						{
+							return pts.end() != pts.find(node_s->GetName_c())
+								|| pts.end() != pts.find(node_d->GetName_c());
+						};
+					bool eq_node = !is_an_interest() || (nameEQ() && tmEQ());
 					if (!eq_node)
 					{
 						if (n_err_nodes < n_err_nodes_cap)

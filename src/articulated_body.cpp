@@ -187,9 +187,9 @@ void log_body_node(HBODY body)
 	LOGIK(logInfo.str().c_str());
 }
 
-int body_cmp(HBODY body_s, HBODY body_d, HBODY* err_nodes, int n_err_nodes_cap)
+int body_cmp(const char* const pts_interest[], int n_interests, HBODY body_s, HBODY body_d, HBODY* err_nodes, Real* err_oris)
 {
 	CArtiBodyNode* artiBody_s = CAST_2PBODY(body_s);
 	CArtiBodyNode* artiBody_d = CAST_2PBODY(body_d);
-	return CArtiBodyTree::BodyCMP(artiBody_s, artiBody_d, err_nodes, n_err_nodes_cap);
+	return CArtiBodyTree::BodyCMP(pts_interest, n_interests, artiBody_s, artiBody_d, err_nodes, err_oris);
 }
