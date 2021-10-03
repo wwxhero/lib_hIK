@@ -259,8 +259,7 @@ int CArtiBodyTree::BodyCMP(const char* const pts_interest[], int n_interests, co
 	for (int i_interest = 0; i_interest < n_interests; i_interest ++)
 		pts.insert(pts_interest[i_interest]);
 
-	std::queue<const CArtiBodyNode*> que_s;
-	std::queue<const CArtiBodyNode*> que_d;
+
 	int n_err_nodes_cap = n_interests;
 	int n_err_nodes = 0;
 	auto NodeEQ = [&n_err_nodes, n_err_nodes_cap, &pts, err_nodes, err_oris](const CArtiBodyNode* node_s, const CArtiBodyNode* node_d) -> bool
@@ -289,7 +288,7 @@ int CArtiBodyTree::BodyCMP(const char* const pts_interest[], int n_interests, co
 							if (!tt_eq)
 							{
 								const Real rad2deg = (Real)180 / (Real)M_PI;
-								err_oris[n_err_nodes] = rad2deg*acos(cos_err);
+								err_oris[n_err_nodes] = rad2deg*wrap_pi(acos(cos_err));
 							}
 							// LOGIKVar(LogInfoBool, ori_eq);
 							// LOGIKVar(LogInfoBool, tt_eq);
@@ -327,38 +326,19 @@ int CArtiBodyTree::BodyCMP(const char* const pts_interest[], int n_interests, co
 				{
 					return strcmp(root_s->GetName_c(), root_d->GetName_c()) < 0;
 				};
-	que_s.push(root_s);
-	que_d.push(root_d);
-	bool body_eq = true;
-	while ((body_eq = (body_eq && (que_s.empty() == que_d.empty())))
-		&& !que_s.empty())
-	{
-		auto node_s = que_s.front();
-		auto node_d = que_d.front();
-		body_eq = NodeEQ(node_s, node_d);
-		std::list<const CArtiBodyNode*> children_s;
-		std::list<const CArtiBodyNode*> children_d;
-		const CArtiBodyNode *child_s, *child_d;
-		for (child_s = node_s->GetFirstChild(), child_d = node_d->GetFirstChild()
-			; (body_eq = (body_eq && ((NULL == child_s) == (NULL == child_d))))
-				&& NULL != child_s
-			; child_s = child_s->GetNextSibling(), child_d = child_d->GetNextSibling())
-		{
-			children_s.push_back(child_s);
-			children_d.push_back(child_d);
-		}
-		children_s.sort(NodeCMP);
-		children_d.sort(NodeCMP);
-		for (auto child_s : children_s)
-			que_s.push(child_s);
-		for (auto child_d : children_d)
-			que_d.push(child_d);
-		que_s.pop();
-		que_d.pop();
-	}
+	Super::TraverseDFS_Bound(root_s, root_d, NodeCMP, NodeEQ);
 	return n_err_nodes;
 }
 
+int CArtiBodyTree::Body_T(const CArtiBodyNode* body
+					, const std::vector<std::string>& right_arms
+					, const std::vector<std::string>& left_arms
+					, const std::vector<std::string>& right_legs
+					, const std::vector<std::string>& left_legs
+					, const std::vector<std::string>& spines)
+{
+	return 0;
+}
 
 #ifdef _DEBUG
 void CArtiBodyTree::Connect(CArtiBodyNode* from, CArtiBodyNode* to, CNN type)

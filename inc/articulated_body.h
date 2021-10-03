@@ -73,8 +73,16 @@ HIKLIB(const wchar_t*,	body_name_w)(HBODY body);
 HIKLIB(const char*,		body_name_c)(HBODY body);
 HIKLIB(void,			get_body_transform_l2w)(HBODY body, _TRANSFORM* tm_l2w);
 HIKLIB(void,			get_body_transform_l2p)(HBODY body, _TRANSFORM* tm_l2w);
+
 HIKLIB(void,			log_body_node)(HBODY body);
 HIKLIB(int,				body_cmp)(const char* const pts_interest[], int n_interests, HBODY body_s, HBODY body_d, HBODY* err_nodes, Real* err_ori);
+HIKLIB(int,				body_T)(HBODY body,
+								const char* const right_arms[], int n_right_arms,
+								const char* const left_arms[], int n_left_arms,
+								const char* const right_legs[], int n_right_legs,
+								const char* const left_legs[], int n_left_legs,
+								const char* const spine[], int n_spines,
+								HBODY bodies_nt[], Real err_oris_nt[]);
 
 
 

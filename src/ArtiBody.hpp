@@ -454,6 +454,12 @@ STOP_PROFILER
 	}
 
 	static int BodyCMP(const char* const pts_interest[], int n_interests, const CArtiBodyNode* body_s, const CArtiBodyNode* body_d, HBODY* err_nodes, Real* err_oris);
+	static int Body_T(const CArtiBodyNode* body
+					, const std::vector<std::string>& right_arms
+					, const std::vector<std::string>& left_arms
+					, const std::vector<std::string>& right_legs
+					, const std::vector<std::string>& left_legs
+					, const std::vector<std::string>& spines);
 
 #ifdef _DEBUG
 	static void Connect(CArtiBodyNode* from, CArtiBodyNode* to, CNN type);

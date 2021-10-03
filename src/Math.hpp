@@ -73,7 +73,7 @@ inline bool FuzzyZero(Real x)
 template<typename T>
 T wrap_pi(T rad)
 {
-  const T pi_2 = 2 * M_PI;
+  const T pi_2 = (T)2 * (T)M_PI;
   T rad_wrap = 0;
   auto k = floor(rad / pi_2);
   auto r_i_2pi = rad - k * pi_2;
