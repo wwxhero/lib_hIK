@@ -287,8 +287,7 @@ int CArtiBodyTree::BodyCMP(const char* const pts_interest[], int n_interests, co
 							bool eq = ori_eq && tt_eq;
 							if (!tt_eq)
 							{
-								const Real rad2deg = (Real)180 / (Real)M_PI;
-								err_oris[n_err_nodes] = rad2deg*wrap_pi(acos(cos_err));
+								err_oris[n_err_nodes] = rad2deg(wrap_pi(acos(cos_err)));
 							}
 							// LOGIKVar(LogInfoBool, ori_eq);
 							// LOGIKVar(LogInfoBool, tt_eq);
@@ -330,14 +329,98 @@ int CArtiBodyTree::BodyCMP(const char* const pts_interest[], int n_interests, co
 	return n_err_nodes;
 }
 
-int CArtiBodyTree::Body_T(const CArtiBodyNode* body
-					, const std::vector<std::string>& right_arms
-					, const std::vector<std::string>& left_arms
-					, const std::vector<std::string>& right_legs
-					, const std::vector<std::string>& left_legs
-					, const std::vector<std::string>& spines)
+void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r& dir_up
+					, const std::vector<std::string>& pts_interest
+					, int part_body_idx_range[parts_total][2]
+					, Real err[])
 {
-	return 0;
+	std::map<std::string, const CArtiBodyNode*> name2body;
+	auto onEnterBody = [&name2body](const CArtiBodyNode* node_this) -> bool
+					{
+						name2body[node_this->GetName_c()] = node_this;
+						return true;
+					};
+
+	auto onLeaveBody = [](const CArtiBodyNode* node_this) -> bool
+					{
+						return true;
+					};
+	Super::TraverseDFS(body, onEnterBody, onLeaveBody);
+
+	auto Error = [](const Eigen::Vector3r& vec_seg, const Eigen::Vector3r& dir_standard) -> Real //[0 180]
+				{
+					Real vec_seg_norm = vec_seg.norm();
+			 		Real cos_alpha = vec_seg_norm > c_100epsilon
+	 						? abs(vec_seg.dot(dir_standard))/vec_seg_norm
+	 						: (Real)1;
+		 			return rad2deg(acos(cos_alpha));
+				};
+
+	for (int i_body = part_body_idx_range[spine][0]; i_body < part_body_idx_range[spine][1]; i_body ++)
+	{
+		const CArtiBodyNode* body = name2body[pts_interest[i_body]];
+		const CArtiBodyNode* body_p = body->GetParent();
+		Eigen::Vector3r vec_seg = body->GetTransformLocal2World()->getTranslation()
+									- body_p->GetTransformLocal2World()->getTranslation();
+		err[i_body] = Error(vec_seg, dir_up);
+	}
+
+
+	// int n_errs = 0;
+	// const Real angle_epsilon = (Real)7/(Real)180;
+	// const Real cos_epsilon = (Real)cos(M_PI*angle_epsilon);
+	// const Real sin_epsilon = (Real)sin(M_PI*angle_epsilon);
+
+	// int n_spines = (int)spines.size();
+	// Eigen::Vector3r up = name2body[spines[n_spines-1]]->GetTransformLocal2World()->getTranslation()
+	// 					- name2body[spines[0]]->GetTransformLocal2World()->getTranslation();
+	// IKAssert(up.norm()>c_epsilon);
+	// up.normalize();
+
+	// auto parallel = [cos_epsilon, bodies_nt, ories_nt, &n_errs](const CArtiBodyNode* body, const Eigen::Vector3r& dir, Real& cos_alpha) -> bool
+	// 	{
+	// 		const CArtiBodyNode* body_p = body->GetParent();
+	// 		IKAssert(nullptr != body_p);
+	// 		Eigen::Vector3r vec_seg = body->GetTransformLocal2World()->getTranslation()
+	// 								- body_p->GetTransformLocal2World()->getTranslation();
+	// 		Real vec_seg_norm = vec_seg.norm();
+	// 		cos_alpha = vec_seg_norm > c_100epsilon
+	// 						? abs(vec_seg.dot(dir))/vec_seg_norm
+	// 						: (Real)1;
+	// 		bool seg_in_line = (cos_epsilon < cos_alpha);
+	// 		if (!seg_in_line)
+	// 		{
+	// 			bodies_nt[n_errs] = CAST_2HBODY(const_cast<CArtiBodyNode*>(body));
+	// 			ories_nt[n_errs] = rad2deg(acos(cos_alpha));
+	// 			n_errs ++;
+	// 		}
+	// 		return seg_in_line;
+	// 	};
+
+	// bool spine_in_line = true;
+	// for (auto spine : spines)
+	// {
+	// 	Real cos_alpha = (Real)1;
+	// 	bool seg_in_line = parallel(name2body[spine], up, cos_alpha);
+	// 	spine_in_line = spine_in_line
+	// 				&& seg_in_line;
+
+	// }
+
+	// bool legs_in_line = true;
+	// const std::vector<std::string>* legs[] = {&left_legs, &right_legs};
+	// for (auto leg : legs)
+	// {
+	// 	for (auto pt_leg : *leg)
+	// 	{
+	// 		Real cos_alpha = (Real)1;
+	// 		bool seg_in_line = parallel(name2body[pt_leg], up, cos_alpha);
+	// 		legs_in_line = legs_in_line
+	// 					&& seg_in_line;
+	// 	}
+	// }
+
+	// return n_errs;
 }
 
 #ifdef _DEBUG

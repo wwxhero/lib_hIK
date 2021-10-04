@@ -69,7 +69,6 @@ inline bool FuzzyZero(Real x)
 	return fabs(x) < c_epsilon;
 }
 
-
 template<typename T>
 T wrap_pi(T rad)
 {
@@ -85,6 +84,11 @@ T wrap_pi(T rad)
   return rad_wrap;
 }
 
+inline Real rad2deg(Real rad)
+{
+	const Real r2d = (Real)180 / (Real)M_PI;
+	return r2d * wrap_pi(rad);
+}
 
 struct Plane
 {

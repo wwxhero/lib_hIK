@@ -194,19 +194,17 @@ int body_cmp(const char* const pts_interest[], int n_interests, HBODY body_s, HB
 	return CArtiBodyTree::BodyCMP(pts_interest, n_interests, artiBody_s, artiBody_d, err_nodes, err_oris);
 }
 
-int body_T(HBODY body,
-		const char* const right_arms[], int n_right_arms,
-		const char* const left_arms[], int n_left_arms,
-		const char* const right_legs[], int n_right_legs,
-		const char* const left_legs[], int n_left_legs,
-		const char* const spines[], int n_spines,
-		HBODY bodies_nt[], Real err_oris_nt[])
+void	body_T_test(HBODY body, const Real up[3]
+			, const char* const pts_interest[], int n_interests
+			, int part_body_idx_range[parts_total][2]
+			, Real err[])
 {
 	CArtiBodyNode* artiBody = CAST_2PBODY(body);
-	std::vector<std::string> right_arms_vec(right_arms, right_arms + n_right_arms);
-	std::vector<std::string> left_arms_vec(left_arms, left_arms + n_left_arms);
-	std::vector<std::string> right_legs_vec(right_legs, right_legs + n_right_legs);
-	std::vector<std::string> left_legs_vec(left_legs, left_legs + n_left_legs);
-	std::vector<std::string> spines_vec(spines, spines + n_spines);
-	return CArtiBodyTree::Body_T(artiBody, right_arms_vec, left_arms_vec, right_legs_vec, left_legs_vec, spines_vec);
+	std::vector<std::string> pts(pts_interest, pts_interest + n_interests);
+	Eigen::Vector3r dir_up(up[0], up[1], up[2]); dir_up.normalize();
+	CArtiBodyTree::Body_T_Test(artiBody
+							, dir_up
+							, pts
+							, part_body_idx_range
+							, err);
 }
