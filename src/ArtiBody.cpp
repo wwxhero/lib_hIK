@@ -330,7 +330,7 @@ int CArtiBodyTree::BodyCMP(const char* const pts_interest[], int n_interests, co
 }
 
 void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r& dir_up
-					, const std::vector<std::string>& pts_interest
+					, const std::vector<std::string>& names_interest
 					, int part_body_idx_range[parts_total][2]
 					, Real err[])
 {
@@ -356,13 +356,22 @@ void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r
 		 			return rad2deg(acos(cos_alpha));
 				};
 
-	PART parts[] = {spine, left_leg, right_leg};
-	Eigen::Vector3r dirs[] = {dir_up, -dir_up, -dir_up};
+	int idx_right_arm_base = part_body_idx_range[right_arm][0];
+	int idx_left_arm_base = part_body_idx_range[left_arm][0];
+
+	Eigen::Vector3r dir_right =	(name2body[names_interest[idx_right_arm_base]]->GetTransformLocal2World()->getTranslation()
+								- name2body[names_interest[idx_left_arm_base]]->GetTransformLocal2World()->getTranslation())
+								.normalized();
+	Eigen::Vector3r dir_front = dir_up.cross(dir_right);
+	dir_right = dir_front.cross(dir_up);
+
+	PART parts[] = {spine, left_leg, right_leg, left_arm, right_arm};
+	Eigen::Vector3r dirs[] = {dir_up, -dir_up, -dir_up, -dir_right, dir_right};
 	for (auto part : parts)
 	{
 		for (int i_body = part_body_idx_range[part][0]; i_body < part_body_idx_range[part][1]; i_body ++)
 		{
-			const CArtiBodyNode* body = name2body[pts_interest[i_body]];
+			const CArtiBodyNode* body = name2body[names_interest[i_body]];
 			const CArtiBodyNode* body_p = body->GetParent();
 			Eigen::Vector3r vec_seg = body->GetTransformLocal2World()->getTranslation()
 										- body_p->GetTransformLocal2World()->getTranslation();
