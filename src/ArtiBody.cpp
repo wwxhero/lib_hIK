@@ -356,14 +356,21 @@ void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r
 		 			return rad2deg(acos(cos_alpha));
 				};
 
-	for (int i_body = part_body_idx_range[spine][0]; i_body < part_body_idx_range[spine][1]; i_body ++)
+	PART parts[] = {spine, left_leg, right_leg};
+	Eigen::Vector3r dirs[] = {dir_up, -dir_up, -dir_up};
+	for (auto part : parts)
 	{
-		const CArtiBodyNode* body = name2body[pts_interest[i_body]];
-		const CArtiBodyNode* body_p = body->GetParent();
-		Eigen::Vector3r vec_seg = body->GetTransformLocal2World()->getTranslation()
-									- body_p->GetTransformLocal2World()->getTranslation();
-		err[i_body] = Error(vec_seg, dir_up);
+		for (int i_body = part_body_idx_range[part][0]; i_body < part_body_idx_range[part][1]; i_body ++)
+		{
+			const CArtiBodyNode* body = name2body[pts_interest[i_body]];
+			const CArtiBodyNode* body_p = body->GetParent();
+			Eigen::Vector3r vec_seg = body->GetTransformLocal2World()->getTranslation()
+										- body_p->GetTransformLocal2World()->getTranslation();
+			err[i_body] = Error(vec_seg, dirs[part]);
+		}
 	}
+
+
 
 
 	// int n_errs = 0;
