@@ -412,8 +412,9 @@ void updateBVHAnim(HBODY body_root, bvh11::BvhObject& bvh, int i_frame, bool ver
 
 }
 
-bool ResetRestPose(bvh11::BvhObject& bvh, int t)
+bvh11::BvhObject* ResetRestPose(bvh11::BvhObject& bvh, int t)
 {
+ 	bvh11::BvhObject* bvh_reset = nullptr;
 	int n_frames = bvh.frames();
 	bool in_range = (-1 < t
 					&& t < n_frames);
@@ -423,7 +424,6 @@ bool ResetRestPose(bvh11::BvhObject& bvh, int t)
 	HBODY h_driveeProxy = H_INVALID;
 	HBODY h_drivee = H_INVALID;
 	bool resetted = true;
-	// HBODY h_driver = createArticulatedBody(bvh, -1, false); //t = -1: the rest posture in BVH file
 	h_driver = CreateBVHArticulatedBody(bvh);
 	resetted = VALID_HANDLE(h_driver);
 #if defined _DEBUG
@@ -504,28 +504,28 @@ bool ResetRestPose(bvh11::BvhObject& bvh, int t)
 		bool header_resetted = false;
 		if (pre_reset_header)
 		{
-			updateHeader(bvh, h_drivee);
+			bvh_reset = new bvh11::BvhObject(CAST_2PBODY(h_drivee));
 			header_resetted = true;
+			/*for (int i_frame = 0
+				; i_frame < n_frames
+				; i_frame++)
+			{
+				PROFILE_FRAME(i_frame);
+				pose_nonrecur(h_driver, bvh, i_frame, !header_resetted);
+				motion_sync(h_motion_driver);
+				updateBVHAnim(h_drivee, bvh, i_frame, header_resetted);
+			}
+
+			if (!pre_reset_header)
+				updateHeader(bvh, h_drivee);*/
 		}
 
-		for (int i_frame = 0
-			; i_frame < n_frames
-			; i_frame++)
-		{
-			PROFILE_FRAME(i_frame);
-			pose_nonrecur(h_driver, bvh, i_frame, !header_resetted);
-			motion_sync(h_motion_driver);
-			updateBVHAnim(h_drivee, bvh, i_frame, header_resetted);
-		}
-
-		if (!pre_reset_header)
-			updateHeader(bvh, h_drivee);
+	
 
 		HMOTIONNODE h_motions[] = {h_motion_driver, h_motion_driveeProxy, h_motion_drivee};
 		const int n_motions = sizeof(h_motions)/sizeof(HMOTIONNODE);
 		for (int i_motion = 0; i_motion < n_motions; i_motion++)
 			destroy_tree_motion_node(h_motions[i_motion]);
-
 	}
 
 
@@ -537,7 +537,7 @@ bool ResetRestPose(bvh11::BvhObject& bvh, int t)
 			destroy_tree_body(bodies[i_body]);
 	}
 
-	return resetted;
+	return bvh_reset;
 
 }
 
@@ -622,12 +622,17 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 {
 	try
 	{
-		bvh11::BvhObject bvh(path_src, scale);
+		bvh11::BvhObject bvh_src(path_src, scale);
 		int frame_bvh11 = frame - 1;
-		bool resetted = ResetRestPose(bvh, frame_bvh11);
-		if (resetted)
-			bvh.WriteBvhFile(path_dst);
-		return resetted;
+		bvh11::BvhObject* bvh_reset = ResetRestPose(bvh_src, frame_bvh11);
+		if (bvh_reset)
+		{
+			bvh_reset->WriteBvhFile(path_dst);
+			delete bvh_reset;
+			return true;
+		}
+		else
+			return false;
 	}
 	catch (std::string& exp)
 	{

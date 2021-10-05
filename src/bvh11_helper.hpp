@@ -11,6 +11,7 @@
 
 #include <stdlib.h>
 
+class CArtiBodyNode;
 
 namespace bvh11
 {
@@ -27,6 +28,8 @@ namespace bvh11
 		}
 
 		BvhObject(const BvhObject& src) throw(...);
+
+		BvhObject(const CArtiBodyNode* root_src);
 
 		~BvhObject()
 		{
@@ -59,7 +62,6 @@ namespace bvh11
 			return GetTransformation(root_joint_, frame);
 		}
 
-		bool ResetRestPose(int frame);
 		void UpdateMotion(std::shared_ptr<const Joint> joint, const Eigen::Affine3d& tm_l, int i_frame);
 
 		void PrintJointHierarchy() const { PrintJointSubHierarchy(root_joint_, 0); }

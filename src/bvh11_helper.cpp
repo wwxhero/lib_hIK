@@ -7,6 +7,7 @@
 #include <map>
 #include "math.hpp"
 #include "bvh11_helper.hpp"
+#include "ArtiBody.hpp"
 
 namespace bvh11
 {
@@ -250,6 +251,85 @@ namespace bvh11
 		}
 	}
 
+	BvhObject::BvhObject(const CArtiBodyNode* root_src)
+		: frame_time_(0.0083333)
+		, frames_(0)
+	{
+		auto Offset = [](const CArtiBodyNode* body) -> Eigen::Vector3d
+			{
+				const CArtiBodyNode* body_p = body->GetParent();
+				if (nullptr == body_p)
+					return Eigen::Vector3d::Zero();
+				else
+				{
+					Eigen::Vector3r offset_r = body->GetTransformLocal2World()->getTranslation()
+												- body_p->GetTransformLocal2World()->getTranslation();
+					return Eigen::Vector3d(offset_r.x(), offset_r.y(), offset_r.z());
+				}
+			};
+
+		auto SetJointChannel = [](bool root, std::shared_ptr<Joint> joint, std::vector<Channel>& channels)
+			{
+				const std::vector<Channel::Type> channels_root = {Channel::Type::x_position
+																, Channel::Type::y_position
+																, Channel::Type::z_position
+																, Channel::Type::z_rotation
+																, Channel::Type::y_rotation
+																, Channel::Type::x_rotation};
+				const std::vector<Channel::Type> channels_leaf = {Channel::Type::z_rotation
+																, Channel::Type::y_rotation
+																, Channel::Type::x_rotation};
+				const auto & channels_joint = (root ? channels_root : channels_leaf);
+
+				for (auto channel : channels_joint)
+				{
+					joint->AssociateChannel((int)channels.size());
+					channels.push_back({channel, joint});
+				}
+			};
+
+
+		std::map<std::string, std::shared_ptr<Joint>> name2joint;
+		auto root_dst = std::shared_ptr<Joint>(new Joint(root_src->GetName_c(), nullptr));
+		root_joint_ = root_dst;
+		struct Bound
+		{
+			const CArtiBodyNode* src;
+			std::shared_ptr<Joint> dst;
+		};
+		Bound rootBnd = { root_src, root_dst };
+		std::queue<Bound> bfs_que;
+		SetJointChannel(true, root_dst, channels_);
+		bfs_que.push(rootBnd);
+		while (!bfs_que.empty())
+		{
+			Bound node_b = bfs_que.front();
+			auto body_src = node_b.src;
+			auto joint_dst = node_b.dst;
+			joint_dst->offset() = Offset(body_src);
+			const CArtiBodyNode* body_src_child = body_src->GetFirstChild();
+			if (nullptr == body_src_child)
+			{
+				joint_dst->has_end_site() = true;
+				joint_dst->end_site() = Eigen::Vector3d::Zero();
+			}
+			for (
+				; nullptr != body_src_child
+				; body_src_child = body_src_child->GetNextSibling())
+			{
+				auto joint_dst_child = std::shared_ptr<Joint>(new Joint(body_src_child->GetName_c(), joint_dst));
+				Bound node_b_child = { body_src_child, joint_dst_child };
+				SetJointChannel(false, joint_dst_child, channels_);
+				bfs_que.push(node_b_child);
+				joint_dst->AddChild(joint_dst_child);
+			}
+			name2joint[joint_dst->name()] = joint_dst;
+			bfs_que.pop();
+		}
+
+
+	}
+
 	BvhObject::BvhObject(const BvhObject& src)
 		: frame_time_(src.frame_time_)
 		, frames_(src.frames_)
@@ -292,7 +372,7 @@ namespace bvh11
 		{
 			auto joint_i = name2joint[channel_src_i.target_joint->name()];
 			Channel channel_dst_i = { channel_src_i.type, joint_i };
-			joint_i->AssociateChannel(channels_.size());
+			joint_i->AssociateChannel((int)channels_.size());
 			channels_.push_back(channel_dst_i);
 		}
 
@@ -399,77 +479,7 @@ namespace bvh11
 			&& "has_translation_in_delta_tm -> has_translation_channel");
 	}
 
-	bool BvhObject::ResetRestPose(int nframe)
-	{
-		if (-1 < nframe
-			  && nframe < frames())
-		{
-			const double c_epsilon = 1e-3;
-			typedef std::shared_ptr<const Joint> Joint_ptr;
-			auto joints = GetJointList();
-			size_t n_joints = joints.size();
-			std::vector<Eigen::Vector3d> offset_b(n_joints);
-			std::vector<Eigen::Affine3d> bind_a2b(n_joints);
-			std::vector<Eigen::Affine3d> bind_b2a(n_joints);
-			std::vector<Eigen::Affine3d> bind_p2l_a(n_joints);
 
-			for (int i_joint = 0; i_joint < n_joints; i_joint ++)
-			{
-				Joint_ptr joint = joints[i_joint];
-				Eigen::Affine3d bind_l2w_i = GetTransformation(joint, nframe);
-				Eigen::Affine3d bind_p2w_i;
-				Joint_ptr joint_parent = joint->parent();
-				if (nullptr == joint_parent)
-				{
-					bind_p2w_i.linear() = Eigen::Matrix3d::Identity();
-					bind_p2w_i.translation() = bind_l2w_i.translation();
-				}
-				else
-				{
-					bind_p2w_i = GetTransformation(joint_parent, nframe);
-				}
-
-				Eigen::Vector3d offset_i = bind_l2w_i.translation() - bind_p2w_i.translation();
-				Eigen::Affine3d bind_a2b_i(bind_l2w_i.linear());
-				Eigen::Affine3d bind_b2a_i(bind_a2b_i.inverse());
-				Eigen::Affine3d bind_p2l_i = bind_l2w_i.inverse() * bind_p2w_i;
-
-				offset_b[i_joint] = offset_i;
-				bind_a2b[i_joint] = bind_a2b_i;
-				bind_b2a[i_joint] = bind_b2a_i;
-				bind_p2l_a[i_joint] = bind_p2l_i;
-			}
-
-			std::vector<Eigen::Affine3d> delta_b_l;
-			delta_b_l.resize(joints.size());
-			for (int i_frame = 0; i_frame < frames_; i_frame++)
-			{
-				for (int i_joint = 0; i_joint < joints.size(); i_joint ++)
-				{
-					Joint_ptr joint = joints[i_joint];
-					Eigen::Affine3d delta_l2p_a_i = GetTransformationRelativeToParent(joint, i_frame);
-					Eigen::Affine3d delta_a_l_i = bind_p2l_a[i_joint]*delta_l2p_a_i;
-					Eigen::Affine3d delta_b_l_i = bind_a2b[i_joint] * delta_a_l_i * bind_b2a[i_joint];
-					delta_b_l[i_joint] = delta_b_l_i;
-				}
-
-				for (int i_joint = 0; i_joint < joints.size(); i_joint ++)
-				{
-					UpdateMotion(joints[i_joint], delta_b_l[i_joint], i_frame);
-				}
-			}
-
-			for (int i_joint = 0; i_joint < n_joints; i_joint ++)
-			{
-				Joint_ptr joint = joints[i_joint];
-				const_cast<Eigen::Vector3d&>(joint->offset()) = offset_b[i_joint];
-			}
-
-			return true;
-		}
-		else
-			return false;
-	}
 
 	Eigen::Affine3d BvhObject::GetLocalDeltaTM(std::shared_ptr<const Joint> joint, int frame) const
 	{
