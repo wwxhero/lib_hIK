@@ -152,6 +152,12 @@ const char* body_name_c(HBODY body)
 	return artiBody->GetName_c();
 }
 
+HBODY get_parent_body(HBODY body)
+{
+	CArtiBodyNode* artiBody = CAST_2PBODY(body);
+	return CAST_2HBODY(artiBody->GetParent());
+}
+
 HBODY get_first_child_body(HBODY body)
 {
 	CArtiBodyNode* artiBody = CAST_2PBODY(body);
@@ -194,7 +200,7 @@ int body_cmp(const char* const pts_interest[], int n_interests, HBODY body_s, HB
 	return CArtiBodyTree::BodyCMP(pts_interest, n_interests, artiBody_s, artiBody_d, err_nodes, err_oris);
 }
 
-void	body_T_test(HBODY body, const Real up[3]
+void body_T_test(HBODY body, const Real up[3]
 			, const char* const pts_interest[], int n_interests
 			, int part_body_idx_range[parts_total][2]
 			, Real err[])
@@ -207,4 +213,36 @@ void	body_T_test(HBODY body, const Real up[3]
 							, pts
 							, part_body_idx_range
 							, err);
+}
+
+HBODY* alloc_bodies(HBODY root, int *n_bodies)
+{
+	CArtiBodyNode* root_body = CAST_2PBODY(root);
+	*n_bodies = 0;
+	auto onEnterBody_Cnt = [n_bodies] (CArtiBodyNode *node)
+		{
+			(*n_bodies)++;
+		};
+	auto onLeaveBody_Cnt = [] (CArtiBodyNode *node)
+		{
+		};
+	CArtiBodyTree::TraverseDFS(root_body, onEnterBody_Cnt, onLeaveBody_Cnt);
+
+	HBODY* bodies = new HBODY[*n_bodies];
+	int i_body = 0;
+	auto onEnterBody_Assign = [&i_body, bodies] (CArtiBodyNode *node)
+		{
+			bodies[i_body ++] = CAST_2HBODY(node);
+		};
+	auto onLeaveBody_Assign = [] (CArtiBodyNode *node)
+		{
+		};
+	CArtiBodyTree::TraverseDFS(root_body, onEnterBody_Assign, onLeaveBody_Assign);
+
+	return bodies;
+}
+
+void free_bodies(HBODY* bodies)
+{
+	delete [] bodies;
 }

@@ -76,6 +76,7 @@ HIKLIB(bool,			clone_body_interests_htr)(HBODY src, HBODY* dst, const wchar_t* (
 HIKLIB(void,			destroy_tree_body_node)(HBODY hBody);
 HIKLIB(void,			destroy_tree_body)(HBODY hBody);
 HIKLIB(void,			cnn_arti_body)(HBODY from, HBODY to, enum CNN);
+HIKLIB(HBODY,			get_parent_body)(HBODY body);
 HIKLIB(HBODY,			get_first_child_body)(HBODY body);
 HIKLIB(HBODY,			get_next_sibling_body)(HBODY body);
 HIKLIB(const wchar_t*,	body_name_w)(HBODY body);
@@ -84,14 +85,12 @@ HIKLIB(void,			get_body_transform_l2w)(HBODY body, _TRANSFORM* tm_l2w);
 HIKLIB(void,			get_body_transform_l2p)(HBODY body, _TRANSFORM* tm_l2w);
 
 HIKLIB(void,			log_body_node)(HBODY body);
-HIKLIB(int,				body_cmp)(const char* const pts_interest[], int n_interests, HBODY body_s, HBODY body_d, HBODY* err_nodes, Real* err_ori);
-
 HIKLIB(void,			body_T_test)(HBODY body, const Real up[3]
 								, const char* const pts_interest[], int n_interests
 								, int part_idx_range[parts_total][2]
 								, Real err[]);
-
-
+HIKLIB(HBODY*,			alloc_bodies)(HBODY root, int *n_bodies);
+HIKLIB(void,			free_bodies)(HBODY* bodies);
 
 #ifdef __cplusplus
 }

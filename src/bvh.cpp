@@ -235,9 +235,21 @@ void updateHeader(bvh11::BvhObject& bvh, HBODY body)
 	{
 		Joint_bvh_ptr joint_this = b_this.first;
 		HBODY body_this = b_this.second;
-		_TRANSFORM tm_l2p;
-		get_body_transform_l2p(body_this, &tm_l2p);
-		const_cast<Eigen::Vector3d&>(joint_this->offset()) = Eigen::Vector3d(tm_l2p.tt.x, tm_l2p.tt.y, tm_l2p.tt.z);
+		HBODY body_parent = get_parent_body(body_this);
+		if (VALID_HANDLE(body_parent))
+		{
+			_TRANSFORM tm_l2w;
+			get_body_transform_l2w(body_this, &tm_l2w);
+			_TRANSFORM tm_p2w;
+			get_body_transform_l2w(body_parent, &tm_p2w);
+			const_cast<Eigen::Vector3d&>(joint_this->offset()) = Eigen::Vector3d( tm_l2w.tt.x - tm_p2w.tt.x
+																				, tm_l2w.tt.y - tm_p2w.tt.y
+																				, tm_l2w.tt.z - tm_p2w.tt.z );
+		}
+		else
+		{
+			const_cast<Eigen::Vector3d&>(joint_this->offset()) = Eigen::Vector3d::Zero();
+		}
 	};
 	auto lam_onLeave = [](Bound b_this)
 	{
