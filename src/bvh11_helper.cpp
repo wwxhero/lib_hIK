@@ -4,6 +4,7 @@
 #include <fstream>
 #include <queue>
 #include <Windows.h>
+#include <map>
 #include "math.hpp"
 #include "bvh11_helper.hpp"
 
@@ -247,6 +248,54 @@ namespace bvh11
 			const double offset_z = std::stod(tokens[3]);
 			return Eigen::Vector3d(offset_x, offset_y, offset_z);
 		}
+	}
+
+	BvhObject::BvhObject(const BvhObject& src)
+		: frame_time_(src.frame_time_)
+		, frames_(src.frames_)
+		, motion_(src.motion_)
+	{
+		std::map<std::string, std::shared_ptr<Joint>> name2joint;
+		auto root_dst = std::shared_ptr<Joint>(new Joint(src.root_joint_->name(), nullptr));
+		root_joint_ = root_dst;
+		struct Bound
+		{
+			const std::shared_ptr<const Joint> src;
+			std::shared_ptr<Joint> dst;
+		};
+		Bound rootBnd = { src.root_joint_, root_dst };
+		std::queue<Bound> bfs_que;
+		bfs_que.push(rootBnd);
+		while (!bfs_que.empty())
+		{
+			Bound node_b = bfs_que.front();
+			auto joint_src = node_b.src;
+			auto joint_dst = node_b.dst;
+			joint_dst->offset() = joint_src->offset();
+			if (joint_src->children().empty())
+			{
+				joint_dst->has_end_site() = joint_src->has_end_site();
+				joint_dst->end_site() = joint_src->end_site();
+			}
+			for (auto joint_src_child : joint_src->children())
+			{
+				auto joint_dst_child = std::shared_ptr<Joint>(new Joint(joint_src_child->name(), joint_dst));
+				Bound node_b_child = { joint_src_child, joint_dst_child };
+				bfs_que.push(node_b_child);
+				joint_dst->AddChild(joint_dst_child);
+			}
+			name2joint[joint_dst->name()] = joint_dst;
+			bfs_que.pop();
+		}
+
+		for (auto channel_src_i : src.channels_)
+		{
+			auto joint_i = name2joint[channel_src_i.target_joint->name()];
+			Channel channel_dst_i = { channel_src_i.type, joint_i };
+			joint_i->AssociateChannel(channels_.size());
+			channels_.push_back(channel_dst_i);
+		}
+
 	}
 
 	std::vector<std::shared_ptr<const Joint>> BvhObject::GetJointList() const

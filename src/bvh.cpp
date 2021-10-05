@@ -563,7 +563,7 @@ HBVH load_bvh_c(const char* path_src)
 	bvh11::BvhObject* bvh = NULL;
 	try
 	{
-		 bvh = new bvh11::BvhObject(path_src);
+		bvh = new bvh11::BvhObject(path_src);
 	}
 	catch (const std::string& info)
 	{
@@ -583,6 +583,27 @@ HBVH load_bvh_w(const wchar_t* path_src)
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 	auto path_src_c = converter.to_bytes(path_src);
 	return load_bvh_c(path_src_c.c_str());
+}
+
+HBVH copy_bvh(HBVH src)
+{
+	bvh11::BvhObject* bvh_src = CAST_2PBVH(src);
+	bvh11::BvhObject* bvh_dup = NULL;
+	try
+	{
+		bvh_dup = new bvh11::BvhObject(*bvh_src);
+	}
+	catch (const std::string& info)
+	{
+		LOGIK(info.c_str());
+		return H_INVALID;
+	}
+	catch (...)
+	{
+		LOGIK("Unknown expection");
+		return H_INVALID;
+	}
+	return CAST_2HBVH(bvh_dup);
 }
 
 void unload_bvh(HBVH hBvh)

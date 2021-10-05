@@ -26,6 +26,8 @@ namespace bvh11
 			ReadBvhFile(file_path, scale);
 		}
 
+		BvhObject(const BvhObject& src) throw(...);
+
 		~BvhObject()
 		{
 
