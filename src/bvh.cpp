@@ -398,135 +398,7 @@ void updateBVHAnim(HBODY body_root, bvh11::BvhObject& bvh, int i_frame, bool ver
 
 }
 
-bvh11::BvhObject* ResetRestPose(bvh11::BvhObject& bvh_src, int frame_bvh11)
-{
- 	bvh11::BvhObject* bvh_reset = nullptr;
-	int n_frames = bvh_src.frames();
-	bool in_range = (-1 < frame_bvh11
-					&& frame_bvh11 < n_frames);
-	if (!in_range)
-		return false;
-	HBODY h_driver = H_INVALID;
-	HBODY h_driveeProxy = H_INVALID;
-	HBODY h_drivee = H_INVALID;
-	bool resetted = true;
-	h_driver = CreateBVHArticulatedBody(bvh_src);
-	resetted = VALID_HANDLE(h_driver);
-#if defined _DEBUG
-	{
-		std::cout << "Bounds:" << std::endl;
-		int n_indent = 1;
-		auto lam_onEnter = [&n_indent, &bvh_src = std::as_const(bvh_src)](Bound b_this)
-		{
-			printBoundName(b_this, n_indent++);
-			assert(BoundEQ(b_this, bvh_src, -1));
-		};
-		auto lam_onLeave = [&n_indent](Bound b_this)
-		{
-			n_indent--;
-		};
-		Bound root = std::make_pair(bvh_src.root_joint(), h_driver);
-		TraverseDFS_boundtree_recur(root, lam_onEnter, lam_onLeave);
-	}
-#endif
-	if (resetted)
-	{
-		pose_nonrecur(h_driver, bvh_src, frame_bvh11);
-		resetted = clone_body_fbx(h_driver, &h_driveeProxy); // reset = false
-	}
 
-#if 0 //defined _DEBUG
-	{
-		std::cout << "Bounds:" << std::endl;
-		int n_indent = 1;
-		auto lam_onEnter = [&n_indent, &bvh_src = std::as_const(bvh_src), frame_bvh11](Bound b_this)
-		{
-			printBoundName(b_this, n_indent++);
-			// BoundEQ(b_this, bvh_src, frame_bvh11);
-			assert(BoundEQ(b_this, bvh_src, frame_bvh11));
-		};
-		auto lam_onLeave = [&n_indent](Bound b_this)
-		{
-			n_indent--;
-		};
-		Bound root = std::make_pair(bvh_src.root_joint(), h_driveeProxy);
-		TraverseDFS_boundtree_recur(root, lam_onEnter, lam_onLeave);
-	}
-#endif
-	if (resetted)
-		resetted = clone_body_bvh(h_driveeProxy, &h_drivee);
-
-#if defined _DEBUG
-	if (resetted)
-	{
-		std::cout << "Bounds:" << std::endl;
-		int n_indent = 1;
-		auto lam_onEnter = [&n_indent, &bvh_src = std::as_const(bvh_src), frame_bvh11](Bound b_this)
-		{
-			printBoundName(b_this, n_indent++);
-			assert(BoundResetAsBVHRest(b_this, bvh_src, frame_bvh11));
-		};
-		auto lam_onLeave = [&n_indent](Bound b_this)
-		{
-			n_indent--;
-		};
-		Bound root = std::make_pair(bvh_src.root_joint(), h_drivee);
-		TraverseDFS_boundtree_recur(root, lam_onEnter, lam_onLeave);
-	}
-#endif
-	if (resetted)
-	{
-		HMOTIONNODE h_motion_driver = create_tree_motion_node(h_driver);
-		HMOTIONNODE h_motion_driveeProxy = create_tree_motion_node(h_driveeProxy);
-		bool sync_created = motion_sync_cnn_homo(h_motion_driver, h_motion_driveeProxy, FIRSTCHD);
-		assert(sync_created && "homo sync should be created for 2 same-header-BVHs");
-
-		HMOTIONNODE h_motion_drivee = create_tree_motion_node(h_drivee);
-		sync_created = motion_sync_cnn_cross_c(h_motion_driveeProxy, h_motion_drivee, FIRSTCHD, NULL, 0, NULL);
-		assert(sync_created && "cross sync should be created for 2 algined postures");
-
-		bool pre_reset_header = true;
-
-		if (pre_reset_header)
-		{
-			CArtiBodyNode* drivee_root = CAST_2PBODY(h_drivee);
-			bvh_reset = new bvh11::BvhObject(drivee_root, n_frames);
-#ifdef _DEBUG
-			std::cout << "bvh src:" << std::endl;
-			bvh.Dump();
-			std::cout << "bvh reset:" << std::endl;
-			bvh_reset->Dump();
-#endif
-			for (int i_frame = 0
-				; i_frame < n_frames
-				; i_frame++)
-			{
-				PROFILE_FRAME(i_frame);
-				pose_nonrecur(h_driver, bvh_src, i_frame);
-				motion_sync(h_motion_driver);
-				// updateBVHAnim(h_drivee, bvh_src, i_frame, header_resetted);
-				bvh_reset->SetMotion(drivee_root, i_frame);
-			}
-		}
-
-	
-
-		HMOTIONNODE h_motions[] = {h_motion_driver, h_motion_driveeProxy, h_motion_drivee};
-		const int n_motions = sizeof(h_motions)/sizeof(HMOTIONNODE);
-		for (int i_motion = 0; i_motion < n_motions; i_motion++)
-			destroy_tree_motion_node(h_motions[i_motion]);
-	}
-
-	HBODY bodies[] = {h_driver, h_driveeProxy, h_drivee};
-	const int n_body = sizeof(bodies)/sizeof(HBODY);
-	for (int i_body = 0; i_body < n_body; i_body ++)
-	{
-		if (VALID_HANDLE(bodies[i_body]))
-			destroy_tree_body(bodies[i_body]);
-	}
-
-	return bvh_reset;
-}
 
 HBODY create_tree_body_bvh_file(const wchar_t* path_src)
 {
@@ -543,6 +415,7 @@ HBODY create_tree_body_bvh(HBVH hBvh)
 	HBODY h_root = CreateBVHArticulatedBody(*bvh);
 	return h_root;
 }
+
 
 
 HBVH load_bvh_c(const char* path_src)
@@ -710,7 +583,6 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 					pose_nonrecur(h_driver, bvh_src, i_frame);
 					motion_sync(h_motion_driver);
 					bvh_reset->SetMotion(drivee_root, i_frame);
-					// updateBVHAnim(h_drivee, *bvh_reset, i_frame, true);
 				}
 				bvh_reset->WriteBvhFile(path_dst);
 				delete bvh_reset;
