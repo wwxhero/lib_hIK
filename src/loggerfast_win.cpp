@@ -19,10 +19,38 @@ void SimpleUTF16(const char* src, unsigned int len, wchar_t* dst)
 	*p_dst = L'\0';
 }
 
+LoggerFast::LoggerFast(const char* path) throw(...)
+	: m_pLogger(NULL)
+	, c_fmtBuffSz(1024)
+	, m_pFmtBuff(NULL)
+{
+	Initialize(path);
+}
+
 LoggerFast::LoggerFast() throw(...)
 	: m_pLogger(NULL)
 	, c_fmtBuffSz(1024)
 	, m_pFmtBuff(NULL)
+{
+	const char* envVar = "InternalLog";
+	char c_fileName[1024] = {0};
+	char *envFileName = NULL;
+	if (NULL != (envFileName = std::getenv(envVar)))
+		strcpy(c_fileName, envFileName);
+	else
+	{
+		sprintf(c_fileName
+				, "%s.txt"
+				, envVar);
+		fprintf(stdout
+				, "Environment Variable <%s> is not set\n"
+				, envVar);
+		fflush(stdout);
+	}
+	Initialize(c_fileName);
+}
+
+void LoggerFast::Initialize(const char* path) throw (...)
 {
 	m_pFmtBuff = new char[c_fmtBuffSz];
 	m_pFmtBuffw = new wchar_t[c_fmtBuffSz];
@@ -36,22 +64,7 @@ LoggerFast::LoggerFast() throw(...)
 									, (void **)&m_pLogger);
 	if (SUCCEEDED(hResult))
 	{
-		const char* envVar = "InternalLog";
-		char c_fileName[1024] = {0};
-    	char *envFileName = NULL;
-		if (NULL != (envFileName = std::getenv(envVar)))
-			strcpy(c_fileName, envFileName);
-		else
-		{
-			sprintf(c_fileName
-					, "%s.txt"
-					, envVar);
-			fprintf(stdout
-					, "Environment Variable <%s> is not set\n"
-					, envVar);
-			fflush(stdout);
-		}
-		_bstr_t path_bstr(c_fileName);
+		_bstr_t path_bstr(path);
 		m_pLogger->Create(path_bstr);
 	}
 	else

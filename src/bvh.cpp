@@ -1,8 +1,4 @@
 #include "pch.h"
-#pragma push_macro("new")
-#undef new
-#include <Eigen/Geometry>
-#pragma pop_macro("new")
 #include <iostream>
 #include <stack>
 #include <queue>
@@ -14,6 +10,8 @@
 #include "handle_helper.hpp"
 #include "ik_logger.h"
 #include "ArtiBodyFile.hpp"
+#include "Math.hpp"
+#include "loggerfast.h"
 
 
 #define ZERO_ENTITY_TT_HOMO
@@ -576,8 +574,8 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 			{
 				CArtiBodyNode* drivee_root = CAST_2PBODY(h_drivee);
 				auto bvh_reset = new CArtiBodyFile(drivee_root, n_frames);
-				// LoggerFast logger(std::string(path_dst)+"_dup");
-				// bvh_reset->OutputHeader(logger);
+				LoggerFast logger((std::string(path_dst)+"_dup").c_str());
+				bvh_reset->OutputHeader(logger);
 				for (int i_frame = 0
 					; i_frame < n_frames
 					; i_frame++)
@@ -586,7 +584,7 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 					pose_nonrecur(h_driver, bvh_src, i_frame);
 					motion_sync(h_motion_driver);
 					bvh_reset->SetMotion(i_frame);
-					// bvh_reset->OutputMotion(logger);
+					bvh_reset->OutputMotion(i_frame, logger);
 				}
 				bvh_reset->WriteBvhFile(path_dst);
 				delete bvh_reset;

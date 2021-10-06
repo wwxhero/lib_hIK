@@ -1,13 +1,16 @@
 #include "bvh11_helper.hpp"
 #include <queue>
+#include "loggerfast.h"
 
 class CArtiBodyFile : public bvh11::BvhObject
 {
 public:
 	CArtiBodyFile(const CArtiBodyNode* root_src, int n_frames);
-	void SetJointChannel(std::shared_ptr<bvh11::Joint> joint);
 	void SetMotion(int i_frame);
+	void OutputHeader(LoggerFast& logger) const;
+	void OutputMotion(int i_frame, LoggerFast& logger) const;
 private:
+	void SetJointChannel(std::shared_ptr<bvh11::Joint> joint);
 	typedef std::shared_ptr<const bvh11::Joint> Joint_bvh_ptr;
 	typedef std::pair<Joint_bvh_ptr, const CArtiBodyNode*> Bound;
 

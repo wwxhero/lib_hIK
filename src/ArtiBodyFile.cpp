@@ -118,3 +118,13 @@ void CArtiBodyFile::SetMotion(int i_frame)
 	Bound root_b = std::make_pair(root_joint_, m_bodyRoot);
 	TraverseBFS_boundtree_norecur(root_b, onEnterBound_pose, onLeaveBound_pose);
 }
+
+void CArtiBodyFile::OutputHeader(LoggerFast &logger) const
+{
+	//to be done
+}
+
+void CArtiBodyFile::OutputMotion(int i_frame, LoggerFast& logger) const
+{
+	//to be done
+}

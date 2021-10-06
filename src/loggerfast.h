@@ -9,11 +9,13 @@ class LoggerFast
 {
 public:
 	LoggerFast() throw(...);
+	LoggerFast(const char* path) throw(...);
 	~LoggerFast();
 	int __cdecl OutFmt(const char* fmt, ...);
 	int Out(const char* fmt, va_list _ArgList);
 	void Flush();
 private:
+	void Initialize(const char* path) throw (...);
 	ILogger* m_pLogger;
 	const unsigned int c_fmtBuffSz;
 	char* m_pFmtBuff;
