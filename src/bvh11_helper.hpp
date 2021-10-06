@@ -1,13 +1,13 @@
 #ifndef BVH11_HELPER_HPP_
 #define BVH11_HELPER_HPP_
 #include "pch.h"
-
 #include <vector>
 #include <list>
 #include <string>
 #include <memory>
 #include <iostream>
 #include <stdlib.h>
+#include "Math.hpp"
 #include "macro_helper.h"
 
 class CArtiBodyNode;
@@ -26,9 +26,9 @@ namespace bvh11
 			ReadBvhFile(file_path, scale);
 		}
 
-		BvhObject(const BvhObject& src) throw(...);
+		BvhObject() {} // constructor for derived class
 
-		BvhObject(const CArtiBodyNode* root_src, int n_frames);
+		BvhObject(const BvhObject& src) throw(...);
 
 		~BvhObject()
 		{
@@ -36,7 +36,6 @@ namespace bvh11
 		}
 
 		void Dump();
-		void SetJointChannel(std::shared_ptr<Joint> joint);
 		int    frames()     const { return frames_;     }
 		double frame_time() const { return frame_time_; }
 
@@ -79,10 +78,7 @@ namespace bvh11
 		/// \param num_new_frames Number of the new frames.
 		void ResizeFrames(int num_new_frames);
 
-		typedef std::shared_ptr<const bvh11::Joint> Joint_bvh_ptr;
-		typedef std::pair<Joint_bvh_ptr, const CArtiBodyNode*> Bound;
-
-	private:
+	protected:
 		int                  frames_;
 		double               frame_time_;
 

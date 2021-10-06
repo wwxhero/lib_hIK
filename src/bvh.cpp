@@ -13,6 +13,7 @@
 #include "fk_joint.h"
 #include "handle_helper.hpp"
 #include "ik_logger.h"
+#include "ArtiBodyFile.hpp"
 
 
 #define ZERO_ENTITY_TT_HOMO
@@ -574,7 +575,9 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 			if (pre_reset_header)
 			{
 				CArtiBodyNode* drivee_root = CAST_2PBODY(h_drivee);
-				auto bvh_reset = new bvh11::BvhObject(drivee_root, n_frames);
+				auto bvh_reset = new CArtiBodyFile(drivee_root, n_frames);
+				// LoggerFast logger(std::string(path_dst)+"_dup");
+				// bvh_reset->OutputHeader(logger);
 				for (int i_frame = 0
 					; i_frame < n_frames
 					; i_frame++)
@@ -582,7 +585,8 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 					PROFILE_FRAME(i_frame);
 					pose_nonrecur(h_driver, bvh_src, i_frame);
 					motion_sync(h_motion_driver);
-					bvh_reset->SetMotion(drivee_root, i_frame);
+					bvh_reset->SetMotion(i_frame);
+					// bvh_reset->OutputMotion(logger);
 				}
 				bvh_reset->WriteBvhFile(path_dst);
 				delete bvh_reset;
