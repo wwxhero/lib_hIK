@@ -491,6 +491,12 @@ bvh11::BvhObject* ResetRestPose(bvh11::BvhObject& bvh, int t)
 		{
 			CArtiBodyNode* drivee_root = CAST_2PBODY(h_drivee);
 			bvh_reset = new bvh11::BvhObject(drivee_root, n_frames);
+#ifdef _DEBUG
+			std::cout << "bvh src:" << std::endl;
+			bvh.Dump();
+			std::cout << "bvh reset:" << std::endl;
+			bvh_reset->Dump();
+#endif
 			for (int i_frame = 0
 				; i_frame < n_frames
 				; i_frame++)
@@ -498,7 +504,6 @@ bvh11::BvhObject* ResetRestPose(bvh11::BvhObject& bvh, int t)
 				PROFILE_FRAME(i_frame);
 				pose_nonrecur(h_driver, bvh, i_frame);
 				motion_sync(h_motion_driver);
-				// updateBVHAnim(h_drivee, bvh, i_frame, header_resetted);
 				bvh_reset->SetMotion(drivee_root, i_frame);
 			}
 		}

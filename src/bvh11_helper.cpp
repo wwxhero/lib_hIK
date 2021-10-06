@@ -251,9 +251,18 @@ namespace bvh11
 		}
 	}
 
+	BEGIN_ENUM_STR(Channel, Type)
+		ENUM_ITEM(x_position)
+		ENUM_ITEM(y_position)
+		ENUM_ITEM(z_position)
+		ENUM_ITEM(z_rotation)
+		ENUM_ITEM(x_rotation)
+		ENUM_ITEM(y_rotation)
+	END_ENUM_STR(Channel, Type)
+
 	BvhObject::BvhObject(const CArtiBodyNode* root_src, int n_frames)
 		: frame_time_(0.0083333)
-		, frames_(n_frames)
+		, frames_(n_frames) // throw(...)
 	{
 		auto Offset = [](const CArtiBodyNode* body) -> Eigen::Vector3d
 			{
@@ -268,28 +277,6 @@ namespace bvh11
 				}
 			};
 
-		auto SetJointChannel = [](bool root, std::shared_ptr<Joint> joint, std::vector<Channel>& channels)
-			{
-				const std::vector<Channel::Type> channels_root = {Channel::Type::x_position
-																, Channel::Type::y_position
-																, Channel::Type::z_position
-																, Channel::Type::z_rotation
-																, Channel::Type::y_rotation
-																, Channel::Type::x_rotation};
-				const std::vector<Channel::Type> channels_leaf = {Channel::Type::z_rotation
-																, Channel::Type::y_rotation
-																, Channel::Type::x_rotation};
-				const auto & channels_joint = (root ? channels_root : channels_leaf);
-
-				for (auto channel : channels_joint)
-				{
-					joint->AssociateChannel((int)channels.size());
-					channels.push_back({channel, joint});
-				}
-			};
-
-
-		std::map<std::string, std::shared_ptr<Joint>> name2joint;
 		auto root_dst = std::shared_ptr<Joint>(new Joint(root_src->GetName_c(), nullptr));
 		root_joint_ = root_dst;
 		struct Bound
@@ -299,7 +286,6 @@ namespace bvh11
 		};
 		Bound rootBnd = { root_src, root_dst };
 		std::queue<Bound> bfs_que;
-		SetJointChannel(true, root_dst, channels_);
 		bfs_que.push(rootBnd);
 		while (!bfs_que.empty())
 		{
@@ -319,13 +305,13 @@ namespace bvh11
 			{
 				auto joint_dst_child = std::shared_ptr<Joint>(new Joint(body_src_child->GetName_c(), joint_dst));
 				Bound node_b_child = { body_src_child, joint_dst_child };
-				SetJointChannel(false, joint_dst_child, channels_);
 				bfs_que.push(node_b_child);
 				joint_dst->AddChild(joint_dst_child);
 			}
-			name2joint[joint_dst->name()] = joint_dst;
 			bfs_que.pop();
 		}
+
+		SetJointChannel(root_dst);
 
 		motion_.resize(frames_, channels_.size());
 	}
@@ -377,6 +363,38 @@ namespace bvh11
 		}
 
 	}
+
+	void BvhObject::Dump()
+	{
+		for (auto channel_i : channels_)
+		{
+			std::cout << Channel::from_Type(channel_i.type) << ", " << channel_i.target_joint->name() << std::endl;
+		}
+	}
+
+	void BvhObject::SetJointChannel(std::shared_ptr<Joint> joint)
+	{
+		const std::vector<Channel::Type> channels_root = { Channel::Type::x_position
+														, Channel::Type::y_position
+														, Channel::Type::z_position
+														, Channel::Type::z_rotation
+														, Channel::Type::y_rotation
+														, Channel::Type::x_rotation };
+		const std::vector<Channel::Type> channels_leaf = { Channel::Type::z_rotation
+														, Channel::Type::y_rotation
+														, Channel::Type::x_rotation };
+		bool is_root = (nullptr == joint->parent());
+		const auto & channels_joint = (is_root ? channels_root : channels_leaf);
+
+		for (auto channel : channels_joint)
+		{
+			joint->AssociateChannel((int)channels_.size());
+			channels_.push_back({ channel, joint });
+		}
+
+		for (auto joint_child : joint->children())
+			SetJointChannel(joint_child);
+	};
 
 	std::vector<std::shared_ptr<const Joint>> BvhObject::GetJointList() const
 	{

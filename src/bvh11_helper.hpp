@@ -7,9 +7,8 @@
 #include <string>
 #include <memory>
 #include <iostream>
-
-
 #include <stdlib.h>
+#include "macro_helper.h"
 
 class CArtiBodyNode;
 
@@ -36,6 +35,8 @@ namespace bvh11
 
 		}
 
+		void Dump();
+		void SetJointChannel(std::shared_ptr<Joint> joint);
 		int    frames()     const { return frames_;     }
 		double frame_time() const { return frame_time_; }
 
@@ -99,11 +100,13 @@ namespace bvh11
 
 	struct Channel
 	{
-		enum class Type
+		enum Type
 		{
 			x_position, y_position, z_position,
 			z_rotation, x_rotation, y_rotation
 		};
+
+		DECLARE_ENUM_STR(Type)
 
 		const Type type;
 		const std::shared_ptr<Joint> target_joint;
