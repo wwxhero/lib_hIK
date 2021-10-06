@@ -70,7 +70,12 @@ namespace EigenExt
 
 	};
 
-	class MatrixX : public Eigen::MatrixXd
+	class MatrixX : public Eigen::MatrixXr
+	{
+
+	};
+
+	class Affine : public Eigen::Affine3d
 	{
 
 	};

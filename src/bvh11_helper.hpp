@@ -78,6 +78,9 @@ namespace bvh11
 		/// \param num_new_frames Number of the new frames.
 		void ResizeFrames(int num_new_frames);
 
+		typedef std::shared_ptr<const bvh11::Joint> Joint_bvh_ptr;
+		typedef std::pair<Joint_bvh_ptr, const CArtiBodyNode*> Bound;
+
 	private:
 		int                  frames_;
 		double               frame_time_;

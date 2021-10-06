@@ -390,9 +390,64 @@ namespace bvh11
 		return joint_list;
 	}
 
+	template<typename LAMaccessEnter, typename LAMaccessLeave>
+	inline void TraverseBFS_boundtree_norecur(BvhObject::Bound root, LAMaccessEnter OnEnterBound, LAMaccessLeave OnLeaveBound)
+	{
+		std::queue<BvhObject::Bound> queBFS;
+		queBFS.push(root);
+		OnEnterBound(root);
+		while (!queBFS.empty())
+		{
+			auto b_this = queBFS.front();
+			auto joint_bvh = b_this.first;
+			const CArtiBodyNode* body_hik = b_this.second;
+			auto& children_bvh = joint_bvh->children();
+			auto it_bvh_child = children_bvh.begin();
+			auto body_child = body_hik->GetFirstChild();
+			for (
+				; it_bvh_child != children_bvh.end()
+				&& nullptr != body_child
+				; it_bvh_child++,
+				body_child = body_child->GetNextSibling())
+			{
+				auto b_child = std::make_pair(*it_bvh_child, body_child);
+				queBFS.push(b_child);
+				OnEnterBound(b_child);
+			}
+			queBFS.pop();
+			OnLeaveBound(b_this);
+		}
+	}
+
 	void BvhObject::SetMotion(const CArtiBodyNode* root, int i_frame)
 	{
-		
+		auto& bvh = *this;
+		auto onEnterBound_pose = [&bvh, i_frame](Bound b_this)
+		{
+			Joint_bvh_ptr joint_bvh = b_this.first;
+			const IJoint* joint_hik = b_this.second->GetJoint();
+			_TRANSFORM delta_l_tm = {0};
+			joint_hik->GetTransform()->CopyTo(delta_l_tm);
+
+			Eigen::Affine3d delta_l;
+			Eigen::Vector3d tt(delta_l_tm.tt.x,
+				delta_l_tm.tt.y,
+				delta_l_tm.tt.z);
+			Eigen::Quaterniond r(delta_l_tm.r.w,
+				delta_l_tm.r.x,
+				delta_l_tm.r.y,
+				delta_l_tm.r.z);
+			Eigen::Vector3d s(delta_l_tm.s.x,
+				delta_l_tm.s.y,
+				delta_l_tm.s.z);
+			delta_l.fromPositionOrientationScale(tt, r, s);
+			bvh.UpdateMotion(joint_bvh, delta_l, i_frame);
+
+		};
+		auto onLeaveBound_pose = [](Bound b_this) {};
+
+		Bound root_b = std::make_pair(root_joint_, root);
+		TraverseBFS_boundtree_norecur(root_b, onEnterBound_pose, onLeaveBound_pose);
 	}
 
 	void BvhObject::UpdateMotion(std::shared_ptr<const Joint> joint, const Eigen::Affine3d& tm_delta_l, int i_frame)
