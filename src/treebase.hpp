@@ -135,7 +135,7 @@ public:
 	}
 
 	template<typename TSrc, typename TDst, typename LAMaccess>
-	static bool Construct(const TSrc* root_src, TDst** a_root_dst, LAMaccess ConstructNode)
+	static bool ConstructBFS(const TSrc* root_src, TDst** a_root_dst, LAMaccess ConstructNode)
 	{
 		typedef std::pair<const TSrc*, TDst*> Bound;
 		std::queue<Bound> queBFS;
@@ -260,7 +260,7 @@ public:
 	}
 
 	template<typename LAMBDA_nodecmp, typename LAMBDA_onBound>
-	static bool TraverseDFS_Bound(const NodeType* root_s, const NodeType* root_d, LAMBDA_nodecmp nodeCmp, LAMBDA_onBound onBound)
+	static bool TraverseBFS_Bound(const NodeType* root_s, const NodeType* root_d, LAMBDA_nodecmp nodeCmp, LAMBDA_onBound onBound)
 	{
 		std::queue<const NodeType*> que_s;
 		std::queue<const NodeType*> que_d;

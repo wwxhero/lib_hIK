@@ -211,7 +211,7 @@ bool CArtiBodyTree::Clone_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, con
 						return false;
 				};
 
-	bool cloned_tree = Construct(src, dst, CloneNode);
+	bool cloned_tree = ConstructBFS(src, dst, CloneNode);
 
 	if (cloned_tree)
 	{
@@ -325,7 +325,7 @@ int CArtiBodyTree::BodyCMP(const char* const pts_interest[], int n_interests, co
 				{
 					return strcmp(root_s->GetName_c(), root_d->GetName_c()) < 0;
 				};
-	Super::TraverseDFS_Bound(root_s, root_d, NodeCMP, NodeEQ);
+	Super::TraverseBFS_Bound(root_s, root_d, NodeCMP, NodeEQ);
 	return n_err_nodes;
 }
 

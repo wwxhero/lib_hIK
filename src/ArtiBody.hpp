@@ -385,7 +385,7 @@ public:
 			return ret;
 		};
 
-		bool cloned = Construct(src, dst, ConstructNode);
+		bool cloned = ConstructBFS(src, dst, ConstructNode);
 
 		if (cloned)
 		{
