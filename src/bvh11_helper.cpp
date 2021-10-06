@@ -251,9 +251,9 @@ namespace bvh11
 		}
 	}
 
-	BvhObject::BvhObject(const CArtiBodyNode* root_src)
+	BvhObject::BvhObject(const CArtiBodyNode* root_src, int n_frames)
 		: frame_time_(0.0083333)
-		, frames_(0)
+		, frames_(n_frames)
 	{
 		auto Offset = [](const CArtiBodyNode* body) -> Eigen::Vector3d
 			{
@@ -327,7 +327,7 @@ namespace bvh11
 			bfs_que.pop();
 		}
 
-
+		motion_.resize(frames_, channels_.size());
 	}
 
 	BvhObject::BvhObject(const BvhObject& src)
@@ -388,6 +388,11 @@ namespace bvh11
 		};
 		add_joint(root_joint_);
 		return joint_list;
+	}
+
+	void BvhObject::SetMotion(const CArtiBodyNode* root, int i_frame)
+	{
+		
 	}
 
 	void BvhObject::UpdateMotion(std::shared_ptr<const Joint> joint, const Eigen::Affine3d& tm_delta_l, int i_frame)

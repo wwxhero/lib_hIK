@@ -327,7 +327,7 @@ inline void TraverseBFS_boundtree_norecur(Bound root, LAMaccessEnter OnEnterBoun
 	}
 }
 // pose articulated body with the bvh and the frame
-void pose_nonrecur(HBODY body_root, const bvh11::BvhObject& bvh, int i_frame, bool verify)
+void pose_nonrecur(HBODY body_root, const bvh11::BvhObject& bvh, int i_frame)
 {
 	auto onEnterBound_pose = [&bvh, i_frame](Bound b_this)
 	{
@@ -349,20 +349,6 @@ void pose_nonrecur(HBODY body_root, const bvh11::BvhObject& bvh, int i_frame, bo
 	TraverseBFS_boundtree_norecur(root, onEnterBound_pose, onLeaveBound_pose);
 
 	update_fk(body_root);
-
-	if (verify)
-	{
-		auto onEnterBound_verify = [](Bound b_this)
-		{
-		};
-
-		auto onLeaveBound_verify = [&bvh, i_frame](Bound b_this)
-		{
-			verify_bound(b_this, false, bvh, i_frame);
-		};
-
-		TraverseBFS_boundtree_norecur(root, onEnterBound_verify, onLeaveBound_verify);
-	}
 }
 
 void updateBVHAnim(HBODY body_root, bvh11::BvhObject& bvh, int i_frame, bool verify)
@@ -445,7 +431,7 @@ bvh11::BvhObject* ResetRestPose(bvh11::BvhObject& bvh, int t)
 #endif
 	if (resetted)
 	{
-		pose_nonrecur(h_driver, bvh, t, true);
+		pose_nonrecur(h_driver, bvh, t);
 		resetted = clone_body_fbx(h_driver, &h_driveeProxy); // reset = false
 	}
 
@@ -501,23 +487,20 @@ bvh11::BvhObject* ResetRestPose(bvh11::BvhObject& bvh, int t)
 
 		bool pre_reset_header = true;
 
-		bool header_resetted = false;
 		if (pre_reset_header)
 		{
-			bvh_reset = new bvh11::BvhObject(CAST_2PBODY(h_drivee));
-			header_resetted = true;
-			/*for (int i_frame = 0
+			CArtiBodyNode* drivee_root = CAST_2PBODY(h_drivee);
+			bvh_reset = new bvh11::BvhObject(drivee_root, n_frames);
+			for (int i_frame = 0
 				; i_frame < n_frames
 				; i_frame++)
 			{
 				PROFILE_FRAME(i_frame);
-				pose_nonrecur(h_driver, bvh, i_frame, !header_resetted);
+				pose_nonrecur(h_driver, bvh, i_frame);
 				motion_sync(h_motion_driver);
-				updateBVHAnim(h_drivee, bvh, i_frame, header_resetted);
+				// updateBVHAnim(h_drivee, bvh, i_frame, header_resetted);
+				bvh_reset->SetMotion(drivee_root, i_frame);
 			}
-
-			if (!pre_reset_header)
-				updateHeader(bvh, h_drivee);*/
 		}
 
 	
@@ -645,7 +628,7 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 void pose_body(HBVH bvh, HBODY body, int i_frame)
 {
 	auto pBvh = CAST_2PBVH(bvh);
-	pose_nonrecur(body, *pBvh, i_frame, false);
+	pose_nonrecur(body, *pBvh, i_frame);
 }
 
 unsigned int channels(HBVH hBvh)
