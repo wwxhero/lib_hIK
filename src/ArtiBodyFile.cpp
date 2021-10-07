@@ -133,11 +133,15 @@ void CArtiBodyFile::OutputHeader(LoggerFast &logger) const
 void CArtiBodyFile::OutputMotion(int i_frame, LoggerFast& logger) const
 {
 	//to be done
-	// auto r_i = motion_.row(i_frame);
-	// auto n_cols = channels_.size();
-	// const double* p_data = r_i.data();
-	// logger << p_data[0];
-	// for (int i_col = 1; i_col < n_cols; i_col++)
-	// 	logger << " " << p_data[i_col];
-	// logger << "\n";
+	auto n_rows = motion_.rows();
+	auto n_cols = channels_.size();
+	auto n_stride = n_rows; // eigen is a column major matrix storage
+	IKAssert(i_frame < n_rows);
+	const double* p_data_start = motion_.row(i_frame).data();
+	const double* p_data_end = p_data_start + n_cols * n_stride;
+	const double* p_data = p_data_start;
+	logger << *p_data;
+	for (p_data += n_stride; p_data < p_data_end; p_data += n_stride)
+	  	logger << " " << *p_data;
+	logger << "\n";
 }
