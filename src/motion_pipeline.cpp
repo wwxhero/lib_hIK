@@ -1,15 +1,13 @@
 #include "pch.h"
-#include <filesystem>
 #include "motion_pipeline.h"
 #include "MoNode.hpp"
 #include "handle_helper.hpp"
 #include "MotionPipeConf.hpp"
 #include "bvh.h"
 #include "IKGroupTree.hpp"
+#include "loggerfast.h"
 
 using namespace CONF;
-
-
 
 struct MotionPipeInternal : public MotionPipe
 {
@@ -23,7 +21,11 @@ struct MotionPipeInternal : public MotionPipe
 			HBVH bvh;
 			int i_frame;
 		};
-		CIKGroupNode* root_ik;
+		struct
+		{
+			CIKGroupNode* root_ik;
+			LoggerFast* logger;
+		};
 	};
 };
 
@@ -35,9 +37,10 @@ void init_mopipe(MotionPipeInternal* mopipe)
 	mopipe->mo_nodes[0] = H_INVALID;
 	mopipe->mo_nodes[1] = H_INVALID;
 	mopipe->n_frames = 0;
-	mopipe->root_ik = NULL;
 	mopipe->bvh = H_INVALID;
-	mopipe->i_frame = -1;
+	mopipe->i_frame = 0;
+	mopipe->root_ik = NULL;
+	mopipe->logger = NULL;
 }
 
 bool InitBody_Internal(HBODY bodySrc
@@ -47,7 +50,8 @@ bool InitBody_Internal(HBODY bodySrc
 					, HBODY& hBody
 					, unsigned int &frames
 					, HBVH& hBVH
-					, CIKGroupNode* &root_ikGroup)
+					, CIKGroupNode* &root_ikGroup
+					, LoggerFast* &logger)
 {
 	const CBodyConf* body_confs[] = {&mp_conf.Source, &mp_conf.Destination};
 	const CBodyConf* body_conf_i = body_confs[i_body];
@@ -56,8 +60,8 @@ bool InitBody_Internal(HBODY bodySrc
 	{
 		case BODY_TYPE::bvh:
 		{
-			std::experimental::filesystem::path fullPath(rootConfDir);
-			std::experimental::filesystem::path relpath(body_conf_i->file_w());
+			fs::path fullPath(rootConfDir);
+			fs::path relpath(body_conf_i->file_w());
 			fullPath.append(relpath);
 			hBVH = load_bvh_w(fullPath.c_str());
 			IKAssert(VALID_HANDLE(hBVH));
@@ -115,6 +119,15 @@ bool InitBody_Internal(HBODY bodySrc
 			break;
 		}
 
+	}
+
+	auto record = body_conf_i->record_w();
+	if (NULL != record)
+	{
+		fs::path fullPath(rootConfDir);
+		fs::path relpath(record);
+		fullPath.append(relpath);
+		logger = new LoggerFast(fullPath.generic_u8string().c_str());
 	}
 
 	return initialized;
@@ -179,9 +192,10 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 			}
 			else
 			{
-				std::experimental::filesystem::path fullPath(confXML);
+				fs::path fullPath(confXML);
 				HBVH bvh = H_INVALID;
 				CIKGroupNode* root_ik = NULL;
+				LoggerFast* logger = NULL;
 				bool initialized = InitBody_Internal(body_ref
 													, fullPath.parent_path().c_str()
 													, *mp_conf
@@ -189,7 +203,8 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 													, mopipe->bodies[i_bodyConf]
 													, mopipe->n_frames
 													, bvh
-													, root_ik);
+													, root_ik
+													, logger);
 				IKAssert(initialized);
 				// IKAssert(VALID_HANDLE(bvh) == (NULL == root_ik));
 				if (VALID_HANDLE(bvh))
@@ -202,6 +217,7 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 				{
 					IKAssert(root_ik);
 					mopipe->root_ik = root_ik;
+					mopipe->logger = logger;
 					mopipe->type = MotionPipeInternal::IK;
 				}
 			}
@@ -330,6 +346,8 @@ void unload_mopipe(MotionPipe* a_mopipe)
 	case MotionPipeInternal::IK:
 		delete mopipe->root_ik;
 		mopipe->root_ik = NULL;
+		delete mopipe->logger;
+		mopipe->logger = NULL;
 		break;
 	}
 

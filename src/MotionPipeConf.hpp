@@ -119,16 +119,20 @@ namespace CONF
 	class CBodyConf
 	{
 	public:
+		CBodyConf();
 		int Scale_alloc(B_Scale* &scales) const;
 		static void Scale_free(B_Scale* scales, int n_scale);
 		int Targets_alloc(const wchar_t ** &nameTargets) const;
 		static void Targets_free(const wchar_t** nameTargets, int n_Targets);
 		const wchar_t* file_w() const;
 		const char* file_c() const;
+		const wchar_t* record_w() const;
+		const char* record_c() const;
 
 		void AddScale(const char* name, Real x, Real y, Real z);
 		void AddTarget(const char* name);
 		void SetFileName(const char* fileName);
+		void SetRecord(const char* rc_file);
 
 		BODY_TYPE type() const;
 
@@ -154,6 +158,8 @@ namespace CONF
 		std::vector<Name> m_targets;
 		std::wstring m_fileName_w;
 		std::string m_fileName_c;
+		std::wstring m_record_w;
+		std::string m_record_c;
 	public:
 		std::vector<CIKChainConf> IK_Chains;
 	private:
