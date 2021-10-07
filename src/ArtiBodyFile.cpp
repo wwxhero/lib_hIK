@@ -88,9 +88,9 @@ void CArtiBodyFile::SetJointChannel(std::shared_ptr<Joint> joint)
 }
 
 
-void CArtiBodyFile::SetMotion(int i_frame)
+void CArtiBodyFile::UpdateMotion(int i_frame)
 {
-	auto& bvh = *this;
+	bvh11::BvhObject& bvh = *this;
 	auto onEnterBound_pose = [&bvh, i_frame](Bound b_this)
 	{
 		Joint_bvh_ptr joint_bvh = b_this.first;
@@ -119,29 +119,24 @@ void CArtiBodyFile::SetMotion(int i_frame)
 	TraverseBFS_boundtree_norecur(root_b, onEnterBound_pose, onLeaveBound_pose);
 }
 
-void CArtiBodyFile::OutputHeader(LoggerFast &logger) const
+
+CBodyLogger::CBodyLogger(const CArtiBodyNode* root, const char* path) throw (...)
+	: m_bodyFile(root, 1)
+	, m_logger(path)
 {
-	//to be done
-	logger << "HIERARCHY" << "\n";
-	WriteJointSubHierarchy(logger, root_joint_, 0);
-	// Motion
-	logger << "MOTION" << "\n";
-	logger << "Frames: " << frames_ << "\n";
-	logger << "Frame Time: " << frame_time_ << "\n";
 }
 
-void CArtiBodyFile::OutputMotion(int i_frame, LoggerFast& logger) const
+CBodyLogger::~CBodyLogger()
 {
-	//to be done
-	auto n_rows = motion_.rows();
-	auto n_cols = channels_.size();
-	auto n_stride = n_rows; // eigen is a column major matrix storage
-	IKAssert(i_frame < n_rows);
-	const double* p_data_start = motion_.row(i_frame).data();
-	const double* p_data_end = p_data_start + n_cols * n_stride;
-	const double* p_data = p_data_start;
-	logger << *p_data;
-	for (p_data += n_stride; p_data < p_data_end; p_data += n_stride)
-	  	logger << " " << *p_data;
-	logger << "\n";
+}
+
+void CBodyLogger::LogHeader()
+{
+	CArtiBodyFile::OutputHeader(m_bodyFile, m_logger);
+}
+
+void CBodyLogger::LogMotion()
+{
+	m_bodyFile.UpdateMotion(0);
+	CArtiBodyFile::OutputMotion(m_bodyFile, 0, m_logger);
 }

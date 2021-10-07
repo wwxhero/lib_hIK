@@ -583,7 +583,7 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 					PROFILE_FRAME(i_frame);
 					pose_nonrecur(h_driver, bvh_src, i_frame);
 					motion_sync(h_motion_driver);
-					bvh_reset->SetMotion(i_frame);
+					bvh_reset->UpdateMotion(i_frame);
 					// bvh_reset->OutputMotion(i_frame, logger);
 				}
 				bvh_reset->WriteBvhFile(path_dst);

@@ -104,7 +104,6 @@ namespace bvh11
 		}
 
 		void UpdateMotion(std::shared_ptr<const Joint> joint, const Eigen::Affine3d& tm_l, int i_frame);
-		void SetMotion(const CArtiBodyNode* root, int i_frame);
 
 		void PrintJointHierarchy() const { PrintJointSubHierarchy(root_joint_, 0); }
 

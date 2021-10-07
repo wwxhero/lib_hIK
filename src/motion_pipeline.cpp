@@ -5,7 +5,7 @@
 #include "MotionPipeConf.hpp"
 #include "bvh.h"
 #include "IKGroupTree.hpp"
-#include "loggerfast.h"
+#include "ArtiBodyFile.hpp"
 
 using namespace CONF;
 
@@ -24,7 +24,7 @@ struct MotionPipeInternal : public MotionPipe
 		struct
 		{
 			CIKGroupNode* root_ik;
-			LoggerFast* logger;
+			CBodyLogger* logger;
 		};
 	};
 };
@@ -51,7 +51,7 @@ bool InitBody_Internal(HBODY bodySrc
 					, unsigned int &frames
 					, HBVH& hBVH
 					, CIKGroupNode* &root_ikGroup
-					, LoggerFast* &logger)
+					, CBodyLogger* &logger)
 {
 	const CBodyConf* body_confs[] = {&mp_conf.Source, &mp_conf.Destination};
 	const CBodyConf* body_conf_i = body_confs[i_body];
@@ -127,7 +127,16 @@ bool InitBody_Internal(HBODY bodySrc
 		fs::path fullPath(rootConfDir);
 		fs::path relpath(record);
 		fullPath.append(relpath);
-		logger = new LoggerFast(fullPath.generic_u8string().c_str());
+		try
+		{
+			logger = new CBodyLogger(CAST_2PBODY(hBody), fullPath.generic_u8string().c_str());
+			logger->LogHeader();
+		}
+		catch(std::string &exp)
+		{
+			LOGIKVarErr(LogInfoCharPtr, exp.c_str());
+			logger = NULL;
+		}
 	}
 
 	return initialized;
@@ -195,7 +204,7 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 				fs::path fullPath(confXML);
 				HBVH bvh = H_INVALID;
 				CIKGroupNode* root_ik = NULL;
-				LoggerFast* logger = NULL;
+				CBodyLogger* logger = NULL;
 				bool initialized = InitBody_Internal(body_ref
 													, fullPath.parent_path().c_str()
 													, *mp_conf
@@ -392,6 +401,8 @@ void ik_update(MotionPipe* mopipe)
 	CIKGroupTree::TraverseDFS(mopipe_internal->root_ik, OnGroupNode, OffGroupNode);
 	const int c_idxSim = 0;
 	motion_sync(mopipe->mo_nodes[c_idxSim]);
+	if (NULL == mopipe_internal->logger)
+		mopipe_internal->logger->LogMotion();
 }
 
 HMOTIONNODE	create_tree_motion_node(HBODY mo_src)
