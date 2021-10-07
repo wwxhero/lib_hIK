@@ -65,15 +65,15 @@ CArtiBodyFile::CArtiBodyFile(const CArtiBodyNode* root_src, int n_frames) // thr
 
 void CArtiBodyFile::SetJointChannel(std::shared_ptr<Joint> joint)
 {
-	const std::vector<Channel::Type> channels_root = { Channel::Type::x_position
-													, Channel::Type::y_position
-													, Channel::Type::z_position
-													, Channel::Type::z_rotation
-													, Channel::Type::y_rotation
-													, Channel::Type::x_rotation };
-	const std::vector<Channel::Type> channels_leaf = { Channel::Type::z_rotation
-													, Channel::Type::y_rotation
-													, Channel::Type::x_rotation };
+	const std::vector<Channel::Type> channels_root = { Channel::Type::Xposition
+													, Channel::Type::Yposition
+													, Channel::Type::Zposition
+													, Channel::Type::Zrotation
+													, Channel::Type::Yrotation
+													, Channel::Type::Xrotation };
+	const std::vector<Channel::Type> channels_leaf = { Channel::Type::Zrotation
+													, Channel::Type::Yrotation
+													, Channel::Type::Xrotation };
 	bool is_root = (nullptr == joint->parent());
 	const auto & channels_joint = (is_root ? channels_root : channels_leaf);
 
@@ -122,9 +122,22 @@ void CArtiBodyFile::SetMotion(int i_frame)
 void CArtiBodyFile::OutputHeader(LoggerFast &logger) const
 {
 	//to be done
+	logger << "HIERARCHY" << "\n";
+	WriteJointSubHierarchy(logger, root_joint_, 0);
+	// Motion
+	logger << "MOTION" << "\n";
+	logger << "Frames: " << frames_ << "\n";
+	logger << "Frame Time: " << frame_time_ << "\n";
 }
 
 void CArtiBodyFile::OutputMotion(int i_frame, LoggerFast& logger) const
 {
 	//to be done
+	// auto r_i = motion_.row(i_frame);
+	// auto n_cols = channels_.size();
+	// const double* p_data = r_i.data();
+	// logger << p_data[0];
+	// for (int i_col = 1; i_col < n_cols; i_col++)
+	// 	logger << " " << p_data[i_col];
+	// logger << "\n";
 }

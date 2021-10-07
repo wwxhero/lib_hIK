@@ -159,7 +159,7 @@ namespace bvh11
 			ofs << "CHANNELS" << " " << associated_channels_indices.size();
 			for (auto i : associated_channels_indices)
 			{
-				ofs << " " << channels()[i].type;
+				ofs << " " << Channel::from_Type(channels()[i].type);
 			}
 			ofs << "\n";
 
@@ -191,8 +191,8 @@ namespace bvh11
 	{
 		enum Type
 		{
-			x_position, y_position, z_position,
-			z_rotation, x_rotation, y_rotation
+			Xposition, Yposition, Zposition,
+			Zrotation, Xrotation, Yrotation
 		};
 
 		DECLARE_ENUM_STR(Type)

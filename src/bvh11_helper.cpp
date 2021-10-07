@@ -252,12 +252,12 @@ namespace bvh11
 	}
 
 	BEGIN_ENUM_STR(Channel, Type)
-		ENUM_ITEM(x_position)
-		ENUM_ITEM(y_position)
-		ENUM_ITEM(z_position)
-		ENUM_ITEM(z_rotation)
-		ENUM_ITEM(x_rotation)
-		ENUM_ITEM(y_rotation)
+		ENUM_ITEM(Xposition)
+		ENUM_ITEM(Yposition)
+		ENUM_ITEM(Zposition)
+		ENUM_ITEM(Zrotation)
+		ENUM_ITEM(Xrotation)
+		ENUM_ITEM(Yrotation)
 	END_ENUM_STR(Channel, Type)
 
 	BvhObject::BvhObject(const BvhObject& src)
@@ -340,21 +340,21 @@ namespace bvh11
 		{
 			int i_channel = *it_i_c;
 			const bvh11::Channel& channel = channels()[i_channel];
-			bool is_a_rotation = ( bvh11::Channel::Type::x_rotation == channel.type
-								|| bvh11::Channel::Type::y_rotation == channel.type
-								|| bvh11::Channel::Type::z_rotation == channel.type);
+			bool is_a_rotation = ( bvh11::Channel::Type::Xrotation == channel.type
+								|| bvh11::Channel::Type::Yrotation == channel.type
+								|| bvh11::Channel::Type::Zrotation == channel.type);
 			if (is_a_rotation)
 			{
 				Eigen::Index rot_i = -1;
 				switch (channel.type)
 				{
-					case bvh11::Channel::Type::x_rotation:
+					case bvh11::Channel::Type::Xrotation:
 						rot_i = 0;
 						break;
-					case bvh11::Channel::Type::y_rotation:
+					case bvh11::Channel::Type::Yrotation:
 						rot_i = 1;
 						break;
-					case bvh11::Channel::Type::z_rotation:
+					case bvh11::Channel::Type::Zrotation:
 						rot_i = 2;
 						break;
 				}
@@ -388,25 +388,25 @@ namespace bvh11
 
 			switch (channel.type)
 			{
-			case bvh11::Channel::Type::x_position:
+			case bvh11::Channel::Type::Xposition:
 				value = value_tt.x();
 				has_translation_channel = true;
 				break;
-			case bvh11::Channel::Type::y_position:
+			case bvh11::Channel::Type::Yposition:
 				value = value_tt.y();
 				has_translation_channel = true;
 				break;
-			case bvh11::Channel::Type::z_position:
+			case bvh11::Channel::Type::Zposition:
 				value = value_tt.z();
 				has_translation_channel = true;
 				break;
-			case bvh11::Channel::Type::x_rotation:
+			case bvh11::Channel::Type::Xrotation:
 				value = value_rots[0] * c_rad2deg;
 				break;
-			case bvh11::Channel::Type::y_rotation:
+			case bvh11::Channel::Type::Yrotation:
 				value = value_rots[1] * c_rad2deg;
 				break;
-			case bvh11::Channel::Type::z_rotation:
+			case bvh11::Channel::Type::Zrotation:
 				value = value_rots[2] * c_rad2deg;
 				break;
 			}
@@ -433,27 +433,27 @@ namespace bvh11
 
 			switch (channel.type)
 			{
-				case bvh11::Channel::Type::x_position:
+				case bvh11::Channel::Type::Xposition:
 					tm_delta_l *= Eigen::Translation3d(Eigen::Vector3d(value, 0.0, 0.0));
 					has_a_translation = true;
 					break;
-				case bvh11::Channel::Type::y_position:
+				case bvh11::Channel::Type::Yposition:
 					tm_delta_l *= Eigen::Translation3d(Eigen::Vector3d(0.0, value, 0.0));
 					has_a_translation = true;
 					break;
-				case bvh11::Channel::Type::z_position:
+				case bvh11::Channel::Type::Zposition:
 					tm_delta_l *= Eigen::Translation3d(Eigen::Vector3d(0.0, 0.0, value));
 					has_a_translation = true;
 					break;
-				case bvh11::Channel::Type::x_rotation:
+				case bvh11::Channel::Type::Xrotation:
 					tm_delta_l *= Eigen::AngleAxisd(value * M_PI / 180.0, Eigen::Vector3d::UnitX());
 					has_a_rotation = true;
 					break;
-				case bvh11::Channel::Type::y_rotation:
+				case bvh11::Channel::Type::Yrotation:
 					tm_delta_l *= Eigen::AngleAxisd(value * M_PI / 180.0, Eigen::Vector3d::UnitY());
 					has_a_rotation = true;
 					break;
-				case bvh11::Channel::Type::z_rotation:
+				case bvh11::Channel::Type::Zrotation:
 					tm_delta_l *= Eigen::AngleAxisd(value * M_PI / 180.0, Eigen::Vector3d::UnitZ());
 					has_a_rotation = true;
 					break;
@@ -577,12 +577,12 @@ namespace bvh11
 						const std::shared_ptr<Joint> target_joint = stack.back();
 						const Channel::Type type = [](const std::string& channel_type)
 						{
-							if (channel_type == "Xposition") { return Channel::Type::x_position; }
-							if (channel_type == "Yposition") { return Channel::Type::y_position; }
-							if (channel_type == "Zposition") { return Channel::Type::z_position; }
-							if (channel_type == "Zrotation") { return Channel::Type::z_rotation; }
-							if (channel_type == "Xrotation") { return Channel::Type::x_rotation; }
-							if (channel_type == "Yrotation") { return Channel::Type::y_rotation; }
+							if (channel_type == "Xposition") { return Channel::Type::Xposition; }
+							if (channel_type == "Yposition") { return Channel::Type::Yposition; }
+							if (channel_type == "Zposition") { return Channel::Type::Zposition; }
+							if (channel_type == "Zrotation") { return Channel::Type::Zrotation; }
+							if (channel_type == "Xrotation") { return Channel::Type::Xrotation; }
+							if (channel_type == "Yrotation") { return Channel::Type::Yrotation; }
 
 							assert(false && "Could not find a valid channel type");
 							return Channel::Type();
@@ -671,7 +671,7 @@ namespace bvh11
 			for (int channel_index = 0; channel_index < channels_.size(); ++ channel_index)
 			{
 				const Channel::Type& type = channels_[channel_index].type;
-				if (type == Channel::Type::x_position || type == Channel::Type::y_position || type == Channel::Type::z_position)
+				if (type == Channel::Type::Xposition || type == Channel::Type::Yposition || type == Channel::Type::Zposition)
 				{
 					motion_.col(channel_index) = scale * motion_.col(channel_index);
 				}
@@ -719,22 +719,22 @@ namespace bvh11
 	std::ostream& operator<<(std::ostream& os, const Channel::Type& type)
 	{
 		switch (type) {
-			case Channel::Type::x_position:
+			case Channel::Type::Xposition:
 				os << "Xposition";
 				break;
-			case Channel::Type::y_position:
+			case Channel::Type::Yposition:
 				os << "Yposition";
 				break;
-			case Channel::Type::z_position:
+			case Channel::Type::Zposition:
 				os << "Zposition";
 				break;
-			case Channel::Type::x_rotation:
+			case Channel::Type::Xrotation:
 				os << "Xrotation";
 				break;
-			case Channel::Type::y_rotation:
+			case Channel::Type::Yrotation:
 				os << "Yrotation";
 				break;
-			case Channel::Type::z_rotation:
+			case Channel::Type::Zrotation:
 				os << "Zrotation";
 				break;
 		}

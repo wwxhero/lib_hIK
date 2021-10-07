@@ -129,3 +129,27 @@ void LoggerFast::Flush()
 }
 
 LoggerFast g_LoggerFast;
+
+LoggerFast& operator << (LoggerFast& logger, const std::string& info)
+{
+	logger.OutFmt(info.c_str());
+	return logger;
+}
+
+LoggerFast& operator << (LoggerFast& logger, double v)
+{
+	logger.OutFmt("%f", v);
+	return logger;
+}
+
+LoggerFast& operator << (LoggerFast& logger, std::size_t v)
+{
+	logger.OutFmt("%d", v);
+	return logger;
+}
+
+LoggerFast& operator << (LoggerFast& logger, int v)
+{
+	logger.OutFmt("%d", v);
+	return logger;
+}
