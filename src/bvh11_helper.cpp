@@ -687,59 +687,6 @@ namespace bvh11
 		for (auto child : joint->children()) { PrintJointSubHierarchy(child, depth + 1); }
 	}
 
-	void BvhObject::WriteJointSubHierarchy(std::ofstream& ofs, std::shared_ptr<const Joint> joint, int depth) const
-	{
-		auto indent_creation = [](int depth) -> std::string
-		{
-			std::string tabs = "";
-			for (int i = 0; i < depth; ++ i) { tabs += "\t"; }
-			return tabs;
-		};
-
-		ofs << indent_creation(depth);
-		ofs << (joint->parent() == nullptr ? "ROOT" : "JOINT");
-		ofs << " " << joint->name() << "\n";
-
-		ofs << indent_creation(depth);
-		ofs << "{" << "\n";
-
-		ofs << indent_creation(depth + 1);
-		ofs << "OFFSET" << " ";
-		ofs << joint->offset()(0) << " " << joint->offset()(1) << " " << joint->offset()(2);
-		ofs << "\n";
-
-		const auto associated_channels_indices = joint->associated_channels_indices();
-		ofs << indent_creation(depth + 1);
-		ofs << "CHANNELS" << " " << associated_channels_indices.size();
-		for (auto i : associated_channels_indices)
-		{
-			ofs << " " << channels()[i].type;
-		}
-		ofs << "\n";
-
-		if (joint->has_end_site())
-		{
-			ofs << indent_creation(depth + 1);
-			ofs << "End Site" << "\n";
-			ofs << indent_creation(depth + 1);
-			ofs << "{" << "\n";
-			ofs << indent_creation(depth + 2);
-			ofs << "OFFSET" << " ";
-			ofs << joint->end_site()(0) << " " << joint->end_site()(1) << " " << joint->end_site()(2);
-			ofs << "\n";
-			ofs << indent_creation(depth + 1);
-			ofs << "}" << "\n";
-		}
-
-		for (auto child : joint->children())
-		{
-			WriteJointSubHierarchy(ofs, child, depth + 1);
-		}
-
-		ofs << indent_creation(depth);
-		ofs << "}" << "\n";
-	}
-
 	void BvhObject::WriteBvhFile(const std::string& file_path) const
 	{
 		// Eigen format
