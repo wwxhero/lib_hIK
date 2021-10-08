@@ -65,20 +65,26 @@ CArtiBodyFile::CArtiBodyFile(const CArtiBodyNode* root_src, int n_frames) // thr
 
 void CArtiBodyFile::SetJointChannel(const CArtiBodyNode* body, std::shared_ptr<Joint> joint)
 {
-	const std::vector<Channel::Type> channels_root = { Channel::Type::Xposition
-													, Channel::Type::Yposition
-													, Channel::Type::Zposition
-													, Channel::Type::Zrotation
-													, Channel::Type::Yrotation
-													, Channel::Type::Xrotation };
-	const std::vector<Channel::Type> channels_leaf = { Channel::Type::Zrotation
-													, Channel::Type::Yrotation
-													, Channel::Type::Xrotation };
+	struct Entry
+	{
+		TM_TYPE tm_type;
+		Channel::Type ch_type;
+	} entires [] = {
+		{t_tt, XPosition},
+		{t_tt, YPosition},
+		{t_tt, ZPosition},
+		{t_rz, Zrotation},
+		{t_ry, Yrotation},
+		{t_rx, Xrotation},
+	};
 
-	const Transform* tm = body->GetJoint()->GetTransform();
-	bool is_root = (tm->Type()&t_tt)
-					&& (tm->Type()&t_r);
-	const auto & channels_joint = (is_root ? channels_root : channels_leaf);
+	auto tm_type_body = body->GetJoint()->GetTransform()->Type();
+	std::vector<Channel::Type> channels_joint;
+	for (auto entry : entries)
+	{
+		if (tm_type_body&entry.tm_type)
+			channels_joint.push_back(entry.ch_type);
+	}
 
 	for (auto channel : channels_joint)
 	{
