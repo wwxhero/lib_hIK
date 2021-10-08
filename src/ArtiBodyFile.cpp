@@ -158,11 +158,13 @@ void CArtiBodyFile::OutputMotion(CArtiBodyFile& bf, int i_frame, LoggerFast& log
 CBodyLogger::CBodyLogger(const CArtiBodyNode* root, const char* path) throw (...)
 	: m_bodyFile(root, 1)
 	, m_logger(path)
+	, m_nMotions(0)
 {
 }
 
 CBodyLogger::~CBodyLogger()
 {
+	m_logger << "Frames: " << m_nMotions;
 	m_logger.Flush();
 }
 
@@ -176,4 +178,5 @@ void CBodyLogger::LogMotion()
 {
 	m_bodyFile.UpdateMotion(0);
 	CArtiBodyFile::OutputMotion(m_bodyFile, 0, m_logger);
+	m_nMotions ++;
 }

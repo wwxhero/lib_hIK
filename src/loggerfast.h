@@ -28,6 +28,8 @@ LoggerFast& operator << (LoggerFast& logger, const std::string& info);
 LoggerFast& operator << (LoggerFast& logger, double v);
 LoggerFast& operator << (LoggerFast& logger, std::size_t v);
 LoggerFast& operator << (LoggerFast& logger, int v);
+LoggerFast& operator << (LoggerFast& logger, unsigned int v);
+
 
 
 extern LoggerFast g_LoggerFast;

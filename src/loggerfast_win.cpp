@@ -161,3 +161,9 @@ LoggerFast& operator << (LoggerFast& logger, int v)
 	logger.OutFmt("%d", v);
 	return logger;
 }
+
+LoggerFast& operator << (LoggerFast& logger, unsigned int v)
+{
+	logger.OutFmt("%u", v);
+	return logger;
+}

@@ -58,4 +58,5 @@ public:
 private:
 	CArtiBodyFile m_bodyFile;
 	LoggerFast m_logger;
+	unsigned int m_nMotions;
 };
