@@ -58,12 +58,12 @@ CArtiBodyFile::CArtiBodyFile(const CArtiBodyNode* root_src, int n_frames) // thr
 		bfs_que.pop();
 	}
 
-	SetJointChannel(root_dst);
+	SetJointChannel(root_src, root_dst);
 
 	motion_.resize(frames_, channels_.size());
 }
 
-void CArtiBodyFile::SetJointChannel(std::shared_ptr<Joint> joint)
+void CArtiBodyFile::SetJointChannel(const CArtiBodyNode* body, std::shared_ptr<Joint> joint)
 {
 	const std::vector<Channel::Type> channels_root = { Channel::Type::Xposition
 													, Channel::Type::Yposition
@@ -74,7 +74,10 @@ void CArtiBodyFile::SetJointChannel(std::shared_ptr<Joint> joint)
 	const std::vector<Channel::Type> channels_leaf = { Channel::Type::Zrotation
 													, Channel::Type::Yrotation
 													, Channel::Type::Xrotation };
-	bool is_root = (nullptr == joint->parent());
+
+	const Transform* tm = body->GetJoint()->GetTransform();
+	bool is_root = (tm->Type()&t_tt)
+					&& (tm->Type()&t_r);
 	const auto & channels_joint = (is_root ? channels_root : channels_leaf);
 
 	for (auto channel : channels_joint)
@@ -83,8 +86,14 @@ void CArtiBodyFile::SetJointChannel(std::shared_ptr<Joint> joint)
 		channels_.push_back({ channel, joint });
 	}
 
-	for (auto joint_child : joint->children())
-		SetJointChannel(joint_child);
+	// for (auto joint_child : joint->children())
+	auto joint_child = joint->children().begin();
+	auto body_child = body->GetFirstChild();
+	for (
+		; joint->children().end() != joint_child
+			&& nullptr != body_child
+		; joint_child ++, body_child = body_child->GetNextSibling())
+		SetJointChannel(body_child, *joint_child);
 }
 
 
@@ -128,11 +137,13 @@ CBodyLogger::CBodyLogger(const CArtiBodyNode* root, const char* path) throw (...
 
 CBodyLogger::~CBodyLogger()
 {
+	m_logger.Flush();
 }
 
 void CBodyLogger::LogHeader()
 {
 	CArtiBodyFile::OutputHeader(m_bodyFile, m_logger);
+	// m_logger.Flush();
 }
 
 void CBodyLogger::LogMotion()

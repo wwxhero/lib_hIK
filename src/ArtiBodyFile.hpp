@@ -38,7 +38,7 @@ public:
 	}
 
 private:
-	void SetJointChannel(std::shared_ptr<bvh11::Joint> joint);
+	void SetJointChannel(const CArtiBodyNode* body, std::shared_ptr<bvh11::Joint> joint);
 	typedef std::shared_ptr<const bvh11::Joint> Joint_bvh_ptr;
 	typedef std::pair<Joint_bvh_ptr, const CArtiBodyNode*> Bound;
 

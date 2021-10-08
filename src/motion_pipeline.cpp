@@ -1,4 +1,5 @@
 #include "pch.h"
+#include <filesystem>
 #include "motion_pipeline.h"
 #include "MoNode.hpp"
 #include "handle_helper.hpp"
@@ -7,6 +8,7 @@
 #include "IKGroupTree.hpp"
 #include "ArtiBodyFile.hpp"
 
+namespace fs = std::experimental::filesystem;
 using namespace CONF;
 
 struct MotionPipeInternal : public MotionPipe
@@ -129,7 +131,11 @@ bool InitBody_Internal(HBODY bodySrc
 		fullPath.append(relpath);
 		try
 		{
-			logger = new CBodyLogger(CAST_2PBODY(hBody), fullPath.generic_u8string().c_str());
+			static int s_file_id = 0;
+			std::stringstream path;
+			path << fullPath.generic_u8string().c_str();
+			path << "_" << s_file_id ++;
+			logger = new CBodyLogger(CAST_2PBODY(hBody), path.str().c_str());
 			logger->LogHeader();
 		}
 		catch(std::string &exp)
@@ -401,7 +407,7 @@ void ik_update(MotionPipe* mopipe)
 	CIKGroupTree::TraverseDFS(mopipe_internal->root_ik, OnGroupNode, OffGroupNode);
 	const int c_idxSim = 0;
 	motion_sync(mopipe->mo_nodes[c_idxSim]);
-	if (NULL == mopipe_internal->logger)
+	if (NULL != mopipe_internal->logger)
 		mopipe_internal->logger->LogMotion();
 }
 

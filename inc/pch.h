@@ -101,7 +101,4 @@ const Real c_rotq_epsilon = (Real)1.0/(Real)180.0;	//err_dot: [1, 0] -> err_deg 
 #define HIKLIB_CB(rtype, func)\
 		rtype (__stdcall func)
 
-#include <filesystem>
-namespace fs = std::experimental::filesystem;
-
 #endif //PCH_H
