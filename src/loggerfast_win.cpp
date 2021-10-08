@@ -121,6 +121,14 @@ int LoggerFast::Out(const char* _Format, va_list _ArgList)
 	return _Result;
 }
 
+void LoggerFast::Out(const char* content)
+{
+	EnterCriticalSection(&m_cs);
+	_bstr_t data(content);
+	m_pLogger->LogOut(data);
+	LeaveCriticalSection(&m_cs);
+}
+
 void LoggerFast::Flush()
 {
 	EnterCriticalSection(&m_cs);

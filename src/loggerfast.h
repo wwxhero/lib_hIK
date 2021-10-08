@@ -13,6 +13,7 @@ public:
 	~LoggerFast();
 	int __cdecl OutFmt(const char* fmt, ...);
 	int Out(const char* fmt, va_list _ArgList);
+	void Out(const char* content);
 	void Flush();
 private:
 	void Initialize(const char* path) throw (...);

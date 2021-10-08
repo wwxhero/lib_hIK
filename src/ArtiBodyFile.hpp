@@ -8,35 +8,8 @@ public:
 	CArtiBodyFile(const CArtiBodyNode* root_src, int n_frames);
 	void UpdateMotion(int i_frame);
 
-	template<typename STREAM>
-	static void OutputHeader(CArtiBodyFile& bf, STREAM &logger)
-	{
-		//to be done
-		logger << "HIERARCHY" << "\n";
-		bf.WriteJointSubHierarchy<STREAM>(logger, bf.root_joint_, 0);
-		// Motion
-		logger << "MOTION" << "\n";
-		logger << "Frames: " << bf.frames_ << "\n";
-		logger << "Frame Time: " << bf.frame_time_ << "\n";
-	}
-
-	template<typename STREAM>
-	static void OutputMotion(CArtiBodyFile& bf, int i_frame, STREAM& logger)
-	{
-		//to be done
-		auto n_rows = bf.motion_.rows();
-		auto n_cols = bf.channels_.size();
-		auto n_stride = n_rows; // eigen is a column major matrix storage
-		IKAssert(i_frame < n_rows);
-		const double* p_data_start = bf.motion_.row(i_frame).data();
-		const double* p_data_end = p_data_start + n_cols * n_stride;
-		const double* p_data = p_data_start;
-		logger << *p_data;
-		for (p_data += n_stride; p_data < p_data_end; p_data += n_stride)
-		  	logger << " " << *p_data;
-		logger << "\n";
-	}
-
+	static void OutputHeader(CArtiBodyFile& bf, LoggerFast &logger);
+	static void OutputMotion(CArtiBodyFile& bf, int i_frame, LoggerFast& logger);
 private:
 	void SetJointChannel(const CArtiBodyNode* body, std::shared_ptr<bvh11::Joint> joint);
 	typedef std::shared_ptr<const bvh11::Joint> Joint_bvh_ptr;

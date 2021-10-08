@@ -69,13 +69,13 @@ void CArtiBodyFile::SetJointChannel(const CArtiBodyNode* body, std::shared_ptr<J
 	{
 		TM_TYPE tm_type;
 		Channel::Type ch_type;
-	} entires [] = {
-		{t_tt, XPosition},
-		{t_tt, YPosition},
-		{t_tt, ZPosition},
-		{t_rz, Zrotation},
-		{t_ry, Yrotation},
-		{t_rx, Xrotation},
+	} entries [] = {
+		{t_tt, Channel::Xposition},
+		{t_tt, Channel::Yposition},
+		{t_tt, Channel::Zposition},
+		{t_rz, Channel::Zrotation},
+		{t_ry, Channel::Yrotation},
+		{t_rx, Channel::Xrotation},
 	};
 
 	auto tm_type_body = body->GetJoint()->GetTransform()->Type();
@@ -134,6 +134,26 @@ void CArtiBodyFile::UpdateMotion(int i_frame)
 	TraverseBFS_boundtree_norecur(root_b, onEnterBound_pose, onLeaveBound_pose);
 }
 
+void CArtiBodyFile::OutputHeader(CArtiBodyFile& bf, LoggerFast &logger)
+{
+	std::stringstream st;
+	st << "HIERARCHY" << "\n";
+	bf.WriteJointSubHierarchy<std::stringstream>(st, bf.root_joint_, 0);
+	// Motion
+	st << "MOTION" << "\n";
+	st << "Frames: " << bf.frames_ << "\n";
+	st << "Frame Time: " << bf.frame_time_ << "\n";
+	logger.Out(st.str().c_str());
+}
+
+void CArtiBodyFile::OutputMotion(CArtiBodyFile& bf, int i_frame, LoggerFast& logger)
+{
+	const Eigen::IOFormat motion_format(Eigen::StreamPrecision, Eigen::DontAlignCols, " ", "", "", "\n", "", "");
+	auto row_i = bf.motion_.row(i_frame);
+	std::stringstream st;
+	st << row_i.format(motion_format);
+	logger.Out(st.str().c_str());
+}
 
 CBodyLogger::CBodyLogger(const CArtiBodyNode* root, const char* path) throw (...)
 	: m_bodyFile(root, 1)
