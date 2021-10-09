@@ -86,9 +86,9 @@ bool clone_body_htr(HBODY hSrc, HBODY* hDst, const Real a_src2dst_w[3][3])
 	IKAssert(verified);
 #endif
 
-	auto CloneNode = [&c_src2dst_w] (const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt) -> bool
+	auto CloneNode = [&src2dst_w = std::as_const(src2dst_w)] (const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt) -> bool
 					{
-						return CArtiBodyTree::CloneNode_htr(src, dst, c_src2dst_w, name_dst_opt);
+						return CArtiBodyTree::CloneNode_htr(src, dst, src2dst_w, name_dst_opt);
 					};
 	bool ret = CArtiBodyTree::Clone(body_src, &body_dst, CloneNode);
 	if (ret)

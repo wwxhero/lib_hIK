@@ -6,7 +6,7 @@
 
 using namespace bvh11;
 
-CArtiBodyFile::CArtiBodyFile(const CArtiBodyNode* root_src, int n_frames) // throw(...)
+CArtiBody2File::CArtiBody2File(const CArtiBodyNode* root_src, int n_frames) // throw(...)
 	: m_bodyRoot(root_src)
 {
 	frames_ = n_frames;
@@ -63,7 +63,7 @@ CArtiBodyFile::CArtiBodyFile(const CArtiBodyNode* root_src, int n_frames) // thr
 	motion_.resize(frames_, channels_.size());
 }
 
-void CArtiBodyFile::SetJointChannel(const CArtiBodyNode* body, std::shared_ptr<Joint> joint)
+void CArtiBody2File::SetJointChannel(const CArtiBodyNode* body, std::shared_ptr<Joint> joint)
 {
 	struct Entry
 	{
@@ -103,7 +103,7 @@ void CArtiBodyFile::SetJointChannel(const CArtiBodyNode* body, std::shared_ptr<J
 }
 
 
-void CArtiBodyFile::UpdateMotion(int i_frame)
+void CArtiBody2File::UpdateMotion(int i_frame)
 {
 	bvh11::BvhObject& bvh = *this;
 	auto onEnterBound_pose = [&bvh, i_frame](Bound b_this)
@@ -134,7 +134,7 @@ void CArtiBodyFile::UpdateMotion(int i_frame)
 	TraverseBFS_boundtree_norecur(root_b, onEnterBound_pose, onLeaveBound_pose);
 }
 
-void CArtiBodyFile::OutputHeader(CArtiBodyFile& bf, LoggerFast &logger)
+void CArtiBody2File::OutputHeader(CArtiBody2File& bf, LoggerFast &logger)
 {
 	std::stringstream st;
 	st << "HIERARCHY" << "\n";
@@ -146,7 +146,7 @@ void CArtiBodyFile::OutputHeader(CArtiBodyFile& bf, LoggerFast &logger)
 	logger.Out(st.str().c_str());
 }
 
-void CArtiBodyFile::OutputMotion(CArtiBodyFile& bf, int i_frame, LoggerFast& logger)
+void CArtiBody2File::OutputMotion(CArtiBody2File& bf, int i_frame, LoggerFast& logger)
 {
 	const Eigen::IOFormat motion_format(Eigen::StreamPrecision, Eigen::DontAlignCols, " ", "", "", "\n", "", "");
 	auto row_i = bf.motion_.row(i_frame);
@@ -154,6 +154,143 @@ void CArtiBodyFile::OutputMotion(CArtiBodyFile& bf, int i_frame, LoggerFast& log
 	st << row_i.format(motion_format);
 	logger.Out(st.str().c_str());
 }
+
+
+CFile2ArtiBody::CFile2ArtiBody(const char* path)
+	: bvh11::BvhObject(std::string(path))
+{
+
+}
+
+
+CArtiBodyNode* CFile2ArtiBody::CreateBody(BODY_TYPE type)
+{
+	switch(type)
+	{
+		case bvh:
+			return CreateBodyBVH();
+		case htr:
+			return CreateBodyHTR();
+		default:
+			IKAssert(0);
+			return NULL;
+	}
+}
+
+CArtiBodyNode* CFile2ArtiBody::CreateBodyBVH()
+{
+	CArtiBodyNode* (*create_arti_body)(bvh11::BvhObject&, Joint_bvh_ptr)
+		= [] (bvh11::BvhObject& bvh_src, Joint_bvh_ptr j_bvh) -> CArtiBodyNode*
+			{
+				auto name = j_bvh->name().c_str();
+				auto tm_bvh = bvh_src.GetTransformationRelativeToParent(j_bvh, -1);
+				Eigen::Quaterniond rq(tm_bvh.linear());
+				Eigen::Vector3d tt;
+				TM_TYPE jtm;
+				bool is_root = (nullptr == j_bvh->parent());
+				if (is_root)
+				{
+					tt = Eigen::Vector3d::Zero();
+					jtm = t_tr; //translation and rotation joint
+				}
+				else
+				{
+					tt = tm_bvh.translation();
+					jtm = t_r; //rotation joint
+				}
+
+				_TRANSFORM tm_hik = {
+					{1, 1, 1},
+					{(Real)rq.w(), (Real)rq.x(), (Real)rq.y(), (Real)rq.z()},
+					{(Real)tt.x(), (Real)tt.y(), (Real)tt.z()}
+				};
+				auto b_hik = CArtiBodyTree::CreateSimNode(name, &tm_hik, BODY_TYPE::bvh, jtm);
+				assert(nullptr != j_bvh->parent()
+					|| tt.norm() < c_epsilon);
+
+				return b_hik;
+			};
+
+	//traverse the bvh herachical structure
+	//	to create an articulated body with the given posture
+	std::queue<Bound> queBFS;
+	auto root_j_bvh = root_joint();
+	CArtiBodyNode* root_b_hik = create_arti_body(*this, root_j_bvh);
+	Bound root = std::make_pair(
+		root_j_bvh,
+		root_b_hik
+	);
+	queBFS.push(root);
+	while (!queBFS.empty())
+	{
+		auto pair = queBFS.front();
+		auto j_bvh = pair.first;
+		CArtiBodyNode* b_hik = pair.second;
+		CNN cnn = FIRSTCHD;
+		CArtiBodyNode*& rb_this = b_hik;
+		for (auto j_bvh_child : j_bvh->children())
+		{
+			CArtiBodyNode* b_hik_child = create_arti_body(*this, j_bvh_child);
+			Bound child = std::make_pair(
+				j_bvh_child,
+				b_hik_child
+			);
+			queBFS.push(child);
+			auto& rb_next = b_hik_child;
+			CArtiBodyTree::Connect(rb_this, rb_next, cnn);
+			cnn = NEXTSIB;
+			rb_this = rb_next;
+		}
+		queBFS.pop();
+	}
+	CArtiBodyTree::KINA_Initialize(root_b_hik);
+	CArtiBodyTree::FK_Update<false>(root_b_hik);
+	return root_b_hik;
+}
+
+CArtiBodyNode* CFile2ArtiBody::CreateBodyHTR()
+{
+	CArtiBodyNode* body_bvh = NULL;
+	CArtiBodyNode* body_htr = NULL;
+	auto CloneNode = [](const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt) -> bool
+	{
+		return CArtiBodyTree::CloneNode_htr(src, dst, Eigen::Matrix3r::Identity(), name_dst_opt);
+	};
+	bool created = (NULL != (body_bvh = CreateBodyBVH())
+					&& CArtiBodyTree::Clone(body_bvh, &body_htr, CloneNode));
+	if (body_bvh)
+		CArtiBodyTree::Destroy(body_bvh);
+	if (created)
+		return body_htr;
+	else
+	{
+		if (body_htr)
+			CArtiBodyTree::Destroy(body_htr);
+		return NULL;
+	}
+}
+
+void CFile2ArtiBody::UpdateMotion(int i_frame, CArtiBodyNode* body)
+{
+	auto onEnterBound_pose = [&src = *this, i_frame](Bound b_this)
+		{
+			const Joint_bvh_ptr joint_bvh = b_this.first;
+			CArtiBodyNode* body_hik = b_this.second;
+			Eigen::Affine3d delta_l = src.GetLocalDeltaTM(joint_bvh, i_frame);
+			Eigen::Quaterniond r(delta_l.linear());
+			Eigen::Vector3d tt(delta_l.translation());
+			IJoint* body_joint = body_hik->GetJoint();
+			body_joint->SetRotation(Eigen::Quaternionr((Real)r.w(), (Real)r.x(), (Real)r.y(), (Real)r.z()));
+			body_joint->SetTranslation(Eigen::Vector3r((Real)tt.x(), (Real)tt.y(), (Real)tt.z()));
+		};
+	auto onLeaveBound_pose = [](Bound b_this) {};
+
+	Bound root = std::make_pair(root_joint(), body);
+	TraverseBFS_boundtree_norecur(root, onEnterBound_pose, onLeaveBound_pose);
+
+	CArtiBodyTree::FK_Update<false>(body);
+}
+
 
 CBodyLogger::CBodyLogger(const CArtiBodyNode* root, const char* path) throw (...)
 	: m_bodyFile(root, 1)
@@ -170,13 +307,13 @@ CBodyLogger::~CBodyLogger()
 
 void CBodyLogger::LogHeader()
 {
-	CArtiBodyFile::OutputHeader(m_bodyFile, m_logger);
+	CArtiBody2File::OutputHeader(m_bodyFile, m_logger);
 	// m_logger.Flush();
 }
 
 void CBodyLogger::LogMotion()
 {
 	m_bodyFile.UpdateMotion(0);
-	CArtiBodyFile::OutputMotion(m_bodyFile, 0, m_logger);
+	CArtiBody2File::OutputMotion(m_bodyFile, 0, m_logger);
 	m_nMotions ++;
 }

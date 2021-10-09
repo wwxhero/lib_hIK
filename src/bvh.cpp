@@ -4,6 +4,7 @@
 #include <queue>
 #include "bvh.h"
 #include "bvh11_helper.hpp"
+#include "ArtiBody.hpp"
 #include "articulated_body.h"
 #include "motion_pipeline.h"
 #include "fk_joint.h"
@@ -12,6 +13,7 @@
 #include "ArtiBodyFile.hpp"
 #include "Math.hpp"
 #include "loggerfast.h"
+#include "MoNode.hpp"
 
 
 #define ZERO_ENTITY_TT_HOMO
@@ -573,7 +575,7 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 			if (pre_reset_header)
 			{
 				CArtiBodyNode* drivee_root = CAST_2PBODY(h_drivee);
-				auto bvh_reset = new CArtiBodyFile(drivee_root, n_frames);
+				auto bvh_reset = new CArtiBody2File(drivee_root, n_frames);
 				// LoggerFast logger((std::string(path_dst)+"_dup").c_str());
 				// bvh_reset->OutputHeader(logger);
 				for (int i_frame = 0
@@ -643,6 +645,63 @@ void WriteBvhFile(HBVH hBvh, const char* path_dst)
 {
 	auto* pBVH = CAST_2PBVH(hBvh);
 	pBVH->WriteBvhFile(path_dst);
+}
+
+bool convert(const char* src, const char* dst, bool htr2bvh)
+{
+	bool ret = true;
+	CArtiBodyNode* bodies[2] = {nullptr};
+	try
+	{
+		CFile2ArtiBody bvh_src(src);
+		if (htr2bvh)
+		{
+		 	bodies[0] = bvh_src.CreateBody(htr);
+		 	ret = CArtiBodyTree::Clone(bodies[0], &bodies[1], CArtiBodyTree::CloneNode_bvh);
+		}
+		else
+		{
+		 	bodies[0] = bvh_src.CreateBody(bvh);
+			auto CloneNode = [](const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt) -> bool
+				{
+					return CArtiBodyTree::CloneNode_htr(src, dst, Eigen::Matrix3r::Identity(), name_dst_opt);
+				};
+		 	ret = CArtiBodyTree::Clone(bodies[0], &bodies[1], CloneNode);
+		}
+
+		if (ret)
+		{
+			CMoNode mo_node_src(bodies[0]);
+			CMoNode mo_node_dst(bodies[1]);
+			Real id[3][3] = {
+			 	(Real)1, (Real)0, (Real)0,
+			 	(Real)0, (Real)1, (Real)0,
+			 	(Real)0, (Real)0, (Real)1
+			};
+			CMoTree::Connect_cross(&mo_node_src, &mo_node_dst, CNN::FIRSTCHD, id);
+			int n_frames = bvh_src.frames();
+			CArtiBody2File bvh_reset(bodies[1], n_frames);
+			for (int i_frame = 0; i_frame < n_frames; i_frame ++)
+			{
+				PROFILE_FRAME(i_frame);
+				bvh_src.UpdateMotion(i_frame, bodies[0]);
+				CMoTree::Motion_sync(&mo_node_src);
+				bvh_reset.UpdateMotion(i_frame);
+			}
+			bvh_reset.WriteBvhFile(dst);
+		}
+	}
+	catch(std::string &strInfo)
+	{
+		auto err = strInfo.c_str();
+		LOGIKVarErr(LogInfoCharPtr, err);
+		ret = false;
+	}
+
+	for (auto body : bodies)
+		delete body;
+	return ret;
+
 }
 
 #pragma warning( pop )

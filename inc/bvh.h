@@ -16,6 +16,7 @@ HIKLIB(unsigned int,	channels)(HBVH bvh);
 HIKLIB(double,			frame_time)(HBVH bvh);
 HIKLIB(void,			PrintJointHierarchy)(HBVH hBVH);
 HIKLIB(void,			WriteBvhFile)(HBVH hBVH, const char* path_dst);
+HIKLIB(bool,			convert)(const char* path_src, const char* path_dst, bool btr2bvh);
 
 #ifdef __cplusplus
 };

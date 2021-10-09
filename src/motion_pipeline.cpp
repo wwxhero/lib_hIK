@@ -365,7 +365,7 @@ void unload_mopipe(MotionPipe* a_mopipe)
 		mopipe->logger = NULL;
 		break;
 	}
-
+	LOGIKFlush();
 
 	delete mopipe;
 }
