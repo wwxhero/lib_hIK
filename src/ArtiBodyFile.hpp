@@ -51,6 +51,7 @@ class CFile2ArtiBody : public bvh11::BvhObject
 {
 public:
 	CFile2ArtiBody(const char* path);
+	CFile2ArtiBody(const std::string& path);
 	CArtiBodyNode* CreateBody(BODY_TYPE type);
 	void UpdateMotion(int i_frame, CArtiBodyNode* body);
 private:

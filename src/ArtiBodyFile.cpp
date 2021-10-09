@@ -162,6 +162,11 @@ CFile2ArtiBody::CFile2ArtiBody(const char* path)
 
 }
 
+CFile2ArtiBody::CFile2ArtiBody(const std::string& path)
+	: bvh11::BvhObject(path)
+{
+
+}
 
 CArtiBodyNode* CFile2ArtiBody::CreateBody(BODY_TYPE type)
 {

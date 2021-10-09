@@ -405,15 +405,16 @@ HBODY create_tree_body_bvh_file(const wchar_t* path_src)
 {
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 	auto path_src_c = converter.to_bytes(path_src);
-	bvh11::BvhObject bvh(path_src_c);
-	HBODY h_root = CreateBVHArticulatedBody(bvh);
-	return h_root;
+	CFile2ArtiBody bvh(path_src_c);
+	CArtiBodyNode* body = bvh.CreateBody(BODY_TYPE::bvh);
+	return CAST_2HBODY(body);
 }
 
 HBODY create_tree_body_bvh(HBVH hBvh)
 {
-	bvh11::BvhObject* bvh = CAST_2PBVH(hBvh);
-	HBODY h_root = CreateBVHArticulatedBody(*bvh);
+	CFile2ArtiBody* bvh = CAST_2PBVH(hBvh);
+	CArtiBodyNode* body = bvh->CreateBody(BODY_TYPE::bvh);
+	HBODY h_root = CAST_2HBODY(body);
 	return h_root;
 }
 
@@ -421,10 +422,10 @@ HBODY create_tree_body_bvh(HBVH hBvh)
 
 HBVH load_bvh_c(const char* path_src)
 {
-	bvh11::BvhObject* bvh = NULL;
+	CFile2ArtiBody* bvh = NULL;
 	try
 	{
-		bvh = new bvh11::BvhObject(path_src);
+		bvh = new CFile2ArtiBody(path_src);
 	}
 	catch (const std::string& info)
 	{
@@ -448,11 +449,11 @@ HBVH load_bvh_w(const wchar_t* path_src)
 
 HBVH copy_bvh(HBVH src)
 {
-	bvh11::BvhObject* bvh_src = CAST_2PBVH(src);
-	bvh11::BvhObject* bvh_dup = NULL;
+	CFile2ArtiBody* bvh_src = CAST_2PBVH(src);
+	CFile2ArtiBody* bvh_dup = NULL;
 	try
 	{
-		bvh_dup = new bvh11::BvhObject(*bvh_src);
+		bvh_dup = new CFile2ArtiBody(*bvh_src);
 	}
 	catch (const std::string& info)
 	{
@@ -576,8 +577,6 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 			{
 				CArtiBodyNode* drivee_root = CAST_2PBODY(h_drivee);
 				auto bvh_reset = new CArtiBody2File(drivee_root, n_frames);
-				// LoggerFast logger((std::string(path_dst)+"_dup").c_str());
-				// bvh_reset->OutputHeader(logger);
 				for (int i_frame = 0
 					; i_frame < n_frames
 					; i_frame++)
@@ -586,7 +585,6 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 					pose_nonrecur(h_driver, bvh_src, i_frame);
 					motion_sync(h_motion_driver);
 					bvh_reset->UpdateMotion(i_frame);
-					// bvh_reset->OutputMotion(i_frame, logger);
 				}
 				bvh_reset->WriteBvhFile(path_dst);
 				delete bvh_reset;
