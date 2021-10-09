@@ -378,65 +378,6 @@ void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r
 			err[i_body] = Error(vec_seg, dirs[part]);
 		}
 	}
-
-
-
-
-	// int n_errs = 0;
-	// const Real angle_epsilon = (Real)7/(Real)180;
-	// const Real cos_epsilon = (Real)cos(M_PI*angle_epsilon);
-	// const Real sin_epsilon = (Real)sin(M_PI*angle_epsilon);
-
-	// int n_spines = (int)spines.size();
-	// Eigen::Vector3r up = name2body[spines[n_spines-1]]->GetTransformLocal2World()->getTranslation()
-	// 					- name2body[spines[0]]->GetTransformLocal2World()->getTranslation();
-	// IKAssert(up.norm()>c_epsilon);
-	// up.normalize();
-
-	// auto parallel = [cos_epsilon, bodies_nt, ories_nt, &n_errs](const CArtiBodyNode* body, const Eigen::Vector3r& dir, Real& cos_alpha) -> bool
-	// 	{
-	// 		const CArtiBodyNode* body_p = body->GetParent();
-	// 		IKAssert(nullptr != body_p);
-	// 		Eigen::Vector3r vec_seg = body->GetTransformLocal2World()->getTranslation()
-	// 								- body_p->GetTransformLocal2World()->getTranslation();
-	// 		Real vec_seg_norm = vec_seg.norm();
-	// 		cos_alpha = vec_seg_norm > c_100epsilon
-	// 						? abs(vec_seg.dot(dir))/vec_seg_norm
-	// 						: (Real)1;
-	// 		bool seg_in_line = (cos_epsilon < cos_alpha);
-	// 		if (!seg_in_line)
-	// 		{
-	// 			bodies_nt[n_errs] = CAST_2HBODY(const_cast<CArtiBodyNode*>(body));
-	// 			ories_nt[n_errs] = rad2deg(acos(cos_alpha));
-	// 			n_errs ++;
-	// 		}
-	// 		return seg_in_line;
-	// 	};
-
-	// bool spine_in_line = true;
-	// for (auto spine : spines)
-	// {
-	// 	Real cos_alpha = (Real)1;
-	// 	bool seg_in_line = parallel(name2body[spine], up, cos_alpha);
-	// 	spine_in_line = spine_in_line
-	// 				&& seg_in_line;
-
-	// }
-
-	// bool legs_in_line = true;
-	// const std::vector<std::string>* legs[] = {&left_legs, &right_legs};
-	// for (auto leg : legs)
-	// {
-	// 	for (auto pt_leg : *leg)
-	// 	{
-	// 		Real cos_alpha = (Real)1;
-	// 		bool seg_in_line = parallel(name2body[pt_leg], up, cos_alpha);
-	// 		legs_in_line = legs_in_line
-	// 					&& seg_in_line;
-	// 	}
-	// }
-
-	// return n_errs;
 }
 
 #ifdef _DEBUG

@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include "loggerSrv_i.h"
 #include "loggerfast.h"
+#include "ik_logger.h"
 
 
 void SimpleUTF16(const char* src, unsigned int len, wchar_t* dst)
@@ -33,10 +34,13 @@ LoggerFast::LoggerFast() throw(...)
 	, m_pFmtBuff(NULL)
 {
 	const char* envVar = "InternalLog";
-	char c_fileName[1024] = {0};
+	char c_fileName[MAX_PATH] = {0};
 	char *envFileName = NULL;
 	if (NULL != (envFileName = std::getenv(envVar)))
+	{
+		IKAssert(strlen(envFileName) < MAX_PATH);
 		strcpy(c_fileName, envFileName);
+	}
 	else
 	{
 		sprintf(c_fileName

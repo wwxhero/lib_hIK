@@ -107,6 +107,28 @@ bool InitBody_Internal(HBODY bodySrc
 
 			root_ikGroup = CIKGroupTree::Generate(CAST_2PBODY(hBody), *body_conf_i);
 
+			const wchar_t* record = body_conf_i->record_w();
+			if (NULL != record)
+			{
+				fs::path fullPath(rootConfDir);
+				fs::path relpath(record);
+				fullPath.append(relpath);
+				try
+				{
+					static int s_file_id = 0;
+					std::stringstream path;
+					path << fullPath.generic_u8string().c_str();
+					path << "_" << s_file_id ++;
+					logger = new CBodyLogger(CAST_2PBODY(hBody), path.str().c_str());
+					logger->LogHeader();
+				}
+				catch(std::string &exp)
+				{
+					LOGIKVarErr(LogInfoCharPtr, exp.c_str());
+					logger = NULL;
+				}
+			}
+
 			bool valid_fk_body = VALID_HANDLE(hBody);
 			bool valid_ik_group = (NULL != root_ikGroup);
 			IKAssert(valid_fk_body);
@@ -121,28 +143,6 @@ bool InitBody_Internal(HBODY bodySrc
 			break;
 		}
 
-	}
-
-	auto record = body_conf_i->record_w();
-	if (NULL != record)
-	{
-		fs::path fullPath(rootConfDir);
-		fs::path relpath(record);
-		fullPath.append(relpath);
-		try
-		{
-			static int s_file_id = 0;
-			std::stringstream path;
-			path << fullPath.generic_u8string().c_str();
-			path << "_" << s_file_id ++;
-			logger = new CBodyLogger(CAST_2PBODY(hBody), path.str().c_str());
-			logger->LogHeader();
-		}
-		catch(std::string &exp)
-		{
-			LOGIKVarErr(LogInfoCharPtr, exp.c_str());
-			logger = NULL;
-		}
 	}
 
 	return initialized;
