@@ -6,10 +6,10 @@
 #include "MotionPipeConf.hpp"
 #include "bvh.h"
 #include "IKGroupTree.hpp"
+#include "ArtiBodyFile.hpp"
 
+namespace fs = std::experimental::filesystem;
 using namespace CONF;
-
-
 
 struct MotionPipeInternal : public MotionPipe
 {
@@ -23,7 +23,11 @@ struct MotionPipeInternal : public MotionPipe
 			HBVH bvh;
 			int i_frame;
 		};
-		CIKGroupNode* root_ik;
+		struct
+		{
+			CIKGroupNode* root_ik;
+			CBodyLogger* logger;
+		};
 	};
 };
 
@@ -35,9 +39,10 @@ void init_mopipe(MotionPipeInternal* mopipe)
 	mopipe->mo_nodes[0] = H_INVALID;
 	mopipe->mo_nodes[1] = H_INVALID;
 	mopipe->n_frames = 0;
-	mopipe->root_ik = NULL;
 	mopipe->bvh = H_INVALID;
-	mopipe->i_frame = -1;
+	mopipe->i_frame = 0;
+	mopipe->root_ik = NULL;
+	mopipe->logger = NULL;
 }
 
 bool InitBody_Internal(HBODY bodySrc
@@ -47,7 +52,8 @@ bool InitBody_Internal(HBODY bodySrc
 					, HBODY& hBody
 					, unsigned int &frames
 					, HBVH& hBVH
-					, CIKGroupNode* &root_ikGroup)
+					, CIKGroupNode* &root_ikGroup
+					, CBodyLogger* &logger)
 {
 	const CBodyConf* body_confs[] = {&mp_conf.Source, &mp_conf.Destination};
 	const CBodyConf* body_conf_i = body_confs[i_body];
@@ -56,8 +62,8 @@ bool InitBody_Internal(HBODY bodySrc
 	{
 		case BODY_TYPE::bvh:
 		{
-			std::experimental::filesystem::path fullPath(rootConfDir);
-			std::experimental::filesystem::path relpath(body_conf_i->file_w());
+			fs::path fullPath(rootConfDir);
+			fs::path relpath(body_conf_i->file_w());
 			fullPath.append(relpath);
 			hBVH = load_bvh_w(fullPath.c_str());
 			IKAssert(VALID_HANDLE(hBVH));
@@ -100,6 +106,28 @@ bool InitBody_Internal(HBODY bodySrc
 			hBody = body_htr_2;
 
 			root_ikGroup = CIKGroupTree::Generate(CAST_2PBODY(hBody), *body_conf_i);
+
+			const wchar_t* record = body_conf_i->record_w();
+			if (NULL != record)
+			{
+				fs::path fullPath(rootConfDir);
+				fs::path relpath(record);
+				fullPath.append(relpath);
+				try
+				{
+					static int s_file_id = 0;
+					std::stringstream path;
+					path << fullPath.generic_u8string().c_str();
+					path << "_" << s_file_id ++;
+					logger = new CBodyLogger(CAST_2PBODY(hBody), path.str().c_str());
+					logger->LogHeader();
+				}
+				catch(std::string &exp)
+				{
+					LOGIKVarErr(LogInfoCharPtr, exp.c_str());
+					logger = NULL;
+				}
+			}
 
 			bool valid_fk_body = VALID_HANDLE(hBody);
 			bool valid_ik_group = (NULL != root_ikGroup);
@@ -179,9 +207,10 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 			}
 			else
 			{
-				std::experimental::filesystem::path fullPath(confXML);
+				fs::path fullPath(confXML);
 				HBVH bvh = H_INVALID;
 				CIKGroupNode* root_ik = NULL;
+				CBodyLogger* logger = NULL;
 				bool initialized = InitBody_Internal(body_ref
 													, fullPath.parent_path().c_str()
 													, *mp_conf
@@ -189,7 +218,8 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 													, mopipe->bodies[i_bodyConf]
 													, mopipe->n_frames
 													, bvh
-													, root_ik);
+													, root_ik
+													, logger);
 				IKAssert(initialized);
 				// IKAssert(VALID_HANDLE(bvh) == (NULL == root_ik));
 				if (VALID_HANDLE(bvh))
@@ -202,6 +232,7 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 				{
 					IKAssert(root_ik);
 					mopipe->root_ik = root_ik;
+					mopipe->logger = logger;
 					mopipe->type = MotionPipeInternal::IK;
 				}
 			}
@@ -330,15 +361,18 @@ void unload_mopipe(MotionPipe* a_mopipe)
 	case MotionPipeInternal::IK:
 		delete mopipe->root_ik;
 		mopipe->root_ik = NULL;
+		delete mopipe->logger;
+		mopipe->logger = NULL;
 		break;
 	}
-
+	LOGIKFlush();
 
 	delete mopipe;
 }
 
 void fk_update(MotionPipe* a_mopipe, unsigned int i_frame)
 {
+	PROFILE_FRAME(i_frame);
 	MotionPipeInternal* mopipe = static_cast<MotionPipeInternal*>(a_mopipe);
 	if (i_frame != mopipe->i_frame)
 	{
@@ -373,6 +407,8 @@ void ik_update(MotionPipe* mopipe)
 	CIKGroupTree::TraverseDFS(mopipe_internal->root_ik, OnGroupNode, OffGroupNode);
 	const int c_idxSim = 0;
 	motion_sync(mopipe->mo_nodes[c_idxSim]);
+	if (NULL != mopipe_internal->logger)
+		mopipe_internal->logger->LogMotion();
 }
 
 HMOTIONNODE	create_tree_motion_node(HBODY mo_src)

@@ -64,20 +64,22 @@ bool CMoNode::MoCNN_Initialize(RETAR_TYPE tm_type, const Real p2c_w[3][3])
 	return ok;
 }
 
+bool CMoTree::Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const Real p2c_w[3][3])
+{
+	Tree<CMoNode>::Connect(from, to, cnn_type);
+	bool connected = to->MoCNN_Initialize(CMoNode::cross, p2c_w);
+	return connected;
+}
+
 bool CMoTree::Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const wchar_t* pairs[][2], int n_pairs, const Real p2c_w[3][3])
 {
 	Tree<CMoNode>::Connect(from, to, cnn_type);
 	bool connected = false;
-	if (n_pairs > 0)
-	{
-		auto GetBodyNodeName = [](CArtiBodyNode* node) -> const wchar_t*
-							{
-								return node->GetName_w();
-							};
-		connected = to->MoCNN_Initialize(CMoNode::cross, pairs, n_pairs, GetBodyNodeName, p2c_w);
-	}
-	else
-		connected = to->MoCNN_Initialize(CMoNode::cross, p2c_w);
+	auto GetBodyNodeName = [](CArtiBodyNode* node) -> const wchar_t*
+						{
+							return node->GetName_w();
+						};
+	connected = to->MoCNN_Initialize(CMoNode::cross, pairs, n_pairs, GetBodyNodeName, p2c_w);
 	return connected;
 }
 
@@ -85,16 +87,11 @@ bool CMoTree::Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const char
 {
 	Tree<CMoNode>::Connect(from, to, cnn_type);
 	bool connected = false;
-	if (n_pairs > 0)
-	{
-		auto GetBodyNodeName = [](CArtiBodyNode* node) -> const char*
+	auto GetBodyNodeName = [](CArtiBodyNode* node) -> const char*
 						{
 							return node->GetName_c();
 						};
-		connected = to->MoCNN_Initialize(CMoNode::cross, pairs, n_pairs, GetBodyNodeName, p2c_w);
-	}
-	else
-		connected = to->MoCNN_Initialize(CMoNode::cross, p2c_w);
+	connected = to->MoCNN_Initialize(CMoNode::cross, pairs, n_pairs, GetBodyNodeName, p2c_w);
 	return connected;
 }
 

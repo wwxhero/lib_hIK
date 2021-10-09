@@ -4,8 +4,10 @@
 #include <fstream>
 #include <queue>
 #include <Windows.h>
+#include <map>
 #include "math.hpp"
 #include "bvh11_helper.hpp"
+
 
 namespace bvh11
 {
@@ -249,6 +251,71 @@ namespace bvh11
 		}
 	}
 
+	BEGIN_ENUM_STR(Channel, Type)
+		ENUM_ITEM(Xposition)
+		ENUM_ITEM(Yposition)
+		ENUM_ITEM(Zposition)
+		ENUM_ITEM(Zrotation)
+		ENUM_ITEM(Xrotation)
+		ENUM_ITEM(Yrotation)
+	END_ENUM_STR(Channel, Type)
+
+	BvhObject::BvhObject(const BvhObject& src)
+		: frame_time_(src.frame_time_)
+		, frames_(src.frames_)
+		, motion_(src.motion_)
+	{
+		std::map<std::string, std::shared_ptr<Joint>> name2joint;
+		auto root_dst = std::shared_ptr<Joint>(new Joint(src.root_joint_->name(), nullptr));
+		root_joint_ = root_dst;
+		struct Bound
+		{
+			const std::shared_ptr<const Joint> src;
+			std::shared_ptr<Joint> dst;
+		};
+		Bound rootBnd = { src.root_joint_, root_dst };
+		std::queue<Bound> bfs_que;
+		bfs_que.push(rootBnd);
+		while (!bfs_que.empty())
+		{
+			Bound node_b = bfs_que.front();
+			auto joint_src = node_b.src;
+			auto joint_dst = node_b.dst;
+			joint_dst->offset() = joint_src->offset();
+			if (joint_src->children().empty())
+			{
+				joint_dst->has_end_site() = joint_src->has_end_site();
+				joint_dst->end_site() = joint_src->end_site();
+			}
+			for (auto joint_src_child : joint_src->children())
+			{
+				auto joint_dst_child = std::shared_ptr<Joint>(new Joint(joint_src_child->name(), joint_dst));
+				Bound node_b_child = { joint_src_child, joint_dst_child };
+				bfs_que.push(node_b_child);
+				joint_dst->AddChild(joint_dst_child);
+			}
+			name2joint[joint_dst->name()] = joint_dst;
+			bfs_que.pop();
+		}
+
+		for (auto channel_src_i : src.channels_)
+		{
+			auto joint_i = name2joint[channel_src_i.target_joint->name()];
+			Channel channel_dst_i = { channel_src_i.type, joint_i };
+			joint_i->AssociateChannel((int)channels_.size());
+			channels_.push_back(channel_dst_i);
+		}
+
+	}
+
+	void BvhObject::Dump()
+	{
+		for (auto channel_i : channels_)
+		{
+			std::cout << Channel::from_Type(channel_i.type) << ", " << channel_i.target_joint->name() << std::endl;
+		}
+	}
+
 	std::vector<std::shared_ptr<const Joint>> BvhObject::GetJointList() const
 	{
 		std::vector<std::shared_ptr<const Joint>> joint_list;
@@ -273,21 +340,21 @@ namespace bvh11
 		{
 			int i_channel = *it_i_c;
 			const bvh11::Channel& channel = channels()[i_channel];
-			bool is_a_rotation = ( bvh11::Channel::Type::x_rotation == channel.type
-								|| bvh11::Channel::Type::y_rotation == channel.type
-								|| bvh11::Channel::Type::z_rotation == channel.type);
+			bool is_a_rotation = ( bvh11::Channel::Type::Xrotation == channel.type
+								|| bvh11::Channel::Type::Yrotation == channel.type
+								|| bvh11::Channel::Type::Zrotation == channel.type);
 			if (is_a_rotation)
 			{
 				Eigen::Index rot_i = -1;
 				switch (channel.type)
 				{
-					case bvh11::Channel::Type::x_rotation:
+					case bvh11::Channel::Type::Xrotation:
 						rot_i = 0;
 						break;
-					case bvh11::Channel::Type::y_rotation:
+					case bvh11::Channel::Type::Yrotation:
 						rot_i = 1;
 						break;
-					case bvh11::Channel::Type::z_rotation:
+					case bvh11::Channel::Type::Zrotation:
 						rot_i = 2;
 						break;
 				}
@@ -321,25 +388,25 @@ namespace bvh11
 
 			switch (channel.type)
 			{
-			case bvh11::Channel::Type::x_position:
+			case bvh11::Channel::Type::Xposition:
 				value = value_tt.x();
 				has_translation_channel = true;
 				break;
-			case bvh11::Channel::Type::y_position:
+			case bvh11::Channel::Type::Yposition:
 				value = value_tt.y();
 				has_translation_channel = true;
 				break;
-			case bvh11::Channel::Type::z_position:
+			case bvh11::Channel::Type::Zposition:
 				value = value_tt.z();
 				has_translation_channel = true;
 				break;
-			case bvh11::Channel::Type::x_rotation:
+			case bvh11::Channel::Type::Xrotation:
 				value = value_rots[0] * c_rad2deg;
 				break;
-			case bvh11::Channel::Type::y_rotation:
+			case bvh11::Channel::Type::Yrotation:
 				value = value_rots[1] * c_rad2deg;
 				break;
-			case bvh11::Channel::Type::z_rotation:
+			case bvh11::Channel::Type::Zrotation:
 				value = value_rots[2] * c_rad2deg;
 				break;
 			}
@@ -350,77 +417,7 @@ namespace bvh11
 			&& "has_translation_in_delta_tm -> has_translation_channel");
 	}
 
-	bool BvhObject::ResetRestPose(int nframe)
-	{
-		if (-1 < nframe
-			  && nframe < frames())
-		{
-			const double c_epsilon = 1e-3;
-			typedef std::shared_ptr<const Joint> Joint_ptr;
-			auto joints = GetJointList();
-			size_t n_joints = joints.size();
-			std::vector<Eigen::Vector3d> offset_b(n_joints);
-			std::vector<Eigen::Affine3d> bind_a2b(n_joints);
-			std::vector<Eigen::Affine3d> bind_b2a(n_joints);
-			std::vector<Eigen::Affine3d> bind_p2l_a(n_joints);
 
-			for (int i_joint = 0; i_joint < n_joints; i_joint ++)
-			{
-				Joint_ptr joint = joints[i_joint];
-				Eigen::Affine3d bind_l2w_i = GetTransformation(joint, nframe);
-				Eigen::Affine3d bind_p2w_i;
-				Joint_ptr joint_parent = joint->parent();
-				if (nullptr == joint_parent)
-				{
-					bind_p2w_i.linear() = Eigen::Matrix3d::Identity();
-					bind_p2w_i.translation() = bind_l2w_i.translation();
-				}
-				else
-				{
-					bind_p2w_i = GetTransformation(joint_parent, nframe);
-				}
-
-				Eigen::Vector3d offset_i = bind_l2w_i.translation() - bind_p2w_i.translation();
-				Eigen::Affine3d bind_a2b_i(bind_l2w_i.linear());
-				Eigen::Affine3d bind_b2a_i(bind_a2b_i.inverse());
-				Eigen::Affine3d bind_p2l_i = bind_l2w_i.inverse() * bind_p2w_i;
-
-				offset_b[i_joint] = offset_i;
-				bind_a2b[i_joint] = bind_a2b_i;
-				bind_b2a[i_joint] = bind_b2a_i;
-				bind_p2l_a[i_joint] = bind_p2l_i;
-			}
-
-			std::vector<Eigen::Affine3d> delta_b_l;
-			delta_b_l.resize(joints.size());
-			for (int i_frame = 0; i_frame < frames_; i_frame++)
-			{
-				for (int i_joint = 0; i_joint < joints.size(); i_joint ++)
-				{
-					Joint_ptr joint = joints[i_joint];
-					Eigen::Affine3d delta_l2p_a_i = GetTransformationRelativeToParent(joint, i_frame);
-					Eigen::Affine3d delta_a_l_i = bind_p2l_a[i_joint]*delta_l2p_a_i;
-					Eigen::Affine3d delta_b_l_i = bind_a2b[i_joint] * delta_a_l_i * bind_b2a[i_joint];
-					delta_b_l[i_joint] = delta_b_l_i;
-				}
-
-				for (int i_joint = 0; i_joint < joints.size(); i_joint ++)
-				{
-					UpdateMotion(joints[i_joint], delta_b_l[i_joint], i_frame);
-				}
-			}
-
-			for (int i_joint = 0; i_joint < n_joints; i_joint ++)
-			{
-				Joint_ptr joint = joints[i_joint];
-				const_cast<Eigen::Vector3d&>(joint->offset()) = offset_b[i_joint];
-			}
-
-			return true;
-		}
-		else
-			return false;
-	}
 
 	Eigen::Affine3d BvhObject::GetLocalDeltaTM(std::shared_ptr<const Joint> joint, int frame) const
 	{
@@ -436,27 +433,27 @@ namespace bvh11
 
 			switch (channel.type)
 			{
-				case bvh11::Channel::Type::x_position:
+				case bvh11::Channel::Type::Xposition:
 					tm_delta_l *= Eigen::Translation3d(Eigen::Vector3d(value, 0.0, 0.0));
 					has_a_translation = true;
 					break;
-				case bvh11::Channel::Type::y_position:
+				case bvh11::Channel::Type::Yposition:
 					tm_delta_l *= Eigen::Translation3d(Eigen::Vector3d(0.0, value, 0.0));
 					has_a_translation = true;
 					break;
-				case bvh11::Channel::Type::z_position:
+				case bvh11::Channel::Type::Zposition:
 					tm_delta_l *= Eigen::Translation3d(Eigen::Vector3d(0.0, 0.0, value));
 					has_a_translation = true;
 					break;
-				case bvh11::Channel::Type::x_rotation:
+				case bvh11::Channel::Type::Xrotation:
 					tm_delta_l *= Eigen::AngleAxisd(value * M_PI / 180.0, Eigen::Vector3d::UnitX());
 					has_a_rotation = true;
 					break;
-				case bvh11::Channel::Type::y_rotation:
+				case bvh11::Channel::Type::Yrotation:
 					tm_delta_l *= Eigen::AngleAxisd(value * M_PI / 180.0, Eigen::Vector3d::UnitY());
 					has_a_rotation = true;
 					break;
-				case bvh11::Channel::Type::z_rotation:
+				case bvh11::Channel::Type::Zrotation:
 					tm_delta_l *= Eigen::AngleAxisd(value * M_PI / 180.0, Eigen::Vector3d::UnitZ());
 					has_a_rotation = true;
 					break;
@@ -580,12 +577,12 @@ namespace bvh11
 						const std::shared_ptr<Joint> target_joint = stack.back();
 						const Channel::Type type = [](const std::string& channel_type)
 						{
-							if (channel_type == "Xposition") { return Channel::Type::x_position; }
-							if (channel_type == "Yposition") { return Channel::Type::y_position; }
-							if (channel_type == "Zposition") { return Channel::Type::z_position; }
-							if (channel_type == "Zrotation") { return Channel::Type::z_rotation; }
-							if (channel_type == "Xrotation") { return Channel::Type::x_rotation; }
-							if (channel_type == "Yrotation") { return Channel::Type::y_rotation; }
+							if (channel_type == "Xposition") { return Channel::Type::Xposition; }
+							if (channel_type == "Yposition") { return Channel::Type::Yposition; }
+							if (channel_type == "Zposition") { return Channel::Type::Zposition; }
+							if (channel_type == "Zrotation") { return Channel::Type::Zrotation; }
+							if (channel_type == "Xrotation") { return Channel::Type::Xrotation; }
+							if (channel_type == "Yrotation") { return Channel::Type::Yrotation; }
 
 							assert(false && "Could not find a valid channel type");
 							return Channel::Type();
@@ -674,7 +671,7 @@ namespace bvh11
 			for (int channel_index = 0; channel_index < channels_.size(); ++ channel_index)
 			{
 				const Channel::Type& type = channels_[channel_index].type;
-				if (type == Channel::Type::x_position || type == Channel::Type::y_position || type == Channel::Type::z_position)
+				if (type == Channel::Type::Xposition || type == Channel::Type::Yposition || type == Channel::Type::Zposition)
 				{
 					motion_.col(channel_index) = scale * motion_.col(channel_index);
 				}
@@ -688,59 +685,6 @@ namespace bvh11
 		std::cout << joint->name() << std::endl;
 
 		for (auto child : joint->children()) { PrintJointSubHierarchy(child, depth + 1); }
-	}
-
-	void BvhObject::WriteJointSubHierarchy(std::ofstream& ofs, std::shared_ptr<const Joint> joint, int depth) const
-	{
-		auto indent_creation = [](int depth) -> std::string
-		{
-			std::string tabs = "";
-			for (int i = 0; i < depth; ++ i) { tabs += "\t"; }
-			return tabs;
-		};
-
-		ofs << indent_creation(depth);
-		ofs << (joint->parent() == nullptr ? "ROOT" : "JOINT");
-		ofs << " " << joint->name() << "\n";
-
-		ofs << indent_creation(depth);
-		ofs << "{" << "\n";
-
-		ofs << indent_creation(depth + 1);
-		ofs << "OFFSET" << " ";
-		ofs << joint->offset()(0) << " " << joint->offset()(1) << " " << joint->offset()(2);
-		ofs << "\n";
-
-		const auto associated_channels_indices = joint->associated_channels_indices();
-		ofs << indent_creation(depth + 1);
-		ofs << "CHANNELS" << " " << associated_channels_indices.size();
-		for (auto i : associated_channels_indices)
-		{
-			ofs << " " << channels()[i].type;
-		}
-		ofs << "\n";
-
-		if (joint->has_end_site())
-		{
-			ofs << indent_creation(depth + 1);
-			ofs << "End Site" << "\n";
-			ofs << indent_creation(depth + 1);
-			ofs << "{" << "\n";
-			ofs << indent_creation(depth + 2);
-			ofs << "OFFSET" << " ";
-			ofs << joint->end_site()(0) << " " << joint->end_site()(1) << " " << joint->end_site()(2);
-			ofs << "\n";
-			ofs << indent_creation(depth + 1);
-			ofs << "}" << "\n";
-		}
-
-		for (auto child : joint->children())
-		{
-			WriteJointSubHierarchy(ofs, child, depth + 1);
-		}
-
-		ofs << indent_creation(depth);
-		ofs << "}" << "\n";
 	}
 
 	void BvhObject::WriteBvhFile(const std::string& file_path) const
@@ -775,22 +719,22 @@ namespace bvh11
 	std::ostream& operator<<(std::ostream& os, const Channel::Type& type)
 	{
 		switch (type) {
-			case Channel::Type::x_position:
+			case Channel::Type::Xposition:
 				os << "Xposition";
 				break;
-			case Channel::Type::y_position:
+			case Channel::Type::Yposition:
 				os << "Yposition";
 				break;
-			case Channel::Type::z_position:
+			case Channel::Type::Zposition:
 				os << "Zposition";
 				break;
-			case Channel::Type::x_rotation:
+			case Channel::Type::Xrotation:
 				os << "Xrotation";
 				break;
-			case Channel::Type::y_rotation:
+			case Channel::Type::Yrotation:
 				os << "Yrotation";
 				break;
-			case Channel::Type::z_rotation:
+			case Channel::Type::Zrotation:
 				os << "Zrotation";
 				break;
 		}

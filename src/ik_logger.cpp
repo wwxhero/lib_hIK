@@ -4,6 +4,10 @@
 #include "MoNode.hpp"
 #include "MotionPipeConf.hpp"
 
+#ifdef PROFILE
+	Profile g_profiler;
+#endif
+
 const char *file_short(const char *file_f)
 {
 #ifdef _WIN32

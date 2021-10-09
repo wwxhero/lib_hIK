@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include "loggerSrv_i.h"
 #include "loggerfast.h"
+#include "ik_logger.h"
 
 
 void SimpleUTF16(const char* src, unsigned int len, wchar_t* dst)
@@ -19,10 +20,41 @@ void SimpleUTF16(const char* src, unsigned int len, wchar_t* dst)
 	*p_dst = L'\0';
 }
 
+LoggerFast::LoggerFast(const char* path) throw(...)
+	: m_pLogger(NULL)
+	, c_fmtBuffSz(1024)
+	, m_pFmtBuff(NULL)
+{
+	Initialize(path);
+}
+
 LoggerFast::LoggerFast() throw(...)
 	: m_pLogger(NULL)
 	, c_fmtBuffSz(1024)
 	, m_pFmtBuff(NULL)
+{
+	const char* envVar = "InternalLog";
+	char c_fileName[MAX_PATH] = {0};
+	char *envFileName = NULL;
+	if (NULL != (envFileName = std::getenv(envVar)))
+	{
+		IKAssert(strlen(envFileName) < MAX_PATH);
+		strcpy(c_fileName, envFileName);
+	}
+	else
+	{
+		sprintf(c_fileName
+				, "%s.txt"
+				, envVar);
+		fprintf(stdout
+				, "Environment Variable <%s> is not set\n"
+				, envVar);
+		fflush(stdout);
+	}
+	Initialize(c_fileName);
+}
+
+void LoggerFast::Initialize(const char* path) throw (...)
 {
 	m_pFmtBuff = new char[c_fmtBuffSz];
 	m_pFmtBuffw = new wchar_t[c_fmtBuffSz];
@@ -36,22 +68,7 @@ LoggerFast::LoggerFast() throw(...)
 									, (void **)&m_pLogger);
 	if (SUCCEEDED(hResult))
 	{
-		const char* envVar = "InternalLog";
-		char c_fileName[1024] = {0};
-    	char *envFileName = NULL;
-		if (NULL != (envFileName = std::getenv(envVar)))
-			strcpy(c_fileName, envFileName);
-		else
-		{
-			sprintf(c_fileName
-					, "%s.txt"
-					, envVar);
-			fprintf(stdout
-					, "Environment Variable <%s> is not set\n"
-					, envVar);
-			fflush(stdout);
-		}
-		_bstr_t path_bstr(c_fileName);
+		_bstr_t path_bstr(path);
 		m_pLogger->Create(path_bstr);
 	}
 	else
@@ -108,6 +125,14 @@ int LoggerFast::Out(const char* _Format, va_list _ArgList)
 	return _Result;
 }
 
+void LoggerFast::Out(const char* content)
+{
+	EnterCriticalSection(&m_cs);
+	_bstr_t data(content);
+	m_pLogger->LogOut(data);
+	LeaveCriticalSection(&m_cs);
+}
+
 void LoggerFast::Flush()
 {
 	EnterCriticalSection(&m_cs);
@@ -116,3 +141,33 @@ void LoggerFast::Flush()
 }
 
 LoggerFast g_LoggerFast;
+
+LoggerFast& operator << (LoggerFast& logger, const std::string& info)
+{
+	logger.OutFmt(info.c_str());
+	return logger;
+}
+
+LoggerFast& operator << (LoggerFast& logger, double v)
+{
+	logger.OutFmt("%f", v);
+	return logger;
+}
+
+LoggerFast& operator << (LoggerFast& logger, std::size_t v)
+{
+	logger.OutFmt("%d", v);
+	return logger;
+}
+
+LoggerFast& operator << (LoggerFast& logger, int v)
+{
+	logger.OutFmt("%d", v);
+	return logger;
+}
+
+LoggerFast& operator << (LoggerFast& logger, unsigned int v)
+{
+	logger.OutFmt("%u", v);
+	return logger;
+}

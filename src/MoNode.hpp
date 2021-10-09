@@ -82,8 +82,8 @@ public:
 	CMoNode(CArtiBodyNode* body);
 	~CMoNode();
 
-
 	bool MoCNN_Initialize(RETAR_TYPE tm_type, const Real p2c_w[3][3]);
+
 	template<typename CHAR, typename LAMBDA_name>
 	bool MoCNN_Initialize(RETAR_TYPE tm_type, const CHAR* name_pairs[][2], int n_pairs, LAMBDA_name GetName, const Real f2t_w[3][3])
 	{
@@ -199,6 +199,7 @@ private:
 class CMoTree : public Tree<CMoNode>
 {
 public:
+	static bool Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const Real p2c_w[3][3]);
 	static bool Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const char* pairs[][2], int n_pairs, const Real p2c_w[3][3]);
 	static bool Connect_cross(CMoNode* from, CMoNode* to, CNN cnn_type, const wchar_t* pairs[][2], int n_pairs, const Real p2c_w[3][3]);
 	static bool Connect_homo(CMoNode* from, CMoNode* to, CNN cnn_type);

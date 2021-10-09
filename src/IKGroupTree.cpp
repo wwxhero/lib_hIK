@@ -191,7 +191,7 @@ CArtiBodyClrNode* CArtiBodyClrTree::Generate(const CArtiBodyNode* root)
 						};
 
 	CArtiBodyClrNode* root_clr = NULL;
-	bool constructed = Construct(root, &root_clr, GenerateNode);
+	bool constructed = ConstructBFS(root, &root_clr, GenerateNode);
 	LOGIKVar(LogInfoBool, constructed);
 	IKAssert(constructed || NULL == root_clr);
 	return root_clr;
@@ -309,7 +309,7 @@ CIKGroupNodeGen* CIKGroupTreeGen::Generate(const CArtiBodyClrNode* root)
 									return new_group;
 								};
 	CIKGroupNodeGen* root_G_gen = NULL;
-	bool constructed = Construct(root, &root_G_gen, ConstructNodeGroupGen);
+	bool constructed = ConstructBFS(root, &root_G_gen, ConstructNodeGroupGen);
 	LOGIKVar(LogInfoBool, constructed);
 	IKAssert(constructed || NULL == root_G_gen);
 	return root_G_gen;
@@ -393,7 +393,7 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
 						*dst = new CIKGroupNode(*(const_cast<CIKGroupNodeGen*>(src)));
 						return true;
 					};
-				bool constructed = CIKGroupTreeGen::Construct(root_gen, &root_G, GenerateNode);
+				bool constructed = CIKGroupTreeGen::ConstructBFS(root_gen, &root_G, GenerateNode);
 				LOGIKVar(LogInfoBool, constructed);
 				IKAssert(constructed || NULL == root_clr);
 	 			CIKGroupTreeGen::Destroy(root_gen);

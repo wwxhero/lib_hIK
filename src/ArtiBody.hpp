@@ -385,7 +385,7 @@ public:
 			return ret;
 		};
 
-		bool cloned = Construct(src, dst, ConstructNode);
+		bool cloned = ConstructBFS(src, dst, ConstructNode);
 
 		if (cloned)
 		{
@@ -406,6 +406,7 @@ public:
 	template<bool G_SPACE>
 	static void FK_Update(CArtiBodyNode* root)
 	{
+START_PROFILER_AUTOFRAME(root->GetName_c(), 50000)
 		bool is_an_anim = (root->c_type&anim);
 		if (is_an_anim)
 		{
@@ -449,7 +450,15 @@ public:
 				}
 			}
 		}
+STOP_PROFILER
 	}
+
+	static int BodyCMP(const char* const pts_interest[], int n_interests, const CArtiBodyNode* body_s, const CArtiBodyNode* body_d, HBODY err_nodes[], Real err_oris[]);
+	static void Body_T_Test(const CArtiBodyNode* body
+					, const Eigen::Vector3r& dir_up
+					, const std::vector<std::string>& pts_interest
+					, int part_idx_range[parts_total][2]
+					, Real err[]);
 
 #ifdef _DEBUG
 	static void Connect(CArtiBodyNode* from, CArtiBodyNode* to, CNN type);

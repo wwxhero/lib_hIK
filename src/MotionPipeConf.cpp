@@ -133,6 +133,11 @@ namespace CONF
 	////////////////////////////////////////////////////////////////////////////////////////////
 	//CBodyConf:
 
+	CBodyConf::CBodyConf()
+	{
+	}
+
+
 	int CBodyConf::Scale_alloc(B_Scale* &scales) const
 	{
 		int n_scales = (int)m_scales.size();
@@ -197,11 +202,34 @@ namespace CONF
 		return m_fileName_c.c_str();
 	}
 
+	const wchar_t* CBodyConf::record_w() const
+	{
+		if (m_record_w.size() > 0)
+			return m_record_w.c_str();
+		else
+			return NULL;
+	}
+
+	const char* CBodyConf::record_c() const
+	{
+		if (m_record_c.size() > 0)
+			return m_record_c.c_str();
+		else
+			return NULL;
+	}
+
 	void CBodyConf::SetFileName(const char* filename)
 	{
 		m_fileName_c = filename;
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 		m_fileName_w = converter.from_bytes(filename);
+	}
+
+	void CBodyConf::SetRecord(const char* filename)
+	{
+		m_record_c = filename;
+		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+		m_record_w = converter.from_bytes(filename);
 	}
 
 #ifdef _DEBUG
@@ -600,6 +628,9 @@ namespace CONF
 				{
 					const char* filename = ele->Attribute("file");
 					body_confs[I_Body(node)]->SetFileName(filename);
+					const char* rc_filename = ele->Attribute("record");
+					if (NULL != rc_filename)
+						body_confs[I_Body(node)]->SetRecord(rc_filename);
 				}
 				else if("IK_Chain" == name)
 				{

@@ -21,10 +21,10 @@ T CAST_2H(F* p)
 }
 
 #define CAST_2PBVH(hBVH)\
-	CAST_2P<HBVH, bvh11::BvhObject>(hBVH)
+	CAST_2P<HBVH, CFile2ArtiBody>(hBVH)
 
 #define CAST_2HBVH(pBVH)\
-	CAST_2H<bvh11::BvhObject, HBVH>(pBVH)
+	CAST_2H<CFile2ArtiBody, HBVH>(pBVH)
 
 #define CAST_2PBODY(hBody)\
 	CAST_2P<HBODY, CArtiBodyNode>(hBody)
@@ -37,12 +37,6 @@ T CAST_2H(F* p)
 
 #define CAST_2PMONODE(hMoNode)\
 	CAST_2P<HMOTIONNODE, CMoNode>(hMoNode)
-
-#define CAST_2HBVH(pBVH)\
-	CAST_2H<bvh11::BvhObject, HBVH>(pBVH)
-
-#define CAST_2PBVH(hBVH)\
-	CAST_2P<HBVH, bvh11::BvhObject>(hBVH)
 
 #define CAST_2HCONF(pDOC)\
 	CAST_2H<TiXmlDocument, HCONF>(pDOC)

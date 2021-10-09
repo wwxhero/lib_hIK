@@ -33,7 +33,7 @@ bool IK_QSegment::Initialize(CArtiBodyNode* from, CArtiBodyNode* to)
 	Eigen::Vector3r start_w = GlobalStart();
 	Eigen::Vector3r end_w = GlobalEnd();
 	m_max_extension = (end_w - start_w).norm();
-	return m_max_extension > c_epsilon;
+	return m_max_extension > c_tt_epsilon;
 }
 
 IK_QSegmentDOF3::IK_QSegmentDOF3(const Real weight[3])
