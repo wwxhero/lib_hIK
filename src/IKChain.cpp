@@ -82,9 +82,18 @@ bool CIKChain::BeginUpdate(const Transform_TR& w2g)
 
 	_TRANSFORM target_src_w_tm;
 	target_src_w.CopyTo(target_src_w_tm);
+	const Real err_b = (Real)0.05;
+	const Real sd = (Real)1;
+	const Real range[] = { sd - err_b, sd + err_b };
+	IKAssert(range[0] < target_src_w_tm.s.x && target_src_w_tm.s.x < range[1]
+		&&	range[0] < target_src_w_tm.s.y && target_src_w_tm.s.y < range[1]
+		&&	range[0] < target_src_w_tm.s.z && target_src_w_tm.s.z < range[1]);
+	target_src_w_tm.s.x = target_src_w_tm.s.y = target_src_w_tm.s.z = (Real)1;
+
 	_TRANSFORM eef_src_w_tm;
 	m_eefSrc->GetTransformLocal2World()->CopyTo(eef_src_w_tm);
 	bool valid_update = !Equal(eef_src_w_tm, target_src_w_tm);
+	LOGIKVar(LogInfoBool, valid_update);
 	if (valid_update)
 	{
 		Transform_TR target_src_g;
