@@ -93,7 +93,6 @@ bool CIKChain::BeginUpdate(const Transform_TR& w2g)
 	_TRANSFORM eef_src_w_tm;
 	m_eefSrc->GetTransformLocal2World()->CopyTo(eef_src_w_tm);
 	bool valid_update = !Equal(eef_src_w_tm, target_src_w_tm);
-	LOGIKVar(LogInfoBool, valid_update);
 	if (valid_update)
 	{
 		Transform_TR target_src_g;
