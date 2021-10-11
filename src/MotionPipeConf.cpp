@@ -542,8 +542,8 @@ namespace CONF
 				const TiXmlElement* ele = node->ToElement();
 				if ("Scale" == name)
 				{
-					const char* b_name = ele->Attribute("b_name");
-					bool valid_name = (NULL != b_name);
+					const char* name = ele->Attribute("name");
+					bool valid_name = (NULL != name);
 					Real x, y, z;
 					bool valid_x_scale = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "x", &x));
 					bool valid_y_scale = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "y", &y));
@@ -558,7 +558,7 @@ namespace CONF
 					IKAssert(valid_z_scale);
 					if (ret)
 					{
-						body_confs[I_Body(node)]->AddScale(b_name, x, y, z);
+						body_confs[I_Body(node)]->AddScale(name, x, y, z);
 					}
 				}
 				else if ("MotionPipe" == name)
@@ -616,7 +616,7 @@ namespace CONF
 				}
 				else if ("Target" == name)
 				{
-					const char* target_name = ele->Attribute("b_name");
+					const char* target_name = ele->Attribute("name");
 					bool valid_target = (NULL != target_name);
 					IKAssert(valid_target);
 					ret = valid_target;
