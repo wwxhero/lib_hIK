@@ -4,7 +4,7 @@
 #include "MotionPipeConf.hpp"
 #include "tinyxml.h"
 #include "macro_helper.h"
-#include "filesystem_helper.h"
+#include "filesystem_helper.hpp"
 
 extern HMODULE g_Module;
 
