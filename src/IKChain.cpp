@@ -62,7 +62,7 @@ void CIKChain::SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc
 	const Transform* local2world_src = m_eefSrc->GetTransformLocal2World();
 	Eigen::Matrix3r linear_local2world_src = local2world_src->getLinear();
 	Eigen::Matrix3r linear_local2world_prime_dst = src2dst_w * linear_local2world_src * m_dst2srcW;
-	Eigen::Matrix3r offsetDst = linear_local2world_dst.inverse() * linear_local2world_prime_dst;
+	Eigen::Matrix3r offsetDst = linear_local2world_dst.inverse() * linear_local2world_prime_dst; // offsetDst: [target_l2w * offset = eef_l2w]_dst
 	m_src2dstW_Offset = offsetDst * src2dst_w;
 }
 

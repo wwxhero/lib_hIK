@@ -76,7 +76,7 @@ bool InitBody_Internal(HBODY bodySrc
 		 	break;
 		}
 
-		case BODY_TYPE::htr:
+		case BODY_TYPE::undef:
 		{
 			IKAssert(VALID_HANDLE(bodySrc));
 			const wchar_t* (*matches)[2] = NULL;

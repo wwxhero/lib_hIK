@@ -1,9 +1,10 @@
 #include "pch.h"
 #include <utility>
-#include <filesystem>
 #include "ik_logger.h"
 #include "MotionPipeConf.hpp"
 #include "tinyxml.h"
+#include "macro_helper.h"
+#include "filesystem_helper.h"
 
 extern HMODULE g_Module;
 
@@ -19,7 +20,7 @@ namespace CONF
 	        n_path_spec = n_path;
 	        realloc(path, n_path_spec * sizeof(wchar_t));
 	    }
-	    std::experimental::filesystem::path fullPath(path);
+	    fs::path fullPath(path);
 	    std::wstring dir = fullPath.parent_path().c_str();
 	    free(path);
 	    LOGIKVar(LogInfoWCharPtr, dir.c_str());
@@ -266,8 +267,10 @@ namespace CONF
 
 	BODY_TYPE CBodyConf::type() const
 	{
-		std::experimental::filesystem::path relpath(file_w());
+		fs::path relpath(file_w());
 		std::wstring ext = relpath.extension().c_str();
+		if (ext.empty())
+			return undef;
 		const wchar_t* body_types_str[] = {
 			L".fbx",	L".bvh",	L".htr"
 		};
@@ -627,7 +630,8 @@ namespace CONF
 					|| (is_a_desti = ("Destination" == name)))
 				{
 					const char* filename = ele->Attribute("file");
-					body_confs[I_Body(node)]->SetFileName(filename);
+					if (NULL != filename)
+						body_confs[I_Body(node)]->SetFileName(filename);
 					const char* rc_filename = ele->Attribute("record");
 					if (NULL != rc_filename)
 						body_confs[I_Body(node)]->SetRecord(rc_filename);

@@ -386,6 +386,7 @@
     <ClInclude Include="..\..\src\ArtiBody.hpp" />
     <ClInclude Include="..\..\src\ArtiBodyFile.hpp" />
     <ClInclude Include="..\..\src\bvh11_helper.hpp" />
+    <ClInclude Include="..\..\src\filesystem_helper.hpp" />
     <ClInclude Include="..\..\src\handle_helper.hpp" />
     <ClInclude Include="..\..\src\IKChain.hpp" />
     <ClInclude Include="..\..\src\IKChainInverseJK.hpp" />
