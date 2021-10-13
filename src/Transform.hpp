@@ -321,7 +321,7 @@ public:
 	{
 		auto abs_rotq = m_rotq.squaredNorm();
 		Real err = abs_rotq - (Real)1;
-		return -c_2epsilon < err && err < +c_2epsilon;
+		return -c_rotq_epsilon_sqrnorm < err && err < +c_rotq_epsilon_sqrnorm;
 	}
 
 	Transform_TR operator=(const Transform_TR& other)

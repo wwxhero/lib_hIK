@@ -53,22 +53,38 @@ bool InitBody_Internal_fk(const wchar_t* rootConfDir
 						, HBVH& hBVH)
 {
 	bool initialized = false;
+	fs::path fullPath(rootConfDir);
+	fs::path relpath(body_conf_i->file_w());
+	fullPath.append(relpath);
 	switch(body_conf_i->type())
 	{
 		case BODY_TYPE::bvh:
 		{
-			fs::path fullPath(rootConfDir);
-			fs::path relpath(body_conf_i->file_w());
-			fullPath.append(relpath);
 			hBVH = load_bvh_w(fullPath.c_str());
 			IKAssert(VALID_HANDLE(hBVH));
 			bool bvh_load = (VALID_HANDLE(hBVH)
 			 			&& VALID_HANDLE(hBody = create_tree_body_bvh(hBVH)));
 		 	LOGIKVar(LogInfoBool, bvh_load);
-		 	if (bvh_load)
-		 		frames = get_n_frames(hBVH);
 		 	initialized = bvh_load;
 		 	break;
+		}
+
+		case BODY_TYPE::htr:
+		{
+			hBVH = load_bvh_w(fullPath.c_str());
+			IKAssert(VALID_HANDLE(hBVH));
+			Real identity[3][3] = {
+					{1, 0, 0},
+					{0, 1, 0},
+					{0, 0, 1}
+				};
+			HBODY hTemp = H_INVALID;
+			initialized = (VALID_HANDLE(hBVH)
+			 			&& VALID_HANDLE((hTemp = create_tree_body_bvh(hBVH)))
+			 			&& clone_body_htr(hTemp, &hBody, identity));
+			if (VALID_HANDLE(hTemp))
+				destroy_tree_body(hTemp);
+			break;
 		}
 
 		case BODY_TYPE::fbx:
@@ -77,6 +93,24 @@ bool InitBody_Internal_fk(const wchar_t* rootConfDir
 			break;
 		}
 
+	}
+
+	if (!initialized)
+	{
+		if (VALID_HANDLE(hBVH))
+			unload_bvh(hBVH);
+		hBVH = H_INVALID;
+
+		if (VALID_HANDLE(hBody))
+			destroy_tree_body(hBody);
+		hBody = H_INVALID;
+
+		frames = 0;
+
+	}
+	else
+	{
+		frames = get_n_frames(hBVH);
 	}
 
 	return initialized;
