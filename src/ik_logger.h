@@ -71,7 +71,7 @@ void AssertionFail(const char *file, unsigned int line);
 			unsigned int ___frame_id = frame_id; \
 			for (int i = 0; i < rounds; i++) {
 
-#	define STOP_PROFILER \
+#		define STOP_PROFILER \
 			} \
 			ULONGLONG ___tick = GetTickCount64() - ___tick_start; \
 			unsigned int ___line_end = __LINE__; \
@@ -84,8 +84,17 @@ void AssertionFail(const char *file, unsigned int line);
 												___token, \
 												___millisec);\
 			LOGIKFlush();
+
 #		define START_PROFILER_AUTOFRAME(token, rounds) \
 			START_PROFILER(g_profiler.frame_id, token, rounds)
+
+#		define START_PROFILER_AUTOFRAME_IK(rounds) \
+			TransformArchive tm_data; \
+			CArtiBodyNode* root_body = CAST_2PBODY(mopipe->bodies[0]); \
+			CArtiBodyTree::Serialize<true>(root_body, tm_data); \
+			START_PROFILER_AUTOFRAME("ik", rounds); \
+			CArtiBodyTree::Serialize<false>(root_body, tm_data);
+
 #		define PROFILE_FRAME(i_frame) \
 			g_profiler.frame_id = i_frame
 
@@ -99,6 +108,8 @@ void AssertionFail(const char *file, unsigned int line);
 #		define START_PROFILER_AUTOFRAME(token, rounds)
 #		define PROFILE_FRAME(i_frame)
 #		define STOP_PROFILER
+#		define START_PROFILER_AUTOFRAME_IK(rounds)
+#		define STOP_PROFILER_IK
 #	endif
 
 

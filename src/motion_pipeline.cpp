@@ -445,7 +445,10 @@ void ik_update(MotionPipe* mopipe)
 					{
 					};
 
+START_PROFILER_AUTOFRAME_IK(1000)
 	CIKGroupTree::TraverseDFS(mopipe_internal->root_ik, OnGroupNode, OffGroupNode);
+STOP_PROFILER
+	// CArtiBodyTree::Serialize<false>(root_body, tm_data);
 	const int c_idxSim = 0;
 	motion_sync(mopipe->mo_nodes[c_idxSim]);
 	if (NULL != mopipe_internal->logger)

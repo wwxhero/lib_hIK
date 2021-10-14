@@ -1,7 +1,9 @@
 #pragma once
+#include <vector>
 #include "articulated_body.h"
 #include "Math.hpp"
 #include "ik_logger.h"
+
 
 inline bool NoScale(const _TRANSFORM& tm)
 {
@@ -333,4 +335,24 @@ public:
 
 private:
 	Eigen::Vector3r m_tt;
+};
+
+
+class TransformArchive
+{
+public:
+	TransformArchive()
+	{
+	}
+	void Resize(int sz)
+	{
+		m_data.resize(sz);
+	}
+	_TRANSFORM& operator[](int i)
+	{
+		IKAssert(i < (int)m_data.size());
+		return m_data[i];
+	}
+private:
+	std::vector<_TRANSFORM> m_data;
 };
