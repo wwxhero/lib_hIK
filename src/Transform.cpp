@@ -196,3 +196,34 @@ void Transform_TR::CopyFrom(const _TRANSFORM& tm)
 	Init(tm);
 }
 
+Real TransformArchive::Error_q(const TransformArchive &tms, const TransformArchive &tms_prime)
+{
+	const Real c_err_min = (Real)0;
+	const Real c_err_max = (Real)1;
+	int n_tms = (int)tms.m_data.size();
+	int n_tms_prime = (int)tms_prime.m_data.size();
+	if (n_tms != n_tms_prime)
+		return c_err_max;
+	else
+	{
+		auto Error_q_i = [](const _TRANSFORM& tm_i, const _TRANSFORM& tm_prime_i) -> Real
+			{
+				Real cos_q_q_prime =  tm_i.r.w * tm_prime_i.r.w
+									+ tm_i.r.x * tm_prime_i.r.x
+									+ tm_i.r.y * tm_prime_i.r.y
+									+ tm_i.r.z * tm_prime_i.r.z;
+				return 1 - abs(cos_q_q_prime);
+			};
+
+		Real error_sum = (Real)0;
+		for (int i_tm = 0; i_tm < n_tms; i_tm ++)
+		{
+			const _TRANSFORM& tm_i = tms.m_data[i_tm];
+			const _TRANSFORM& tm_prime_i = tms_prime.m_data[i_tm];
+			error_sum += Error_q_i(tm_i, tm_prime_i);
+		}
+		Real error_av = error_sum/(Real)n_tms;
+		error_av = min(c_err_max, max(c_err_min, error_av));
+		return error_av;
+	}
+}
