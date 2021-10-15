@@ -76,24 +76,25 @@ void AssertionFail(const char *file, unsigned int line);
 			ULONGLONG ___tick = GetTickCount64() - ___tick_start; \
 			unsigned int ___line_end = __LINE__; \
 			double ___millisec = (double)___tick / (double)___rounds; \
-			LoggerFast_OutFmt("%s, %d:%d, frame_id=, %d, token=, %s, %f\n", \
+			LoggerFast_OutFmt("%s, %d:%d, frame_id=, %d, token=, %s, averange=, %f, sum=, %u\n", \
 												file_short(__FILE__), \
 												___line_start, \
 												___line_end, \
 												___frame_id, \
 												___token, \
-												___millisec);\
+												___millisec,\
+												___tick);\
 			LOGIKFlush();
 
 #		define START_PROFILER_AUTOFRAME(token, rounds) \
 			START_PROFILER(g_profiler.frame_id, token, rounds)
 
 #		define START_PROFILER_AUTOFRAME_IK(rounds) \
-			TransformArchive tm_data; \
-			CArtiBodyNode* root_body = CAST_2PBODY(mopipe->bodies[0]); \
-			CArtiBodyTree::Serialize<true>(root_body, tm_data); \
+			TransformArchive ___tm_data; \
+			CArtiBodyNode* ___root_body = CAST_2PBODY(mopipe->bodies[0]); \
+			CArtiBodyTree::Serialize<true>(___root_body, ___tm_data); \
 			START_PROFILER_AUTOFRAME("ik", rounds); \
-			CArtiBodyTree::Serialize<false>(root_body, tm_data);
+			CArtiBodyTree::Serialize<false>(___root_body, ___tm_data);
 
 #		define PROFILE_FRAME(i_frame) \
 			g_profiler.frame_id = i_frame

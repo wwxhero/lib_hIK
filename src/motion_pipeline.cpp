@@ -447,7 +447,25 @@ void ik_update(MotionPipe* mopipe)
 
 START_PROFILER_AUTOFRAME_IK(1000)
 	CIKGroupTree::TraverseDFS(mopipe_internal->root_ik, OnGroupNode, OffGroupNode);
-STOP_PROFILER
+// STOP_PROFILER
+	}
+	ULONGLONG ___tick = GetTickCount64() - ___tick_start;
+	unsigned int ___line_end = __LINE__;
+	double ___millisec = (double)___tick / (double)___rounds;
+	TransformArchive ___tm_data_prime;
+	CArtiBodyTree::Serialize<true>(___root_body, ___tm_data_prime);
+
+	LoggerFast_OutFmt("%s, %d:%d, frame_id=, %d, token=, %s, averange=, %f, sum=, %u, error=, %f\n",
+										file_short(__FILE__),
+										___line_start,
+										___line_end,
+										___frame_id,
+										___token,
+										___millisec,
+										___tick,
+										TransformArchive::Error_q(___tm_data, ___tm_data_prime));
+	LOGIKFlush();
+
 	// CArtiBodyTree::Serialize<false>(root_body, tm_data);
 	const int c_idxSim = 0;
 	motion_sync(mopipe->mo_nodes[c_idxSim]);
