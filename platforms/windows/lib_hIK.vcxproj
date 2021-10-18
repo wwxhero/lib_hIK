@@ -243,14 +243,14 @@
       <PreprocessorDefinitions>_DEBUG;LIB_HIK_EXPORTS;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;WIN32;TIXML_USE_TICPP;TIXML_USE_STL;HARDASSERTION;PROFILE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC);$(LIB_OPENCV_INC)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(LIB_TICPP_BIN)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ticppd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(LIB_TICPP_BIN);$(LIB_OPENCV_BIN)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ticppd.lib;opencv_world453d.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Shipping|Win32'">
@@ -321,10 +321,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;LIB_HIK_EXPORTS;_CRT_SECURE_NO_WARNINGS;_WINDOWS;_USRDLL;_USE_MATH_DEFINES;WIN32;TIXML_USE_TICPP;TIXML_USE_STL;PROFILE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;LIB_HIK_EXPORTS;_CRT_SECURE_NO_WARNINGS;_WINDOWS;_USRDLL;_USE_MATH_DEFINES;WIN32;TIXML_USE_TICPP;TIXML_USE_STL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC);$(LIB_OPENCV_INC)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -333,8 +333,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(LIB_TICPP_BIN)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ticpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(LIB_TICPP_BIN);$(LIB_OPENCV_BIN)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ticpp.lib;opencv_world453.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
@@ -383,6 +383,7 @@
     <ClInclude Include="..\..\inc\fk_joint.h" />
     <ClInclude Include="..\..\inc\motion_pipeline.h" />
     <ClInclude Include="..\..\inc\pch.h" />
+    <ClInclude Include="..\..\inc\posture_graph.h" />
     <ClInclude Include="..\..\src\ArtiBody.hpp" />
     <ClInclude Include="..\..\src\ArtiBodyFile.hpp" />
     <ClInclude Include="..\..\src\bvh11_helper.hpp" />
@@ -429,6 +430,7 @@
     <ClCompile Include="..\..\src\MoNode.cpp" />
     <ClCompile Include="..\..\src\MotionPipeConf.cpp" />
     <ClCompile Include="..\..\src\motion_pipeline.cpp" />
+    <ClCompile Include="..\..\src\posture_graph.cpp" />
     <ClCompile Include="..\..\src\Transform.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="pch.cpp">

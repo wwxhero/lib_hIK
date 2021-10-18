@@ -457,7 +457,6 @@ STOP_PROFILER_IK
 
 HMOTIONNODE	create_tree_motion_node(HBODY mo_src)
 {
-	//todo: create a tree node that represents motions of the articulated body mo_src
 	CArtiBodyNode* body = CAST_2PBODY(mo_src);
 	CMoNode* mo = new CMoNode(body);
 	return CAST_2HMONODE(mo);
