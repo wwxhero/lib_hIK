@@ -390,6 +390,7 @@
     <ClInclude Include="..\..\src\filesystem_helper.hpp" />
     <ClInclude Include="..\..\src\handle_helper.hpp" />
     <ClInclude Include="..\..\src\IKChain.hpp" />
+    <ClInclude Include="..\..\src\IKChainNumerical.hpp" />
     <ClInclude Include="..\..\src\IKChainInverseJK.hpp" />
     <ClInclude Include="..\..\src\IKGroupTree.hpp" />
     <ClInclude Include="..\..\src\IK_QJacobian.h" />
@@ -414,6 +415,7 @@
     <ClCompile Include="..\..\src\bvh11_helper.cpp" />
     <ClCompile Include="..\..\src\IKChain.cpp" />
     <ClCompile Include="..\..\src\IKChainInverseJK.cpp" />
+    <ClCompile Include="..\..\src\IKChainNumerical.cpp" />
     <ClCompile Include="..\..\src\IKGroupTree.cpp" />
     <ClCompile Include="..\..\src\IK_QJacobian.cpp" />
     <ClCompile Include="..\..\src\IK_QSegment.cpp" />
