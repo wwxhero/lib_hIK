@@ -16,6 +16,8 @@ public:
 	}
 
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>& joint_confs) override;
+	virtual bool Update();
+	virtual bool Update_AnyThread() = 0;
 protected:
 	std::vector<IK_QSegment*> m_segments; //the corresponds to CIKChain::m_segments
 };

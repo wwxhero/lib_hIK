@@ -61,14 +61,14 @@ public:
 		bool solved_all = false;
 		if (1 == n_chains)
 		{
-			solved_all = m_kChains[0]->UpdateAll();
+			solved_all = m_kChains[0]->Update();
 		}
 		else
 		{
 			for (int i_update = 0; i_update < n_chains && !solved_all; i_update ++)
 			{
 				for (auto& chain_i : m_kChains)
-					chain_i->UpdateAll();
+					chain_i->Update();
 
 				solved_all = true;
 				for (auto chain_i = m_kChains.begin()

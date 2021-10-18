@@ -140,7 +140,7 @@ public:
 
 	// virtual void UpdateNext(int step) override;
 	// this is a quick IK update solution
-	virtual bool UpdateAll()
+	virtual bool Update_AnyThread()
 	{
 		// iterate
 		bool solved = false;

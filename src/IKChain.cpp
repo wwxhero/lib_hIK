@@ -170,7 +170,7 @@ bool CIKChainProj::BeginUpdate(const Transform_TR& w2g)
 	return true;
 }
 
-bool CIKChainProj::UpdateAll()
+bool CIKChainProj::Update()
 {
 	_TRANSFORM goal;
 	m_eefSrc->GetGoal(goal);

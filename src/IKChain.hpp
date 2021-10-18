@@ -36,7 +36,7 @@ public:
 
 	virtual bool BeginUpdate(const Transform_TR& w2g);
 	// this is a quick IK update solution
-	virtual bool UpdateAll() = 0;
+	virtual bool Update() = 0;
 	virtual bool UpdateCompleted() const = 0;
 	virtual void EndUpdate() {};
 
@@ -98,7 +98,7 @@ public:
 	virtual void Dump(std::stringstream& info) const override;
 	virtual bool BeginUpdate(const Transform_TR& w2g) override;
 	// this is a quick IK update solution
-	virtual bool UpdateAll();
+	virtual bool Update();
 	virtual bool UpdateCompleted() const
 	{
 		return true;
