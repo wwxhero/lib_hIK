@@ -3,12 +3,24 @@
 #include "IK_QSegment.hpp"
 #include "IK_QTask.h"
 
-template<typename IK_QJacobianX>
-class IKChainInverseJK : public CIKChain
+class CIKChainNumerical : public CIKChain
 {
 public:
+	CIKChainNumerical(CIKChain::Algor algor, int n_iters)
+		: CIKChain(algor, n_iters)
+	{
+	}
+private:
+
+};
+
+template<typename IK_QJacobianX>
+class IKChainInverseJK : public CIKChainNumerical
+{
+	typedef CIKChainNumerical Super;
+public:
 	IKChainInverseJK(CIKChain::Algor algor, Real weight_p, Real weight_r, int n_iter)
-		: CIKChain(algor, n_iter)
+		: Super(algor, n_iter)
 		, m_taskP(true, m_segments, m_eefSrc)
 		, m_taskR(true, m_segments, m_eefSrc)
 	{
@@ -28,7 +40,7 @@ public:
 
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>& joint_confs) override
 	{
-		if (!CIKChain::Init(eef, len, joint_confs))
+		if (!Super::Init(eef, len, joint_confs))
 			return false;
 
 		for (auto seg : m_segments)
@@ -180,12 +192,12 @@ public:
 	virtual void Dump(std::stringstream& info) const override
 	{
 		info << from_Algor(c_algor) << " : ";
-		CIKChain::Dump(info);
+		Super::Dump(info);
 	}
 
 	virtual bool BeginUpdate(const Transform_TR& w2g) override
 	{
-		if (!CIKChain::BeginUpdate(w2g))
+		if (!Super::BeginUpdate(w2g))
 			return false;
 		_TRANSFORM goal;
 		m_eefSrc->GetGoal(goal);
