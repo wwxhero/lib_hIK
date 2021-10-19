@@ -123,7 +123,7 @@ namespace CONF
 			delete conf;
 		}
 
-		virtual bool Initialize(TiXmlDocument* doc) = 0;
+		virtual bool Initialize(const TiXmlNode* doc) = 0;
 	};
 
 	class CIKChainConf
@@ -204,7 +204,7 @@ namespace CONF
 #ifdef _DEBUG
 		void Dump_Dbg() const;
 #endif
-		virtual bool Initialize(TiXmlDocument* doc);
+		virtual bool Initialize(const TiXmlNode* doc);
 	private:
 		std::vector<B_ScaleEx> m_scales;
 		std::vector<Name> m_targets;
@@ -241,7 +241,7 @@ namespace CONF
 	private:
 		CMotionPipeConf();
 		~CMotionPipeConf();
-		virtual bool Initialize(TiXmlDocument* doc);
+		virtual bool Initialize(const TiXmlNode* doc);
 
 	public:
 	#ifdef _DEBUG
