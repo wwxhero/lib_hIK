@@ -38,3 +38,55 @@ void err_vis(const char* path_htr, const char* path_png)
 		LOGIKVarErr(LogInfoCharPtr, err.c_str());
 	}
 }
+
+
+//bool InitBody_Internal_ik(const CMotionPipeConf& mp_conf
+//						, const CBodyConf* body_conf_i
+//						, HBODY& hBody
+//						, CIKGroupNode* &root_ikGroup)
+//{
+//	bool initialized = false;
+//
+//	IKAssert(VALID_HANDLE(bodySrc));
+//	const wchar_t* (*matches)[2] = NULL;
+//	int n_match = mp_conf.Pair.Data_alloc(&matches);
+//	HBODY body_htr_1 = H_INVALID;
+//	HBODY body_htr_2 = H_INVALID;
+//	Real identity[3][3] = {
+//		{1, 0, 0},
+//		{0, 1, 0},
+//		{0, 0, 1}
+//	};
+//	if (!(clone_body_interests_htr(bodySrc, &body_htr_1, matches, n_match, false, identity)  	// body_htr_1 is an intermediate body, orient bone with src bone information
+//	 			&& clone_body_htr(body_htr_1, &body_htr_2, mp_conf.m_inv))) 			// body_htr_2 is the result, orient bone with the interest bone information
+//	 		body_htr_2 = H_INVALID;
+//
+//	CPairsConf::Data_free(matches, n_match);
+//
+//	#if 0 // defined _DEBUG
+//		UE_LOG(LogHIK, Display, TEXT("ArtiBody_SIM"));
+//		DBG_printOutSkeletalHierachy(body_htr_1);
+//		UE_LOG(LogHIK, Display, TEXT("ArtiBody_SIM2"));
+//		DBG_printOutSkeletalHierachy(body_htr_2);
+//	#endif
+//
+//	if (VALID_HANDLE(body_htr_1))
+//	 		destroy_tree_body(body_htr_1);
+//	hBody = body_htr_2;
+//
+//	root_ikGroup = CIKGroupTree::Generate(CAST_2PBODY(hBody), *body_conf_i);
+//
+//
+//
+//	bool valid_fk_body = VALID_HANDLE(hBody);
+//	bool valid_ik_group = (NULL != root_ikGroup);
+//	IKAssert(valid_fk_body);
+//	IKAssert(valid_ik_group);
+//	initialized = valid_fk_body && valid_ik_group;
+//	return initialized;
+//}
+
+void dissect(const char* confXML, const char* path_htr, const char* dir_out)
+{
+
+}

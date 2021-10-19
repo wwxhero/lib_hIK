@@ -338,6 +338,11 @@ namespace CONF
 			return -1;
 	}
 
+	bool CBodyConf::Initialize(TiXmlDocument* doc)
+	{
+		return false;
+	}
+
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// CPairsConf:
 
@@ -446,33 +451,6 @@ namespace CONF
 		for (int i_r = 0; i_r < 3; i_r ++)\
 			for (int i_c = 0; i_c < 3; i_c ++)\
 				mtx[i_r][i_c] = (i_r == i_c);
-
-
-
-	CMotionPipeConf* CMotionPipeConf::Load(const wchar_t* confXML)
-	{
-		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-		std::string path_c = converter.to_bytes(confXML);
-		TiXmlDocument* doc = new TiXmlDocument(path_c);
-		CMotionPipeConf* conf = NULL;
-		bool loadOkay = doc->LoadFile();
-		if (loadOkay)
-		{
-			conf = new CMotionPipeConf();
-			if (!conf->Initialize(doc))
-			{
-				delete conf;
-				conf = NULL;
-			}
-		}
-		delete doc;
-		return conf;
-	}
-
-	void CMotionPipeConf::UnLoad(CMotionPipeConf* conf)
-	{
-		delete conf;
-	}
 
 	CMotionPipeConf::CMotionPipeConf()
 		: sync(CMoNode::unknown)
@@ -720,6 +698,7 @@ namespace CONF
 
 		return (TraverseBFS_XML_tree(doc, OnTraverXmlNode));
 	}
+
 #ifdef _DEBUG
 	void CMotionPipeConf::Dump_Dbg() const
 	{
