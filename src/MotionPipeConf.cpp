@@ -623,81 +623,16 @@ namespace CONF
 	{
 		assert(doc->Type() == TiXmlNode::DOCUMENT);
 
-		auto I_Body = [](const TiXmlNode* node) -> int
-		{
-			do
-			{
-				assert(NULL != node);
-				auto v_str = node->ValueStr();
-				bool is_src = ("Source" == v_str);
-				bool is_dst = ("Destination" == v_str);
-				if (is_src)
-					return 0;
-				else if (is_dst)
-					return 1;
-			} while (node = node->Parent());
-
-			assert(0);
-			return -1;
-		};
-
-		auto P_Chain = [this, I_Body](const TiXmlNode* node) -> CIKChainConf*
-		{
-			const char* eef_name = NULL;
-			do
-			{
-				assert(NULL != node);
-				auto v_str = node->ValueStr();
-				bool is_chain = ("IK_Chain" == v_str);
-				if (is_chain)
-				{
-					const TiXmlElement* ele = node->ToElement();
-					eef_name = ele->Attribute("eef");
-				}
-			} while (NULL != (node = node->Parent())
-				&& NULL == eef_name);
-
-			if (NULL != eef_name)
-			{
-				CBodyConf* body_confs[] = {&Source, &Destination};
-				return body_confs[I_Body(node)]->GetIKChain(eef_name);
-			}
-			else
-				return NULL;
-		};
-
-		auto OnTraverXmlNode = [this, I_Body, P_Chain](const TiXmlNode* node) -> bool
+		auto OnTraverXmlNode = [&](const TiXmlNode* node) -> bool
 		{
 			bool ret = true;
 			bool is_a_source = false;
 			bool is_a_desti = false;
-			CBodyConf* body_confs[] = { &Source, &Destination };
 			if (TiXmlNode::ELEMENT == node->Type())
 			{
 				auto name = node->ValueStr();
 				const TiXmlElement* ele = node->ToElement();
-				if ("Scale" == name)
-				{
-					const char* name = ele->Attribute("name");
-					bool valid_name = (NULL != name);
-					Real x, y, z;
-					bool valid_x_scale = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "x", &x));
-					bool valid_y_scale = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "y", &y));
-					bool valid_z_scale = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "z", &z));
-					ret = (valid_name
-						&& valid_x_scale
-						&& valid_y_scale
-						&& valid_z_scale);
-					IKAssert(valid_name);
-					IKAssert(valid_x_scale);
-					IKAssert(valid_y_scale);
-					IKAssert(valid_z_scale);
-					if (ret)
-					{
-						body_confs[I_Body(node)]->AddScale(name, x, y, z);
-					}
-				}
-				else if ("MotionPipe" == name)
+				if ("MotionPipe" == name)
 				{
 					const char* sync_type = ele->Attribute("sync");
 					sync = CMoNode::to_RETAR_TYPE(sync_type);
@@ -750,102 +685,13 @@ namespace CONF
 					if (valid_pair)
 						Pair.Add(j_from, j_to);
 				}
-				else if ("Target" == name)
-				{
-					const char* target_name = ele->Attribute("name");
-					bool valid_target = (NULL != target_name);
-					IKAssert(valid_target);
-					ret = valid_target;
-					if (valid_target)
-						body_confs[I_Body(node)]->AddTarget(target_name);
-				}
 				else if ((is_a_source = ("Source" == name))
 					|| (is_a_desti = ("Destination" == name)))
 				{
-					const char* filename = ele->Attribute("file");
-					if (NULL != filename)
-						body_confs[I_Body(node)]->SetFileName(filename);
-					const char* rc_filename = ele->Attribute("record");
-					if (NULL != rc_filename)
-						body_confs[I_Body(node)]->SetRecord(rc_filename);
-				}
-				else if("IK_Chain" == name)
-				{
-					const char* eef_name = ele->Attribute("eef");
-					int len = -1;
-					bool valid_len = (TIXML_SUCCESS == ele->QueryIntAttribute("len", &len));
-					CIKChain::Algor algor = CIKChain::Unknown;
-					const char* algor_str = NULL;
-					bool valid_algor = (NULL != (algor_str = ele->Attribute("algor"))
-									&& CIKChain::Unknown != (algor = CIKChain::to_Algor(algor_str)));
-					Real weight_p = 0;
-					bool valid_weight_p = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "weight_p", &weight_p));
-					Real weight_r = 0;
-					bool valid_weight_r = (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "weight_r", &weight_r));
-					Real up[3];
-					bool valid_up =   (TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "up_x", &up[0])
-									&& TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "up_y", &up[1])
-									&& TIXML_SUCCESS == TiXMLHelper::QueryRealAttribute(ele, "up_z", &up[2]));
-
-					IKAssert(valid_len);
-					IKAssert(valid_algor);
-					bool numerical_algor = NumericalAlgor(algor);
-					IKAssert(!numerical_algor || (valid_weight_p && valid_weight_r));
-					IKAssert(CIKChain::Proj != algor || valid_up);
-
-					int n_iter = 20;
-					if (TIXML_SUCCESS != ele->QueryIntAttribute("n_iter", &n_iter))
-						n_iter = 20;
-
-					const char* P_Graph = ele->Attribute("P_Graph");
-
-					if (numerical_algor)
-						body_confs[I_Body(node)]->AddIKChain(eef_name
-														, len
-														, algor
-														, weight_p
-														, weight_r
-														, n_iter
-														, NULL != P_Graph ? P_Graph : "");
+					if (is_a_source)
+						Source.Initialize(node);
 					else
-						body_confs[I_Body(node)]->AddIKChain(eef_name
-														, len
-														, algor
-														, up);
-				}
-				else if("Joint" == name)
-				{
-					struct
-					{
-						const char* str;
-						bool is_optional;
-					} names_attri[] = {
-						  { "name",			false }		// 0
-						, { "type",			true }		// 1
-						, { "Dexterity_x",	true }		// 2
-						, { "Dexterity_y",	true }		// 3
-						, { "Dexterity_z",	true }		// 4
-					};
-					const char* value_attri[] = {
-						  ele->Attribute(names_attri[0].str)
-						, ele->Attribute(names_attri[1].str)
-						, ele->Attribute(names_attri[2].str)
-						, ele->Attribute(names_attri[3].str)
-						, ele->Attribute(names_attri[4].str)
-					};
-
-					bool value_valid = true;
-					for (int i_value = 0
-						; i_value < sizeof(value_attri)/sizeof(const char*)
-							&& value_valid
-						; i_value ++)
-						value_valid = (NULL != value_attri[i_value]
-									|| names_attri[i_value].is_optional);
-					IKAssert(value_valid);
-
-					CIKChainConf* chain_conf = P_Chain(node);
-					IKAssert(NULL != chain_conf);
-					chain_conf->AddJoint(value_attri);
+						Destination.Initialize(node);
 				}
 			}
 			return ret;
