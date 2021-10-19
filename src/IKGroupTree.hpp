@@ -89,6 +89,17 @@ public:
 
 	void SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
 	virtual void Dump(int indent) const override;
+
+	bool Empty() const
+	{
+		return m_kChains.empty();
+	}
+
+	CArtiBodyNode* RootBody() const
+	{
+		return m_rootBody;
+	}
+
 protected:
 	CArtiBodyNode* m_rootBody;
 	std::vector<CIKChain*> m_kChains;

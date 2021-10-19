@@ -4,6 +4,9 @@
 #include "posture_graph.h"
 #include "ArtiBody.hpp"
 #include "ArtiBodyFile.hpp"
+#include "MotionPipeConf.hpp"
+#include "IKGroupTree.hpp"
+#include "filesystem_helper.hpp"
 
 void err_vis(const char* path_htr, const char* path_png)
 {
@@ -88,5 +91,55 @@ void err_vis(const char* path_htr, const char* path_png)
 
 void dissect(const char* confXML, const char* path_htr, const char* dir_out)
 {
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	std::wstring confXML_w = converter.from_bytes(confXML);
+	CONF::CBodyConf* body_conf = CONF::CBodyConf::Load(confXML_w.c_str());
+	CFile2ArtiBody htr(path_htr);
+	CArtiBodyNode* body_root = htr.CreateBody(BODY_TYPE::htr);
+	CIKGroupNode* ik_group = CIKGroupTree::Generate(body_root, *body_conf);
+	struct Bound
+	{
+		CArtiBodyNode* group_root;
+		CArtiBody2File* group_file;
+	};
+	std::vector<Bound> section;
+	int n_frames = htr.frames();
+	auto OnGroupNode = [&section, n_frames](CIKGroupNode* g_node)
+		{
+			if (!g_node->Empty())
+			{
+				CArtiBodyNode* group_root = g_node->RootBody();
+				CArtiBody2File* group_file = new CArtiBody2File(group_root, n_frames);
+				section.push_back({group_root, group_file});
+			}
+		};
 
+	auto OffGroupNode = [](CIKGroupNode* g_node)
+		{
+		};
+
+	CIKGroupTree::TraverseDFS(ik_group, OnGroupNode, OffGroupNode);
+
+	for (int i_frame = 0; i_frame < n_frames; i_frame++)
+	{
+		htr.UpdateMotion(i_frame, body_root);
+		for (auto sec : section)
+		{
+			CArtiBodyTree::FK_Update<true>(sec.group_root);
+			sec.group_file->UpdateMotion(i_frame);
+		}
+	}
+
+	fs::path out_path_dir(dir_out);
+	for (auto sec : section)
+	{
+		fs::path out_path(out_path_dir);
+		std::string file_htr(sec.group_root->GetName_c()); file_htr += ".htr";
+		out_path.append(file_htr);
+		sec.group_file->WriteBvhFile(out_path.u8string().c_str());
+		delete sec.group_file;
+	}
+
+	CIKGroupTree::Destroy(ik_group);
+	CArtiBodyTree::Destroy(body_root);
 }
