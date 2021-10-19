@@ -98,10 +98,15 @@ namespace CONF
 			return keep_traversing;
 		}
 
-		static TDerived* Load(const wchar_t* confXML)
+		static TDerived* Load(const std::wstring& confXML)
 		{
 			std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 			std::string path_c = converter.to_bytes(confXML);
+			return Load(path_c);
+		}
+
+		static TDerived* Load(const std::string& path_c)
+		{
 			TiXmlDocument* doc = new TiXmlDocument(path_c);
 			TDerived* conf = NULL;
 			bool loadOkay = doc->LoadFile();

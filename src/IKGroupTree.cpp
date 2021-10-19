@@ -374,7 +374,8 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
 #if defined _DEBUG || defined SMOOTH_LOGGING
 		CArtiBodyClrTree::Dump(root_clr);	// step 1
 #endif
-		if (root_clr->Colored())
+		if (root_clr->Colored() 
+			|| (ikChainConf.Name2IKChainIdx(root->GetName_c()) > -1))	//root node is either colored or an end effector
 		{
  			CIKGroupNodeGen* root_gen = CIKGroupTreeGen::Generate(root_clr);
 			if (root_gen)
