@@ -114,7 +114,7 @@ public:
 		return true;
 	}
 
-	virtual void Dump(std::stringstream& info) const override
+	virtual void Dump(std::ostream& info) const override
 	{
 		info << from_Algor(c_algor) << " : ";
 		Super::Dump(info);

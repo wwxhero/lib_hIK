@@ -1,6 +1,8 @@
 #pragma once
+#include <ostream>
 #include "IKChain.hpp"
 #include "MotionPipeConf.hpp"
+
 
 class CIKGroupNode : public TreeNode<CIKGroupNode>
 {
@@ -89,6 +91,7 @@ public:
 
 	void SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
 	virtual void Dump(int indent) const override;
+	void Dump(int indent, std::ostream& out) const;
 
 	bool Empty() const
 	{

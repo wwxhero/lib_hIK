@@ -1,5 +1,6 @@
 #include "pch.h"
 #include <opencv2/opencv.hpp>
+#include <fstream>
 #include "Math.hpp"
 #include "posture_graph.h"
 #include "ArtiBody.hpp"
@@ -45,11 +46,12 @@ void err_vis(const char* path_htr, const char* path_png)
 
 
 
-void dissect(const char* confXML, const char* path_htr, const char* dir_out)
+bool dissect(const char* confXML, const char* path_htr, const char* dir_out)
 {
 	CONF::CBodyConf* body_conf = NULL;
 	CArtiBodyNode* body_root = NULL;
 	CIKGroupNode* ik_group = NULL;
+	bool ok = true;
 	struct Bound
 	{
 		CArtiBodyNode* group_root;
@@ -64,6 +66,7 @@ void dissect(const char* confXML, const char* path_htr, const char* dir_out)
 		{
 			err = "body conf xml does not exist!!!";
 			LOGIKVarErr(LogInfoCharPtr, err.c_str());
+			ok = false;
 			goto EXIT;
 		}
 
@@ -75,6 +78,7 @@ void dissect(const char* confXML, const char* path_htr, const char* dir_out)
 		{
 			err = "IK group is not created, confirm with body conf xml file!!!";
 			LOGIKVarErr(LogInfoCharPtr, err.c_str());
+			ok = false;
 			goto EXIT;
 		}
 
@@ -112,11 +116,13 @@ void dissect(const char* confXML, const char* path_htr, const char* dir_out)
 			std::string file_htr(sec.group_root->GetName_c()); file_htr += ".htr";
 			out_path.append(file_htr);
 			sec.group_file->WriteBvhFile(out_path.u8string().c_str());
+
 		}
 	}
 	catch(const std::string& exp)
 	{
 		LOGIKVarErr(LogInfoCharPtr, exp.c_str());
+		ok = false;
 	}
 
 EXIT:
@@ -130,4 +136,5 @@ EXIT:
 		CArtiBodyTree::Destroy(body_root);
 	if (NULL != body_conf)
 		CONF::CBodyConf::UnLoad(body_conf);
+	return ok;
 }

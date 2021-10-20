@@ -46,6 +46,18 @@ void CIKGroupNode::Dump(int n_indents) const
 	LOGIK(logInfo.str().c_str());
 }
 
+void CIKGroupNode::Dump(int n_indents, std::ostream& logInfo) const
+{
+	for (int i_indent = 0; i_indent < n_indents; i_indent++)
+		logInfo << "\t";
+	logInfo << "{";
+	for (auto chain : m_kChains)
+	{
+		chain->Dump(logInfo);
+	}
+	logInfo << "}";
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CArtiBodyClrNode

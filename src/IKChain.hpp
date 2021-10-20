@@ -32,7 +32,7 @@ public:
 					, const Eigen::Matrix3r& src2dst_w
 					, const Eigen::Matrix3r& dst2src_w);
 
-	virtual void Dump(std::stringstream& info) const;
+	virtual void Dump(std::ostream& info) const;
 
 	virtual bool BeginUpdate(const Transform_TR& w2g);
 	// this is a quick IK update solution
@@ -95,7 +95,7 @@ public:
 	CIKChainProj(const Real norm[3]);
 	virtual ~CIKChainProj();
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>&) override;
-	virtual void Dump(std::stringstream& info) const override;
+	virtual void Dump(std::ostream& info) const override;
 	virtual bool BeginUpdate(const Transform_TR& w2g) override;
 	// this is a quick IK update solution
 	virtual bool Update();

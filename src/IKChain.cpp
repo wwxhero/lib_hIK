@@ -119,7 +119,7 @@ bool CIKChain::BeginUpdate(const Transform_TR& w2g)
 	return valid_update;
 }
 
-void CIKChain::Dump(std::stringstream& info) const
+void CIKChain::Dump(std::ostream& info) const
 {
 	info << "{";
 	for (auto seg : m_nodes)
@@ -156,7 +156,7 @@ bool CIKChainProj::Init(const CArtiBodyNode* eef, int len, const std::vector<CON
 	return initialized;
 }
 
-void CIKChainProj::Dump(std::stringstream& info) const
+void CIKChainProj::Dump(std::ostream& info) const
 {
 	info << "CIKChainProj:";
 	CIKChain::Dump(info);
