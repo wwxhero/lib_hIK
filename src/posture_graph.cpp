@@ -8,6 +8,7 @@
 #include "MotionPipeConf.hpp"
 #include "IKGroupTree.hpp"
 #include "filesystem_helper.hpp"
+#include "PostureGraph.hpp"
 
 namespace CONF
 {
@@ -222,5 +223,27 @@ EXIT:
 		CArtiBodyTree::Destroy(body_root);
 	if (NULL != body_conf)
 		CONF::CBodyConf::UnLoad(body_conf);
+	return ok;
+}
+
+
+bool posture_graph_gen(const char* path_htr, const char* dir_out)
+{
+	bool ok = false;
+	CPostureGraph* pg_gen = NULL;
+	try
+	{
+		CFile2ArtiBody htr2body(path_htr);
+		pg_gen = CPostureGraph::Generate(&htr2body);
+		pg_gen->Save(dir_out);
+		ok = true;
+	}
+	catch (std::string& err)
+	{
+		LOGIKVarErr(LogInfoCharPtr, err.c_str());
+		ok = false;
+	}
+
+	CPostureGraph::Destroy(pg_gen);
 	return ok;
 }

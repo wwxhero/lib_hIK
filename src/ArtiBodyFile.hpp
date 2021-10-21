@@ -1,3 +1,4 @@
+#pragma once
 #include "bvh11_helper.hpp"
 #include <queue>
 #include "loggerfast.h"

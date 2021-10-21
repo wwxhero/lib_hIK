@@ -404,6 +404,7 @@
     <ClInclude Include="..\..\src\matrix3.h" />
     <ClInclude Include="..\..\src\MoNode.hpp" />
     <ClInclude Include="..\..\src\MotionPipeConf.hpp" />
+    <ClInclude Include="..\..\src\PostureGraph.hpp" />
     <ClInclude Include="..\..\src\Transform.hpp" />
     <ClInclude Include="..\..\src\treebase.hpp" />
   </ItemGroup>
@@ -432,6 +433,7 @@
     <ClCompile Include="..\..\src\MoNode.cpp" />
     <ClCompile Include="..\..\src\MotionPipeConf.cpp" />
     <ClCompile Include="..\..\src\motion_pipeline.cpp" />
+    <ClCompile Include="..\..\src\PostureGraph.cpp" />
     <ClCompile Include="..\..\src\posture_graph.cpp" />
     <ClCompile Include="..\..\src\Transform.cpp" />
     <ClCompile Include="dllmain.cpp" />
