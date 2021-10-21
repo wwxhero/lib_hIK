@@ -9,25 +9,109 @@
 #include "IKGroupTree.hpp"
 #include "filesystem_helper.hpp"
 
-void err_vis(const char* path_htr, const char* path_png)
+namespace CONF
+{
+	class CInterestsConf : public ConfDoc<CInterestsConf>
+	{
+	public:
+		CInterestsConf()
+		{
+
+		}
+		bool Initialize(const TiXmlNode* doc)
+		{
+			auto OnTraverXmlNode = [this](const TiXmlNode* node) -> bool
+			{
+				bool ret = true;
+				bool is_a_source = false;
+				bool is_a_desti = false;
+				if (TiXmlNode::ELEMENT == node->Type())
+				{
+					auto name = node->ValueStr();
+					const TiXmlElement* ele = node->ToElement();
+					if ("Joint" == name)
+					{
+						const char* name = ele->Attribute("name");
+						Joints.push_back(std::string(name));
+					}
+
+				}
+				return ret;
+			};
+
+			return (TraverseBFS_XML_tree(doc, OnTraverXmlNode));
+		}
+
+		void Dump() const
+		{
+			std::cout << "<Interests>" << std::endl;
+			for (auto name : Joints)
+				std::cout << "\t<Joint name=\"" << name << "\"/>" << std::endl;
+			std::cout << "</Interests>" << std::endl;
+		}
+	public:
+		std::list<std::string> Joints;
+	};
+};
+
+bool err_vis(const char* interests_conf_path, const char* path_htr, const char* path_png)
 {
 	try
 	{
+		CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
+		if (!interests_conf_path)
+		{
+			std::stringstream err;
+			err << "loading " << interests_conf_path << " failed";
+			LOGIKVarErr(LogInfoCharPtr, err.str().c_str());
+			return false;
+		}
+		/*else
+		{
+			interests_conf->Dump();
+		}*/
+
 		CFile2ArtiBody htr2body(path_htr);
 		unsigned int n_frames = htr2body.frames();
 		cv::Mat err_out(n_frames, n_frames, CV_16U);
 		CArtiBodyNode* body_i = htr2body.CreateBody(BODY_TYPE::htr);
-		TransformArchive tm_data_i;
+		std::list<const CArtiBodyNode*> interest_bodies_i;
+		int n_bodies_i = CArtiBodyTree::GetBodies(body_i, interests_conf->Joints, interest_bodies_i);
+		TransformArchive tm_data_i(n_bodies_i);
+
 		CArtiBodyNode* body_j = htr2body.CreateBody(BODY_TYPE::htr);
-		TransformArchive tm_data_j;
+		std::list<const CArtiBodyNode*> interest_bodies_j;
+		int n_bodies_j = CArtiBodyTree::GetBodies(body_j, interests_conf->Joints, interest_bodies_j);
+		TransformArchive tm_data_j(n_bodies_j);
+
+		CONF::CInterestsConf::UnLoad(interests_conf);
+
+		bool ok = (n_bodies_i == n_bodies_j);
+		IKAssert(ok);
+		if (!ok)
+			return false;
+
+		auto UpdateTransforms = [] (std::list<const CArtiBodyNode*>& interest_bodies, TransformArchive& tm_data)
+			{
+				int i_tm = 0;
+				for (auto body : interest_bodies)
+				{
+					_TRANSFORM& tm_i = tm_data[i_tm ++];
+					body->GetJoint()->GetTransform()->CopyTo(tm_i);
+				}
+			};
+
+
 		for (unsigned int i_frame = 0; i_frame < n_frames; i_frame++)
 		{
 			htr2body.UpdateMotion(i_frame, body_i);
-			CArtiBodyTree::Serialize<true>(body_i, tm_data_i);
+			// CArtiBodyTree::Serialize<true>(body_i, tm_data_i);
+			UpdateTransforms(interest_bodies_i, tm_data_i);
 			for (unsigned int j_frame = 0; j_frame < n_frames; j_frame++)
 			{
 				htr2body.UpdateMotion(j_frame, body_j);
-				CArtiBodyTree::Serialize<true>(body_j, tm_data_j);
+				// CArtiBodyTree::Serialize<true>(body_j, tm_data_j);
+				UpdateTransforms(interest_bodies_j, tm_data_j);
 				auto& vis_scale_ij = err_out.at<unsigned short>(i_frame, j_frame);
 				auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
 				vis_scale_ij = (unsigned short)(err_ij * USHRT_MAX);
@@ -40,7 +124,9 @@ void err_vis(const char* path_htr, const char* path_png)
 	catch(const std::string& err)
 	{
 		LOGIKVarErr(LogInfoCharPtr, err.c_str());
+		return false;
 	}
+	return true;
 }
 
 

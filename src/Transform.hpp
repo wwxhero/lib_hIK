@@ -344,6 +344,10 @@ public:
 	TransformArchive()
 	{
 	}
+	explicit TransformArchive(int n_transforms)
+	{
+		Resize(n_transforms);
+	}
 	void Resize(int sz)
 	{
 		m_data.resize(sz);
