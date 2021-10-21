@@ -275,6 +275,56 @@ CArtiBodyNode* CFile2ArtiBody::CreateBodyHTR()
 	}
 }
 
+void CFile2ArtiBody::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints)
+{
+	unsigned int n_frames = frames();
+	err_out.resize(n_frames, n_frames);
+	// err_out.create(n_frames, n_frames, CV_16U);
+	CArtiBodyNode* body_i = CreateBody(BODY_TYPE::htr);
+	std::list<const CArtiBodyNode*> interest_bodies_i;
+	int n_bodies_i = CArtiBodyTree::GetBodies(body_i, joints, interest_bodies_i);
+	TransformArchive tm_data_i(n_bodies_i);
+
+	CArtiBodyNode* body_j = CreateBody(BODY_TYPE::htr);
+	std::list<const CArtiBodyNode*> interest_bodies_j;
+	int n_bodies_j = CArtiBodyTree::GetBodies(body_j, joints, interest_bodies_j);
+	TransformArchive tm_data_j(n_bodies_j);
+
+	bool ok = (n_bodies_i == n_bodies_j);
+	IKAssert(ok);
+
+	auto UpdateTransforms = [] (std::list<const CArtiBodyNode*>& interest_bodies, TransformArchive& tm_data)
+		{
+			int i_tm = 0;
+			for (auto body : interest_bodies)
+			{
+				_TRANSFORM& tm_i = tm_data[i_tm ++];
+				body->GetJoint()->GetTransform()->CopyTo(tm_i);
+			}
+		};
+
+
+	for (unsigned int i_frame = 0; i_frame < n_frames; i_frame++)
+	{
+		UpdateMotion(i_frame, body_i);
+		// CArtiBodyTree::Serialize<true>(body_i, tm_data_i);
+		UpdateTransforms(interest_bodies_i, tm_data_i);
+		for (unsigned int j_frame = 0; j_frame < n_frames; j_frame++)
+		{
+			UpdateMotion(j_frame, body_j);
+			// CArtiBodyTree::Serialize<true>(body_j, tm_data_j);
+			UpdateTransforms(interest_bodies_j, tm_data_j);
+			// auto& vis_scale_ij = err_out.at<unsigned short>(i_frame, j_frame);
+			auto& vis_scale_ij = err_out(i_frame, j_frame);
+			auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
+			// vis_scale_ij = (unsigned short)(err_ij * USHRT_MAX);
+			vis_scale_ij = err_ij;
+		}
+	}
+	CArtiBodyTree::Destroy(body_i);
+	CArtiBodyTree::Destroy(body_j);
+}
+
 void CFile2ArtiBody::UpdateMotion(int i_frame, CArtiBodyNode* body)
 {
 	auto onEnterBound_pose = [&src = *this, i_frame](Bound b_this)

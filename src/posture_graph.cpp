@@ -73,54 +73,17 @@ bool err_vis(const char* interests_conf_path, const char* path_htr, const char* 
 		}*/
 
 		CFile2ArtiBody htr2body(path_htr);
-		unsigned int n_frames = htr2body.frames();
-		cv::Mat err_out(n_frames, n_frames, CV_16U);
-		CArtiBodyNode* body_i = htr2body.CreateBody(BODY_TYPE::htr);
-		std::list<const CArtiBodyNode*> interest_bodies_i;
-		int n_bodies_i = CArtiBodyTree::GetBodies(body_i, interests_conf->Joints, interest_bodies_i);
-		TransformArchive tm_data_i(n_bodies_i);
-
-		CArtiBodyNode* body_j = htr2body.CreateBody(BODY_TYPE::htr);
-		std::list<const CArtiBodyNode*> interest_bodies_j;
-		int n_bodies_j = CArtiBodyTree::GetBodies(body_j, interests_conf->Joints, interest_bodies_j);
-		TransformArchive tm_data_j(n_bodies_j);
-
+		Eigen::MatrixXr err_out;
+		htr2body.ETB_Setup(err_out, interests_conf->Joints);
 		CONF::CInterestsConf::UnLoad(interests_conf);
-
-		bool ok = (n_bodies_i == n_bodies_j);
-		IKAssert(ok);
-		if (!ok)
-			return false;
-
-		auto UpdateTransforms = [] (std::list<const CArtiBodyNode*>& interest_bodies, TransformArchive& tm_data)
-			{
-				int i_tm = 0;
-				for (auto body : interest_bodies)
-				{
-					_TRANSFORM& tm_i = tm_data[i_tm ++];
-					body->GetJoint()->GetTransform()->CopyTo(tm_i);
-				}
-			};
-
-
-		for (unsigned int i_frame = 0; i_frame < n_frames; i_frame++)
-		{
-			htr2body.UpdateMotion(i_frame, body_i);
-			// CArtiBodyTree::Serialize<true>(body_i, tm_data_i);
-			UpdateTransforms(interest_bodies_i, tm_data_i);
-			for (unsigned int j_frame = 0; j_frame < n_frames; j_frame++)
-			{
-				htr2body.UpdateMotion(j_frame, body_j);
-				// CArtiBodyTree::Serialize<true>(body_j, tm_data_j);
-				UpdateTransforms(interest_bodies_j, tm_data_j);
-				auto& vis_scale_ij = err_out.at<unsigned short>(i_frame, j_frame);
-				auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
-				vis_scale_ij = (unsigned short)(err_ij * USHRT_MAX);
-			}
-		}
-		CArtiBodyTree::Destroy(body_i);
-		CArtiBodyTree::Destroy(body_j);
-		imwrite(path_png, err_out);
+		int n_rows = (int)err_out.rows();
+		int n_cols = (int)err_out.cols();
+		IKAssert(n_rows == n_cols);
+		cv::Mat err_png(n_rows, n_cols, CV_16U);
+		for (int i_row = 0; i_row < n_rows; i_row++)
+			for (int i_col = 0; i_col < n_cols; i_col++)
+				err_png.at<unsigned short>(i_row, i_col) = (unsigned short)(err_out(i_row, i_col)*(Real)USHRT_MAX);
+		imwrite(path_png, err_png);
 	}
 	catch(const std::string& err)
 	{
@@ -227,14 +190,31 @@ EXIT:
 }
 
 
-bool posture_graph_gen(const char* path_htr, const char* dir_out)
+bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, const char* dir_out)
 {
 	bool ok = false;
-	CPostureGraph* pg_gen = NULL;
+	CPostureGraphGen* pg_gen = NULL;
 	try
 	{
 		CFile2ArtiBody htr2body(path_htr);
-		pg_gen = CPostureGraph::Generate(&htr2body);
+		fs::path path_err_tb(path_htr);
+		path_err_tb.replace_extension(".png");
+		unsigned int n_frames = htr2body.frames();
+		cv::Mat err_tb = cv::imread(path_err_tb.u8string(), cv::IMREAD_GRAYSCALE);
+		if (NULL == err_tb.data)
+		{
+			CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
+			if (!interests_conf_path)
+			{
+				std::stringstream err;
+				err << "loading " << interests_conf_path << " failed";
+				LOGIKVarErr(LogInfoCharPtr, err.str().c_str());
+				return false;
+			}
+			// htr2body.ETB_Setup(err_tb, interests_conf->Joints);
+			CONF::CInterestsConf::UnLoad(interests_conf);
+		}
+		// pg_gen = CPostureGraphGen::Generate(&htr2body, );
 		pg_gen->Save(dir_out);
 		ok = true;
 	}
@@ -244,6 +224,6 @@ bool posture_graph_gen(const char* path_htr, const char* dir_out)
 		ok = false;
 	}
 
-	CPostureGraph::Destroy(pg_gen);
+	CPostureGraphGen::Destroy(pg_gen);
 	return ok;
 }

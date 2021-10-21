@@ -1,6 +1,7 @@
 #pragma once
-#include "bvh11_helper.hpp"
 #include <queue>
+#include <opencv2/opencv.hpp>
+#include "bvh11_helper.hpp"
 #include "loggerfast.h"
 #include "ik_logger.h"
 class CArtiBody2File : public bvh11::BvhObject
@@ -55,6 +56,7 @@ public:
 	CFile2ArtiBody(const std::string& path);
 	CArtiBodyNode* CreateBody(BODY_TYPE type);
 	void UpdateMotion(int i_frame, CArtiBodyNode* body);
+	void ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints);
 private:
 	CArtiBodyNode* CreateBodyBVH();
 	CArtiBodyNode* CreateBodyHTR();
