@@ -6,14 +6,47 @@
 #include <boost/property_map/property_map.hpp>
 #include <string>
 #include <boost/graph/graphviz.hpp>
-class CPostureGraph
-	: public CArtiBody2File
+
+template<typename VertexData, typename EdgeData>
+class PostureGraphBase
+	: public boost::adjacency_list< boost::vecS, boost::vecS, boost::undirectedS, VertexData, EdgeData >
+	//, public CArtiBody2File
 {
-private:
-	CPostureGraph();
-	~CPostureGraph();
+
+protected:
+	PostureGraphBase(std::size_t n_vertices)
+		: boost::adjacency_list< boost::vecS, boost::vecS, boost::undirectedS, VertexData, EdgeData >(n_vertices)
+	{
+	}
+	~PostureGraphBase() {};
 public:
-	void Save(const char* dir);
-	static CPostureGraph* Generate(const CFile2ArtiBody* theta);
-	static void Destroy(CPostureGraph* pg);
+	virtual void Save(const char* dir)
+	{
+	}
+};
+
+
+struct VertexGen
+{
+	bool tag_rm;
+};
+
+struct EdgeGen
+{
+	int deg;
+};
+
+class CPostureGraphGen : public PostureGraphBase<VertexGen, EdgeGen>
+{
+	typedef PostureGraphBase<VertexGen, EdgeGen> Super;
+public:
+	CPostureGraphGen(std::size_t n_vertices)
+		: Super(n_vertices)
+	{
+	}
+	~CPostureGraphGen() {};
+	virtual void Save(const char* dir);
+public:
+	static CPostureGraphGen* Generate(const CFile2ArtiBody* theta, const Eigen::MatrixXr& errTB);
+	static void Destroy(CPostureGraphGen* pg);
 };
