@@ -90,6 +90,12 @@ inline Real rad2deg(Real rad)
 	return r2d * wrap_pi(rad);
 }
 
+inline Real deg2rad(Real deg)
+{
+	const Real d2r = (Real)M_PI / (Real)180;
+	return wrap_pi(d2r*deg);
+}
+
 struct Plane
 {
 	Eigen::Vector3r n;

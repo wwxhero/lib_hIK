@@ -74,8 +74,10 @@ void ETB_Convert(const Eigen::MatrixXr& src, cv::Mat& dst)
 	}
 }
 
-void ETB_Convert(const cv::Mat& src, Eigen::MatrixXr& dst)
+void ETB_Convert(const cv::Mat& a_src, Eigen::MatrixXr& dst)
 {
+	cv::Mat src;
+	a_src.convertTo(src, CV_16U);
 	const Real USHRT_MAX_INV = (Real)1 / (Real)USHRT_MAX;
 	int n_rows = src.rows;
 	int n_cols = src.cols;
@@ -217,17 +219,17 @@ EXIT:
 }
 
 
-bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, const char* dir_out)
+bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, const char* dir_out, Real epsErr)
 {
 	bool ok = false;
-	CPostureGraphGen* pg_gen = NULL;
+	IPostureGraph* pg_gen = NULL;
 	try
 	{
 		CFile2ArtiBody htr2body(path_htr);
 		fs::path path_err_tb(path_htr);
 		path_err_tb.replace_extension(".png");
 		unsigned int n_frames = htr2body.frames();
-		cv::Mat err_png = cv::imread(path_err_tb.u8string(), cv::IMREAD_GRAYSCALE);
+		cv::Mat err_png = cv::imread(path_err_tb.u8string(), cv::IMREAD_UNCHANGED);
 		Eigen::MatrixXr err_tb;
 		if (NULL == err_png.data)
 		{
@@ -246,8 +248,9 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 		else
 			ETB_Convert(err_png, err_tb);
 
-		pg_gen = CPostureGraphGen::Generate(&htr2body, err_tb);
+		pg_gen = CPostureGraphGen::Generate(&htr2body, err_tb, epsErr);
 		pg_gen->Save(dir_out);
+		CPostureGraphGen::Destroy(pg_gen);
 		ok = true;
 	}
 	catch (std::string& err)
@@ -255,7 +258,5 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 		LOGIKVarErr(LogInfoCharPtr, err.c_str());
 		ok = false;
 	}
-
-	CPostureGraphGen::Destroy(pg_gen);
 	return ok;
 }
