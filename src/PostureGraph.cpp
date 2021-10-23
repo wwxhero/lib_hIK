@@ -86,16 +86,16 @@ public:
 	{
 	}
 
-	void InitTransitions(const Eigen::MatrixXr& errTB, Real epsErr_deg)
+	static void InitTransitions(CPostureGraphOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg)
 	{
 		const int i_frame_start = 1; //to skip the 'T' posture
-		const int i_frame_end = m_theta->frames() - 1;
+		const int i_frame_end = graph.m_theta->frames() - 1;
 		for (int i_frame = i_frame_start; i_frame < i_frame_end; i_frame++)
-			boost::add_edge(i_frame, i_frame + 1, *this);
+			boost::add_edge(i_frame, i_frame + 1, graph);
 
-		// #if defined _DEBUG
-		Dump(__FILE__, __LINE__);
-		// #endif
+// #if defined _DEBUG
+		graph.Dump(__FILE__, __LINE__);
+// #endif
 
 		// err_epsilon = (1-cos(theta_eps_deg*deg2rad/2))*65535;
 		Real err_epsilon = (1 - cos(deg2rad(epsErr_deg) / (Real)2));
@@ -105,31 +105,31 @@ public:
 			for (std::size_t j_theta = i_theta + 1; j_theta < n_thetas; j_theta++)
 			{
 				if (errTB(i_theta, j_theta) < err_epsilon)
-					boost::add_edge(i_theta, j_theta, *this);
+					boost::add_edge(i_theta, j_theta, graph);
 			}
 		}
 
 // #if defined _DEBUG
-		Dump(__FILE__, __LINE__);
+		graph.Dump(__FILE__, __LINE__);
 // #endif
 		//tag rm for each vertex
-		auto v_range = boost::vertices(*this);
+		auto v_range = boost::vertices(graph);
 		vertex_iterator it_v_end = v_range.second;
 		for (vertex_iterator it_v = v_range.first; it_v != it_v_end; it_v++)
 		{
-			auto& v_property = (*this)[*it_v];
+			auto& v_property = (graph)[*it_v];
 			v_property.tag_rm = false;
 			v_property.deg = 0;
 		}
 
 		// compute degree for the vertex (work around for adjacent matrix)
-		auto e_range = boost::edges(*this);
+		auto e_range = boost::edges(graph);
 		edge_iterator it_e_end = e_range.second;
 		for (edge_iterator it_e = e_range.first; it_e != it_e_end; it_e++)
 		{
 			auto e = *it_e;
-			vertex_descriptor v[] = { boost::source(e, *this), boost::target(e, *this) };
-			(*this)[v[0]].deg++; (*this)[v[1]].deg++;			
+			vertex_descriptor v[] = { boost::source(e, graph), boost::target(e, graph) };
+			(graph)[v[0]].deg++; (graph)[v[1]].deg++;
 		}
 
 		// tag edge degrees and sort edges by degree
@@ -139,9 +139,9 @@ public:
 		{
 			auto e = *it_e;
 			edges_eps.push_back(e);
-			vertex_descriptor v[] = {boost::source(e, *this), boost::target(e, *this)};
-			std::size_t deg[] = {(*this)[v[0]].deg, (*this)[v[1]].deg };
-			auto& e_property = (*this)[e];
+			vertex_descriptor v[] = {boost::source(e, graph), boost::target(e, graph)};
+			std::size_t deg[] = {(graph)[v[0]].deg, (graph)[v[1]].deg };
+			auto& e_property = (graph)[e];
 			if (v[0] < v[1])
 			{
 				e_property.deg = deg[1];
@@ -163,17 +163,17 @@ public:
 				, edges_eps.end()
 				, [&](const edge_descriptor& e_i, const edge_descriptor& e_j)->bool
 					{
-						return (*this)[e_i].deg > (*this)[e_j].deg;
+						return (graph)[e_i].deg > (graph)[e_j].deg;
 					});
 		int n_removed = 0;
 		for (auto e : edges_eps)
 		{
-			vertex_descriptor v[] = { boost::source(e, *this), boost::target(e, *this) };
-			bool rm[] = { (*this)[v[0]].tag_rm, (*this)[v[1]].tag_rm };
+			vertex_descriptor v[] = { boost::source(e, graph), boost::target(e, graph) };
+			bool rm[] = { (graph)[v[0]].tag_rm, (graph)[v[1]].tag_rm };
 			if (!rm[0] && !rm[1])
 			{
-				auto e_property = (*this)[e];
-				(*this)[v[e_property.to_rm]].tag_rm = true;
+				auto e_property = (graph)[e];
+				(graph)[v[e_property.to_rm]].tag_rm = true;
 				n_removed ++;
 			}
 		}
@@ -181,25 +181,25 @@ public:
 
 		for (vertex_iterator it_v = v_range.first; it_v != it_v_end; it_v++)
 		{
-			const auto& v_property = (*this)[*it_v];
+			const auto& v_property = (graph)[*it_v];
 			if (v_property.tag_rm)
 			{
 				std::list<vertex_descriptor> neightbors_v;
-				auto vertices_range_neighbors = boost::adjacent_vertices(*it_v, *this);
+				auto vertices_range_neighbors = boost::adjacent_vertices(*it_v, graph);
 				for (auto it_vert_n = vertices_range_neighbors.first
 					; it_vert_n != vertices_range_neighbors.second
 					; it_vert_n++)
 				{
-					const auto& v_n_property = (*this)[*it_vert_n];
+					const auto& v_n_property = (graph)[*it_vert_n];
 					neightbors_v.push_back(*it_vert_n);
 				}
 
-				auto edges_range_incident = boost::out_edges(*it_v, *this);
+				auto edges_range_incident = boost::out_edges(*it_v, graph);
 				for (auto it_edge_incident = edges_range_incident.first
 					; it_edge_incident != edges_range_incident.second
 					; it_edge_incident++)
 				{
-					boost::remove_edge(*it_edge_incident, *this);
+					boost::remove_edge(*it_edge_incident, graph);
 				}
 
 				for (auto it_v_i = neightbors_v.begin(); it_v_i != neightbors_v.end(); it_v_i++)
@@ -211,7 +211,7 @@ public:
 						vertex_descriptor v_j = *it_v_j;
 						if (errTB(v_i, v_j) > err_epsilon)
 						{
-							boost::add_edge(v_i, v_j, *this);
+							boost::add_edge(v_i, v_j, graph);
 						}
 					}
 				}
@@ -219,7 +219,7 @@ public:
 		}
 
 // #if defined _DEBUG
-		Dump(__FILE__, __LINE__);
+		graph.Dump(__FILE__, __LINE__);
 // #endif
 
 
@@ -232,13 +232,13 @@ public:
 	{
 		// int n_frames = m_theta->frames();
 		// Eigen::MatrixXi cnn_map(n_frames, n_frames);
-		// auto v_range = boost::vertices(*this);
+		// auto v_range = boost::vertices(graph);
 		// vertex_iterator it_v = v_range.first;
 		// vertex_iterator it_v_end = v_range.second;
 		// for (; it_v != it_v_end; it_v++)
 		// {
 		// 	vertex_descriptor v = *it_v;
-		// 	bool rm = (*this)[v].tag_rm;
+		// 	bool rm = (graph)[v].tag_rm;
 		// 	if (!rm)
 		// 		lstV.push_back(v);
 		// 	else
@@ -292,7 +292,7 @@ private:
 IPostureGraph* CPostureGraphGen::Generate(const CFile2ArtiBody* theta, const Eigen::MatrixXr& errTB, Real epsErr_deg)
 {
 	CPostureGraphOpen* e_epsilon = new CPostureGraphOpen(theta);
-	e_epsilon->InitTransitions(errTB, epsErr_deg);
+	CPostureGraphOpen::InitTransitions(*e_epsilon, errTB, epsErr_deg);
 	std::list<V> vertices;
 	std::list<E> edges;
 	e_epsilon->RemoveDUPs(vertices, edges);
