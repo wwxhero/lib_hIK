@@ -1,4 +1,12 @@
 #include "pch.h"
+#include <boost/config.hpp>
+#include <iostream>
+#include <algorithm>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/adjacency_matrix.hpp>
+#include <boost/property_map/property_map.hpp>
+#include <string>
+#include <boost/graph/graphviz.hpp>
 #include "filesystem_helper.hpp"
 #include "PostureGraph.hpp"
 #include "Math.hpp"
@@ -31,10 +39,28 @@ protected:
 
 };
 
+template<typename VertexData, typename EdgeData>
+class PostureGraphMatrix
+	: public boost::adjacency_matrix< boost::undirectedS
+									, VertexData
+									, EdgeData >
+{
+protected:
+	PostureGraphMatrix(std::size_t n_vertices)
+					: boost::adjacency_matrix<boost::undirectedS
+											, VertexData
+											, EdgeData >(n_vertices)
+	{
+	}
+	~PostureGraphMatrix() {};
+
+};
+
 
 
 struct VertexGen
 {
+	std::size_t deg;
 	bool tag_rm;
 };
 
@@ -45,12 +71,12 @@ struct EdgeGen
 };
 
 class CPostureGraphOpen : public IPostureGraph
-						, public PostureGraphList<VertexGen, EdgeGen>
+						, public PostureGraphMatrix<VertexGen, EdgeGen>
 
 {
 public:
 	CPostureGraphOpen(const CFile2ArtiBody* theta)
-		: PostureGraphList< VertexGen, EdgeGen>((std::size_t)(theta->frames()))
+		: PostureGraphMatrix< VertexGen, EdgeGen>((std::size_t)(theta->frames()))
 		, m_theta(theta)
 	{
 	}
@@ -90,20 +116,31 @@ public:
 		vertex_iterator it_v = v_range.first;
 		vertex_iterator it_v_end = v_range.second;
 		for (; it_v != it_v_end; it_v++)
-			(*this)[*it_v].tag_rm = false;
+		{
+			auto& v_property = (*this)[*it_v];
+			v_property.tag_rm = false;
+			v_property.deg = 0;
+		}
+
+		// compute degree for the vertex (work around for adjacent matrix)
+		auto e_range = boost::edges(*this);
+		edge_iterator it_e_end = e_range.second;
+		for (edge_iterator it_e = e_range.first; it_e != it_e_end; it_e++)
+		{
+			auto e = *it_e;
+			vertex_descriptor v[] = { boost::source(e, *this), boost::target(e, *this) };
+			(*this)[v[0]].deg++; (*this)[v[1]].deg++;			
+		}
 
 		// tag edge degrees and sort edges by degree
 		std::srand((unsigned int)std::time(0));
 		std::vector<edge_descriptor> edges_eps;
-		auto e_range = boost::edges(*this);
-		edge_iterator it_e = e_range.first;
-		edge_iterator it_e_end = e_range.second;
-		for (; it_e != it_e_end; it_e++)
+		for (edge_iterator it_e = e_range.first; it_e != it_e_end; it_e++)
 		{
 			auto e = *it_e;
 			edges_eps.push_back(e);
 			vertex_descriptor v[] = {boost::source(e, *this), boost::target(e, *this)};
-			std::size_t deg[] = {boost::degree(v[0], *this), boost::degree(v[1], *this)};
+			std::size_t deg[] = {(*this)[v[0]].deg, (*this)[v[1]].deg };
 			auto& e_property = (*this)[e];
 			if (v[0] < v[1])
 			{
@@ -117,7 +154,7 @@ public:
 			}
 			else
 			{
-				e_property.deg = deg[0] - 1;
+				e_property.deg = deg[0] - 1; // to give nodes other chance to be decided
 				e_property.to_rm = std::rand()&0x1;
 			}
 		}
@@ -127,6 +164,7 @@ public:
 					{
 						return (*this)[e_i].deg > (*this)[e_j].deg;
 					});
+		int n_removed = 0;
 		for (auto e : edges_eps)
 		{
 			vertex_descriptor v[] = { boost::source(e, *this), boost::target(e, *this) };
@@ -135,8 +173,14 @@ public:
 			{
 				auto e_property = (*this)[e];
 				(*this)[v[e_property.to_rm]].tag_rm = true;
+				n_removed ++;
 			}
 		}
+
+		LOGIKVar(LogInfoInt, n_removed);
+
+
+
 	}
 
 	void RemoveDUPs(std::list<V> &lstV, std::list<E> &lstE)
