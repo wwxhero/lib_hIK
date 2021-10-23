@@ -10,6 +10,7 @@
 #include "filesystem_helper.hpp"
 #include "PostureGraph.hpp"
 #include "Math.hpp"
+#include "ArtiBody.hpp"
 
 typedef std::size_t V;
 typedef struct
@@ -17,6 +18,34 @@ typedef struct
 	V v_i;
 	V v_j;
 } E;
+
+template<typename G>
+void Dump(G& g, const char* fileName, int lineNo)
+{
+	auto file_short = [](const char* file_f) -> const char*
+	{
+#ifdef _WIN32
+#define DELIMITER '\\'
+#else
+#define DELIMITER '/'
+#endif
+		const char* p_delim = NULL;
+		for (const char* p = file_f
+			; *p != '\0'
+			; p++)
+		{
+			if (*p == DELIMITER)
+				p_delim = p;
+		}
+		assert(NULL != p_delim);
+		return ++p_delim;
+	};
+	std::stringstream dot_path;
+	dot_path << file_short(fileName) << "_" << lineNo << ".dot";
+	std::ofstream dot_file(dot_path.str());
+	IKAssert(std::ios_base::failbit != dot_file.rdstate());
+	write_graphviz(dot_file, g);
+}
 
 template<typename VertexData, typename EdgeData>
 class PostureGraphList
@@ -57,6 +86,101 @@ protected:
 };
 
 
+class CPostureGraphClose : public IPostureGraph
+						 , public PostureGraphList<boost::no_property, boost::no_property>
+{
+	friend class CPostureGraphOpen;
+public:
+	struct Registry
+	{
+		std::size_t Register_v(std::size_t v_src)
+		{
+			auto it_src2dst = V_map.find(v_src);
+			bool exists = (V_map.end() != it_src2dst);
+			if (exists)
+				return it_src2dst->second;
+			else
+			{
+				std::size_t v_dst = V.size();
+				V_map[v_src] = v_dst;
+				V.push_back({ v_src, v_dst });
+				return v_dst;
+			}
+		}
+
+		void Register_e(std::size_t v_0, std::size_t v_1)
+		{
+			E.push_back({ v_0, v_1 });
+		}
+
+		typedef struct
+		{
+			std::size_t v_src;
+			std::size_t v_dst;
+		} REGISTER_v;
+
+		typedef struct
+		{
+			std::size_t v_0;
+			std::size_t v_1;
+		} REGISTER_e;
+
+		std::map<std::size_t, std::size_t> V_map;
+		std::list<REGISTER_v> V;
+
+		std::list<REGISTER_e> E;
+	};
+protected:
+	CPostureGraphClose(std::size_t n_vs, const CFile2ArtiBody* theta_src)
+		: PostureGraphList<boost::no_property, boost::no_property>(n_vs)
+		, c_thetaSrc_ref(theta_src)
+		, m_thetaBody(theta_src->CreateBody(BODY_TYPE::htr))
+		, m_thetaFile(m_thetaBody, (int)n_vs)
+	{
+	}
+
+	static void Initialize(CPostureGraphClose& graph, const Registry& reg)
+	{
+		for (Registry::REGISTER_v reg_v : reg.V)
+		{
+			graph.c_thetaSrc_ref->UpdateMotion((int)reg_v.v_src, graph.m_thetaBody);
+			graph.m_thetaFile.UpdateMotion((int)reg_v.v_dst);
+		}
+
+		for (Registry::REGISTER_e reg_e : reg.E)
+		{
+			boost::add_edge(reg_e.v_0, reg_e.v_1, graph);
+		}
+//#if defined _DEBUG
+		Dump(graph, __FILE__, __LINE__);
+//#endif
+	}
+public:
+	virtual ~CPostureGraphClose()
+	{
+		CArtiBodyTree::Destroy(m_thetaBody);
+	}
+
+	virtual void Save(const char* dir)
+	{
+		fs::path dot_path(dir);
+		std::string dot_file_name(m_thetaBody->GetName_c()); dot_file_name += ".dot";
+		dot_path.append(dot_file_name);
+		std::ofstream dot_file(dot_path);
+		IKAssert(std::ios_base::failbit != dot_file.rdstate());
+		write_graphviz(dot_file, *this);
+
+		fs::path htr_path(dir);
+		std::string htr_file_name(m_thetaBody->GetName_c()); htr_file_name += ".htr";
+		htr_path.append(htr_file_name);
+		m_thetaFile.WriteBvhFile(htr_path.u8string().c_str());
+
+	}
+private:
+	const CFile2ArtiBody* c_thetaSrc_ref;
+	CArtiBodyNode* m_thetaBody;
+	CArtiBody2File m_thetaFile;
+};
 
 struct VertexGen
 {
@@ -94,13 +218,13 @@ public:
 			boost::add_edge(i_frame, i_frame + 1, graph);
 
 // #if defined _DEBUG
-		graph.Dump(__FILE__, __LINE__);
+		Dump(graph, __FILE__, __LINE__);
 // #endif
 
 		// err_epsilon = (1-cos(theta_eps_deg*deg2rad/2))*65535;
 		Real err_epsilon = (1 - cos(deg2rad(epsErr_deg) / (Real)2));
 		std::size_t n_thetas = errTB.rows();
-		for (std::size_t i_theta = 0; i_theta < n_thetas; i_theta++)
+		for (std::size_t i_theta = 1; i_theta < n_thetas; i_theta++) //to skip the 'T' posture
 		{
 			for (std::size_t j_theta = i_theta + 1; j_theta < n_thetas; j_theta++)
 			{
@@ -110,7 +234,7 @@ public:
 		}
 
 // #if defined _DEBUG
-		graph.Dump(__FILE__, __LINE__);
+		Dump(graph, __FILE__, __LINE__);
 // #endif
 		//tag rm for each vertex
 		auto v_range = boost::vertices(graph);
@@ -124,7 +248,7 @@ public:
 
 		// compute degree for the vertex (work around for adjacent matrix)
 		auto e_range = boost::edges(graph);
-		edge_iterator it_e_end = e_range.second;
+		const edge_iterator it_e_end = e_range.second;
 		for (edge_iterator it_e = e_range.first; it_e != it_e_end; it_e++)
 		{
 			auto e = *it_e;
@@ -219,33 +343,30 @@ public:
 		}
 
 // #if defined _DEBUG
-		graph.Dump(__FILE__, __LINE__);
+		Dump(graph, __FILE__, __LINE__);
 // #endif
-
-
-
 
 
 	}
 
-	void RemoveDUPs(std::list<V> &lstV, std::list<E> &lstE)
+	static CPostureGraphClose* GenerateClosePG(const CPostureGraphOpen& graph_src)
 	{
-		// int n_frames = m_theta->frames();
-		// Eigen::MatrixXi cnn_map(n_frames, n_frames);
-		// auto v_range = boost::vertices(graph);
-		// vertex_iterator it_v = v_range.first;
-		// vertex_iterator it_v_end = v_range.second;
-		// for (; it_v != it_v_end; it_v++)
-		// {
-		// 	vertex_descriptor v = *it_v;
-		// 	bool rm = (graph)[v].tag_rm;
-		// 	if (!rm)
-		// 		lstV.push_back(v);
-		// 	else
-		// 	{
-		// 		// traverse all neighbor vertices
-		// 	}
-		// }
+		CPostureGraphClose::Registry regG;
+		regG.Register_v(0); // 0 posture is reserved for 'T' posture which has no edges
+		auto e_range_src = boost::edges(graph_src);
+		const edge_iterator it_e_end_src = e_range_src.second;
+		for (auto it_e_src = e_range_src.first
+			; it_e_src != it_e_end_src
+			; it_e_src++)
+		{
+			auto e_src = *it_e_src;
+			vertex_descriptor v_src[] = { boost::source(e_src, graph_src), boost::target(e_src, graph_src) };
+			CPostureGraphClose::vertex_descriptor v_dst[] = { regG.Register_v(v_src[0]), regG.Register_v(v_src[1]) };
+			regG.Register_e(v_dst[0], v_dst[1]);
+		}
+		CPostureGraphClose* graph_dst = new CPostureGraphClose(regG.V.size(), graph_src.Theta());
+		CPostureGraphClose::Initialize(*graph_dst, regG);
+		return graph_dst;
 	}
 
 	virtual void Save(const char* dir)
@@ -258,46 +379,22 @@ public:
 		write_graphviz(dot_file, *this);
 	}
 
-	void Dump(const char* fileName, int lineNo)
-	{
-		auto file_short = [](const char* file_f) -> const char*
-		{
-#ifdef _WIN32
-#define DELIMITER '\\'
-#else
-#define DELIMITER '/'
-#endif
-			const char* p_delim = NULL;
-			for (const char* p = file_f
-				; *p != '\0'
-				; p++)
-			{
-				if (*p == DELIMITER)
-					p_delim = p;
-			}
-			assert(NULL != p_delim);
-			return ++p_delim;
-		};
-		std::stringstream dot_path;
-		dot_path << file_short(fileName) << "_" << lineNo << ".dot";
-		std::ofstream dot_file(dot_path.str());
-		IKAssert(std::ios_base::failbit != dot_file.rdstate());
-		write_graphviz(dot_file, *this);
-	}
-
+	const CFile2ArtiBody* Theta() const { return m_theta; }
 private:
 	const CFile2ArtiBody* m_theta;
 };
 
+
+
+
+
 IPostureGraph* CPostureGraphGen::Generate(const CFile2ArtiBody* theta, const Eigen::MatrixXr& errTB, Real epsErr_deg)
 {
-	CPostureGraphOpen* e_epsilon = new CPostureGraphOpen(theta);
-	CPostureGraphOpen::InitTransitions(*e_epsilon, errTB, epsErr_deg);
-	std::list<V> vertices;
-	std::list<E> edges;
-	e_epsilon->RemoveDUPs(vertices, edges);
+	CPostureGraphOpen e_epsilon(theta);
+	CPostureGraphOpen::InitTransitions(e_epsilon, errTB, epsErr_deg);
+	CPostureGraphClose* pg = CPostureGraphOpen::GenerateClosePG(e_epsilon);
 	// CPostureGraphClose* p_g = new PostureGraphClose(theta, vertices, edges);
-	return e_epsilon;
+	return pg;
 }
 
 void CPostureGraphGen::Destroy(IPostureGraph* pg)

@@ -168,7 +168,7 @@ CFile2ArtiBody::CFile2ArtiBody(const std::string& path)
 
 }
 
-CArtiBodyNode* CFile2ArtiBody::CreateBody(BODY_TYPE type)
+CArtiBodyNode* CFile2ArtiBody::CreateBody(BODY_TYPE type) const
 {
 	switch(type)
 	{
@@ -182,10 +182,10 @@ CArtiBodyNode* CFile2ArtiBody::CreateBody(BODY_TYPE type)
 	}
 }
 
-CArtiBodyNode* CFile2ArtiBody::CreateBodyBVH()
+CArtiBodyNode* CFile2ArtiBody::CreateBodyBVH() const
 {
-	CArtiBodyNode* (*create_arti_body)(bvh11::BvhObject&, Joint_bvh_ptr)
-		= [] (bvh11::BvhObject& bvh_src, Joint_bvh_ptr j_bvh) -> CArtiBodyNode*
+	CArtiBodyNode* (*create_arti_body)(const bvh11::BvhObject&, Joint_bvh_ptr)
+		= [] (const bvh11::BvhObject& bvh_src, Joint_bvh_ptr j_bvh) -> CArtiBodyNode*
 			{
 				auto name = j_bvh->name().c_str();
 				auto tm_bvh = bvh_src.GetTransformationRelativeToParent(j_bvh, -1);
@@ -253,7 +253,7 @@ CArtiBodyNode* CFile2ArtiBody::CreateBodyBVH()
 	return root_b_hik;
 }
 
-CArtiBodyNode* CFile2ArtiBody::CreateBodyHTR()
+CArtiBodyNode* CFile2ArtiBody::CreateBodyHTR() const
 {
 	CArtiBodyNode* body_bvh = NULL;
 	CArtiBodyNode* body_htr = NULL;
@@ -325,7 +325,7 @@ void CFile2ArtiBody::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::st
 	CArtiBodyTree::Destroy(body_j);
 }
 
-void CFile2ArtiBody::UpdateMotion(int i_frame, CArtiBodyNode* body)
+void CFile2ArtiBody::UpdateMotion(int i_frame, CArtiBodyNode* body) const
 {
 	auto onEnterBound_pose = [&src = *this, i_frame](Bound b_this)
 		{

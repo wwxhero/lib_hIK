@@ -54,17 +54,17 @@ class CFile2ArtiBody : public bvh11::BvhObject
 public:
 	CFile2ArtiBody(const char* path);
 	CFile2ArtiBody(const std::string& path);
-	CArtiBodyNode* CreateBody(BODY_TYPE type);
-	void UpdateMotion(int i_frame, CArtiBodyNode* body);
+	CArtiBodyNode* CreateBody(BODY_TYPE type) const;
+	void UpdateMotion(int i_frame, CArtiBodyNode* body) const;
 	void ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints);
 private:
-	CArtiBodyNode* CreateBodyBVH();
-	CArtiBodyNode* CreateBodyHTR();
+	CArtiBodyNode* CreateBodyBVH() const;
+	CArtiBodyNode* CreateBodyHTR() const;
 	typedef std::shared_ptr<const bvh11::Joint> Joint_bvh_ptr;
 	typedef std::pair<const Joint_bvh_ptr, CArtiBodyNode*> Bound;
 
 	template<typename LAMaccessEnter, typename LAMaccessLeave>
-	inline void TraverseBFS_boundtree_norecur(Bound root, LAMaccessEnter OnEnterBound, LAMaccessLeave OnLeaveBound)
+	inline void TraverseBFS_boundtree_norecur(Bound root, LAMaccessEnter OnEnterBound, LAMaccessLeave OnLeaveBound) const
 	{
 		std::queue<Bound> queBFS;
 		queBFS.push(root);
