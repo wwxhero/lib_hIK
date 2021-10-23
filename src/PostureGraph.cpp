@@ -68,6 +68,7 @@ struct EdgeGen
 {
 	std::size_t deg;
 	std::size_t to_rm;
+	// std::size_t tag_rm;
 };
 
 class CPostureGraphOpen : public IPostureGraph
@@ -108,14 +109,13 @@ public:
 			}
 		}
 
-		// #if defined _DEBUG
+// #if defined _DEBUG
 		Dump(__FILE__, __LINE__);
-		// #endif
+// #endif
 		//tag rm for each vertex
 		auto v_range = boost::vertices(*this);
-		vertex_iterator it_v = v_range.first;
 		vertex_iterator it_v_end = v_range.second;
-		for (; it_v != it_v_end; it_v++)
+		for (vertex_iterator it_v = v_range.first; it_v != it_v_end; it_v++)
 		{
 			auto& v_property = (*this)[*it_v];
 			v_property.tag_rm = false;
@@ -157,6 +157,7 @@ public:
 				e_property.deg = deg[0] - 1; // to give nodes other chance to be decided
 				e_property.to_rm = std::rand()&0x1;
 			}
+			// e_property.tag_rm = false;
 		}
 		std::sort(edges_eps.begin()
 				, edges_eps.end()
@@ -176,8 +177,52 @@ public:
 				n_removed ++;
 			}
 		}
-
 		LOGIKVar(LogInfoInt, n_removed);
+
+		for (vertex_iterator it_v = v_range.first; it_v != it_v_end; it_v++)
+		{
+			const auto& v_property = (*this)[*it_v];
+			if (v_property.tag_rm)
+			{
+				std::list<vertex_descriptor> neightbors_v;
+				auto vertices_range_neighbors = boost::adjacent_vertices(*it_v, *this);
+				for (auto it_vert_n = vertices_range_neighbors.first
+					; it_vert_n != vertices_range_neighbors.second
+					; it_vert_n++)
+				{
+					const auto& v_n_property = (*this)[*it_vert_n];
+					neightbors_v.push_back(*it_vert_n);
+				}
+
+				auto edges_range_incident = boost::out_edges(*it_v, *this);
+				for (auto it_edge_incident = edges_range_incident.first
+					; it_edge_incident != edges_range_incident.second
+					; it_edge_incident++)
+				{
+					boost::remove_edge(*it_edge_incident, *this);
+				}
+
+				for (auto it_v_i = neightbors_v.begin(); it_v_i != neightbors_v.end(); it_v_i++)
+				{
+					auto it_v_j = it_v_i;
+					for (it_v_j++; it_v_j != neightbors_v.end(); it_v_j++)
+					{
+						vertex_descriptor v_i = *it_v_i;
+						vertex_descriptor v_j = *it_v_j;
+						if (errTB(v_i, v_j) > err_epsilon)
+						{
+							boost::add_edge(v_i, v_j, *this);
+						}
+					}
+				}
+			}
+		}
+
+// #if defined _DEBUG
+		Dump(__FILE__, __LINE__);
+// #endif
+
+
 
 
 
