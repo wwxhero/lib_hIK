@@ -12,13 +12,6 @@
 #include "Math.hpp"
 #include "ArtiBody.hpp"
 
-typedef std::size_t V;
-typedef struct
-{
-	V v_i;
-	V v_j;
-} E;
-
 template<typename G>
 void Dump(G& g, const char* fileName, int lineNo)
 {
@@ -230,8 +223,6 @@ struct VertexGen
 struct EdgeGen
 {
 	std::size_t deg;
-	std::size_t to_rm;
-	// std::size_t tag_rm;
 };
 
 class CPostureGraphOpen : public IPostureGraph
@@ -288,59 +279,84 @@ public:
 		// compute degree for the vertex (work around for adjacent matrix)
 		auto e_range = boost::edges(graph);
 		const edge_iterator it_e_end = e_range.second;
-		for (edge_iterator it_e = e_range.first; it_e != it_e_end; it_e++)
+		for (edge_iterator it_e = e_range.first; it_e != it_e_end; it_e ++)
 		{
 			auto e = *it_e;
 			vertex_descriptor v[] = { boost::source(e, graph), boost::target(e, graph) };
-			(graph)[v[0]].deg++; (graph)[v[1]].deg++;
+			(graph)[v[0]].deg ++; (graph)[v[1]].deg ++;
 		}
 
 		// tag edge degrees and sort edges by degree
-		std::srand((unsigned int)std::time(0));
-		std::vector<edge_descriptor> edges_eps;
-		for (edge_iterator it_e = e_range.first; it_e != it_e_end; it_e++)
+		std::list<edge_descriptor> edges_eps;
+		for (edge_iterator it_e = e_range.first; it_e != it_e_end; it_e ++)
 		{
 			auto e = *it_e;
 			edges_eps.push_back(e);
 			vertex_descriptor v[] = {boost::source(e, graph), boost::target(e, graph)};
 			std::size_t deg[] = {(graph)[v[0]].deg, (graph)[v[1]].deg };
 			auto& e_property = (graph)[e];
-			if (v[0] < v[1])
-			{
-				e_property.deg = deg[1];
-				e_property.to_rm = 1;
-			}
-			else if (v[0] > v[1])
-			{
-				e_property.deg = deg[0];
-				e_property.to_rm = 0;
-			}
-			else
-			{
-				e_property.deg = deg[0] - 1; // to give nodes other chance to be decided
-				e_property.to_rm = std::rand()&0x1;
-			}
-			// e_property.tag_rm = false;
+			e_property.deg = std::max(deg[0], deg[1]);
 		}
-		std::sort(edges_eps.begin()
-				, edges_eps.end()
-				, [&](const edge_descriptor& e_i, const edge_descriptor& e_j)->bool
-					{
-						return (graph)[e_i].deg > (graph)[e_j].deg;
-					});
-		int n_removed = 0;
-		for (auto e : edges_eps)
+
+		class ComEdgeByDeg
 		{
-			vertex_descriptor v[] = { boost::source(e, graph), boost::target(e, graph) };
-			bool rm[] = { (graph)[v[0]].tag_rm, (graph)[v[1]].tag_rm };
-			if (!rm[0] && !rm[1])
+		public:
+			ComEdgeByDeg(CPostureGraphOpen& g)
+				: graph(g)
 			{
-				auto e_property = (graph)[e];
-				(graph)[v[e_property.to_rm]].tag_rm = true;
-				n_removed ++;
+
+			}
+			bool operator()(const edge_descriptor& e_i, const edge_descriptor& e_j)
+			{
+				return (graph)[e_i].deg > (graph)[e_j].deg;
+			}
+		private:
+			CPostureGraphOpen& graph;
+		};
+		edges_eps.sort(ComEdgeByDeg(graph));
+
+		while (!edges_eps.empty())
+		{
+			bool exists_a_tagged_vertex = false;
+			for (auto e : edges_eps)
+			{
+				vertex_descriptor v[] = {boost::source(e, graph), boost::target(e, graph)};
+				std::size_t deg[] = {(graph)[v[0]].deg, (graph)[v[1]].deg };
+				bool rm[] = { (graph)[v[0]].tag_rm, (graph)[v[1]].tag_rm };
+				if (!rm[0] && !rm[1])
+				{
+					if (deg[0] < deg[1])
+					{
+						(graph)[v[1]].tag_rm = true;
+						exists_a_tagged_vertex = true;
+					}
+					else if (deg[0] > deg[1])
+					{
+						(graph)[v[0]].tag_rm = true;
+						exists_a_tagged_vertex = true;
+					}
+				}
+			}
+			if (!exists_a_tagged_vertex && !edges_eps.empty())
+				(graph)[boost::source(*edges_eps.begin(), graph)].tag_rm = true;
+
+			for (auto it_e = edges_eps.begin()
+				; it_e != edges_eps.end()
+				; )
+			{
+				auto e = *it_e;
+				vertex_descriptor v[] = {boost::source(e, graph), boost::target(e, graph)};
+				bool rm[] = { (graph)[v[0]].tag_rm, (graph)[v[1]].tag_rm };
+				if (rm[0] || rm[1])
+				{
+					(graph)[v[0]].deg --; (graph)[v[1]].deg --;
+					it_e = edges_eps.erase(it_e);
+				}
+				else
+					it_e ++;
 			}
 		}
-		LOGIKVar(LogInfoInt, n_removed);
+
 
 		for (vertex_iterator it_v = v_range.first; it_v != it_v_end; it_v++)
 		{
