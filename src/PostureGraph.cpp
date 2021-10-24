@@ -139,12 +139,31 @@ protected:
 	{
 	}
 
-	static void Initialize(CPostureGraphClose& graph, const Registry& reg)
+	static void Initialize(CPostureGraphClose& graph, const Registry& reg, const Eigen::MatrixXr& errTB_src)
 	{
-		for (Registry::REGISTER_v reg_v : reg.V)
+		struct V_ERR
 		{
+			vertex_descriptor v_dst;
+			Real err_0;
+		};
+		class V_ERRCompare {
+		public:
+			bool operator()(const V_ERR& v_err_1, const V_ERR& v_err_2)
+			{
+				return v_err_1.err_0 < v_err_2.err_0;
+			}
+		};
+
+		std::list<V_ERR> lstV_ERR0;
+		auto it_reg_v = reg.V.begin();
+		IKAssert(0 == it_reg_v->v_src
+				&& 0 == it_reg_v->v_dst);
+		for (it_reg_v ++; it_reg_v != reg.V.end(); it_reg_v ++) // skip the 'T' posture to avoid a self-pointing edge
+		{
+			const auto& reg_v = *it_reg_v;
 			graph.c_thetaSrc_ref->UpdateMotion((int)reg_v.v_src, graph.m_thetaBody);
 			graph.m_thetaFile.UpdateMotion((int)reg_v.v_dst);
+			lstV_ERR0.push_back({reg_v.v_dst, errTB_src(0, reg_v.v_src)});
 		}
 
 		for (Registry::REGISTER_e reg_e : reg.E)
@@ -154,6 +173,26 @@ protected:
 //#if defined _DEBUG
 		Dump(graph, __FILE__, __LINE__);
 //#endif
+
+		lstV_ERR0.sort(V_ERRCompare()); // by err_0
+
+		std::size_t deg_sigma = 0;
+		std::size_t n_vs = 0;
+		auto v_range = boost::vertices(graph);
+		for (auto it_v = v_range.first; it_v != v_range.second; it_v ++, n_vs ++)
+			deg_sigma += boost::degree(*it_v, graph);
+		std::size_t deg_average = (std::size_t)floor((Real)deg_sigma/(Real)n_vs);
+
+		std::size_t n_cnn_T = 0;
+		for (auto it_v_err = lstV_ERR0.begin()
+			; it_v_err != lstV_ERR0.end()
+			  && n_cnn_T < deg_average
+			; it_v_err ++, n_cnn_T ++)
+			boost::add_edge(0, it_v_err->v_dst, graph);
+//#if defined _DEBUG
+		Dump(graph, __FILE__, __LINE__);
+//#endif
+
 	}
 public:
 	virtual ~CPostureGraphClose()
@@ -349,7 +388,7 @@ public:
 
 	}
 
-	static CPostureGraphClose* GenerateClosePG(const CPostureGraphOpen& graph_src)
+	static CPostureGraphClose* GenerateClosePG(const CPostureGraphOpen& graph_src, const Eigen::MatrixXr& errTB)
 	{
 		CPostureGraphClose::Registry regG;
 		regG.Register_v(0); // 0 posture is reserved for 'T' posture which has no edges
@@ -365,7 +404,7 @@ public:
 			regG.Register_e(v_dst[0], v_dst[1]);
 		}
 		CPostureGraphClose* graph_dst = new CPostureGraphClose(regG.V.size(), graph_src.Theta());
-		CPostureGraphClose::Initialize(*graph_dst, regG);
+		CPostureGraphClose::Initialize(*graph_dst, regG, errTB);
 		return graph_dst;
 	}
 
@@ -392,7 +431,7 @@ IPostureGraph* CPostureGraphGen::Generate(const CFile2ArtiBody* theta, const Eig
 {
 	CPostureGraphOpen e_epsilon(theta);
 	CPostureGraphOpen::InitTransitions(e_epsilon, errTB, epsErr_deg);
-	CPostureGraphClose* pg = CPostureGraphOpen::GenerateClosePG(e_epsilon);
+	CPostureGraphClose* pg = CPostureGraphOpen::GenerateClosePG(e_epsilon, errTB);
 	// CPostureGraphClose* p_g = new PostureGraphClose(theta, vertices, edges);
 	return pg;
 }
