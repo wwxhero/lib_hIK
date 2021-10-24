@@ -321,7 +321,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;LIB_HIK_EXPORTS;_CRT_SECURE_NO_WARNINGS;_WINDOWS;_USRDLL;_USE_MATH_DEFINES;WIN32;TIXML_USE_TICPP;TIXML_USE_STL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;LIB_HIK_EXPORTS;_CRT_SECURE_NO_WARNINGS;_WINDOWS;_USRDLL;_USE_MATH_DEFINES;WIN32;TIXML_USE_TICPP;TIXML_USE_STL;SMOOTH_LOGGING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC);$(LIB_OPENCV_INC)</AdditionalIncludeDirectories>
@@ -456,11 +456,13 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\..\..\boost.1.77.0.0\build\boost.targets" Condition="Exists('..\..\..\boost.1.77.0.0\build\boost.targets')" />
+    <Import Project="..\..\..\boost_serialization-vc141.1.77.0.0\build\boost_serialization-vc141.targets" Condition="Exists('..\..\..\boost_serialization-vc141.1.77.0.0\build\boost_serialization-vc141.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\..\..\boost.1.77.0.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\boost.1.77.0.0\build\boost.targets'))" />
+    <Error Condition="!Exists('..\..\..\boost_serialization-vc141.1.77.0.0\build\boost_serialization-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\boost_serialization-vc141.1.77.0.0\build\boost_serialization-vc141.targets'))" />
   </Target>
 </Project>

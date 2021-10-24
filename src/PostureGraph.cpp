@@ -4,9 +4,12 @@
 #include <algorithm>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
+#include <boost/graph/adj_list_serialize.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <string>
 #include <boost/graph/graphviz.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 #include "filesystem_helper.hpp"
 #include "PostureGraph.hpp"
 #include "Math.hpp"
@@ -196,11 +199,14 @@ public:
 	virtual void Save(const char* dir)
 	{
 		fs::path dot_path(dir);
-		std::string dot_file_name(m_thetaBody->GetName_c()); dot_file_name += ".dot";
+		std::string dot_file_name(m_thetaBody->GetName_c()); dot_file_name += ".pg";
 		dot_path.append(dot_file_name);
 		std::ofstream dot_file(dot_path);
 		IKAssert(std::ios_base::failbit != dot_file.rdstate());
-		write_graphviz(dot_file, *this);
+		// write_graphviz(dot_file, *this);
+		boost::archive::text_oarchive oa(dot_file);
+		// oa << *this;
+		boost::serialization::save(oa, *this, 0);
 
 		fs::path htr_path(dir);
 		std::string htr_file_name(m_thetaBody->GetName_c()); htr_file_name += ".htr";
