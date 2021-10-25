@@ -9,10 +9,8 @@
 #include <boost/property_map/property_map.hpp>
 #include <string>
 #include <boost/graph/graphviz.hpp>
-// #include <boost/archive/binary_oarchive.hpp>
-// #include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
 #include "filesystem_helper.hpp"
 #include "Math.hpp"
 #include "ArtiBody.hpp"
@@ -67,22 +65,22 @@ public:
 
 	void SaveTransitions(const char* filePath, PG_FileType type) const
 	{
-		std::ofstream file(filePath);
+		std::ofstream file(filePath, std::ofstream::binary);
 		IKAssert(std::ios_base::failbit != file.rdstate());
 		if (F_DOT == type)
 			write_graphviz(file, *this);
 		else
 		{
-			boost::archive::text_oarchive oa(file);
+			boost::archive::binary_oarchive oa(file);
 			boost::serialization::save(oa, *this, (unsigned int)0);
 		}
 	}
 
 	void LoadTransitions(const char* filePath)
 	{
-		std::ifstream file(filePath);
+		std::ifstream file(filePath, std::ifstream::binary);
 		IKAssert(std::ios_base::failbit != file.rdstate());
-		boost::archive::text_iarchive ia(file);
+		boost::archive::binary_iarchive ia(file);
 		boost::serialization::load(ia, *this, (unsigned int)0);
 	}
 };
