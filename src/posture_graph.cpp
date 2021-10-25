@@ -265,13 +265,8 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 
 bool convert_pg2dot(const char* path_src, const char* path_dst)
 {
-	// IPostureGraph* pg = CPostureGraphGen::LoadTransitions(path_src);
-	// bool ok = (NULL != pg);
-	// if (ok)
-	// {
-	// 	pg->SaveTransitions(path_dst, IPostureGraph::F_DOT);
-	// 	delete pg;
-	// }
-	// return ok;
-	return false;
+	CFile2PostureGraphClose filePG;
+	filePG.LoadTransitions(path_src);
+	filePG.SaveTransitions(path_dst, F_DOT);
+	return true;
 }

@@ -9,13 +9,15 @@
 #include <boost/property_map/property_map.hpp>
 #include <string>
 #include <boost/graph/graphviz.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
+// #include <boost/archive/binary_oarchive.hpp>
+// #include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 #include "filesystem_helper.hpp"
 #include "Math.hpp"
 #include "ArtiBody.hpp"
 
-enum FileType {F_PG = 0, F_DOT};
+enum PG_FileType {F_PG = 0, F_DOT};
 
 template<typename VertexData, typename EdgeData>
 class PostureGraphList
@@ -63,12 +65,26 @@ public:
 	{
 	}
 
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version)
+	void SaveTransitions(const char* filePath, PG_FileType type) const
 	{
-		boost::serialization::serialize(ar, *this, version);
+		std::ofstream file(filePath);
+		IKAssert(std::ios_base::failbit != file.rdstate());
+		if (F_DOT == type)
+			write_graphviz(file, *this);
+		else
+		{
+			boost::archive::text_oarchive oa(file);
+			boost::serialization::save(oa, *this, (unsigned int)0);
+		}
 	}
 
+	void LoadTransitions(const char* filePath)
+	{
+		std::ifstream file(filePath);
+		IKAssert(std::ios_base::failbit != file.rdstate());
+		boost::archive::text_iarchive ia(file);
+		boost::serialization::load(ia, *this, (unsigned int)0);
+	}
 };
 
 
@@ -121,12 +137,22 @@ protected:
 public:
 	virtual ~CPostureGraphClose2File();
 
-	void Save(const char* dir, FileType type = F_PG) const;
+	void Save(const char* dir, PG_FileType type = F_PG) const;
 
 private:
 	const CFile2ArtiBody* c_thetaSrc_ref;
 	CArtiBodyNode* m_thetaBody;
 	CArtiBody2File m_thetaFile;
+};
+
+class CFile2PostureGraphClose : public CPostureGraphClose
+{
+public:
+	CFile2PostureGraphClose()
+		: CPostureGraphClose(0)
+	{
+	}
+
 };
 
 struct VertexGen
@@ -152,7 +178,7 @@ public:
 
 	static CPostureGraphClose2File* GenerateClosePG(const CPostureGraphOpen& graph_src, const Eigen::MatrixXr& errTB);
 
-	void Save(const char* dir, FileType type = F_PG) const;
+	void Save(const char* dir, PG_FileType type = F_PG) const;
 
 	const CFile2ArtiBody* Theta() const { return m_theta; }
 private:
@@ -160,28 +186,3 @@ private:
 };
 
 
-class CFile2PostureGraphClose : public CPostureGraphClose
-{
-public:
-	CFile2PostureGraphClose()
-		: CPostureGraphClose(0)
-	{
-	}
-
-	virtual void Save(const char* dir, FileType type) const
-	{
-	}
-
-	void LoadTransitions(const char* filePath)
-	{
-		std::ifstream file(filePath);
-		IKAssert(std::ios_base::failbit != file.rdstate());
-		boost::archive::binary_iarchive ia(file);
-		ia >> *this;
-	}
-
-	void SaveTransitions(const char* filePath)
-	{
-
-	}
-};

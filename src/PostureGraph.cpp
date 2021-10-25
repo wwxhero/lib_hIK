@@ -93,21 +93,13 @@ void CPostureGraphClose2File::Initialize(CPostureGraphClose2File& graph, const R
 
 }
 
-void CPostureGraphClose2File::Save(const char* dir, FileType type) const
+void CPostureGraphClose2File::Save(const char* dir, PG_FileType type) const
 {
 	std::string exts[] = { ".pg", ".dot" };
-	fs::path dot_path(dir);
-	std::string dot_file_name(m_thetaBody->GetName_c()); dot_file_name += exts[F_PG];
-	dot_path.append(dot_file_name);
-	std::ofstream file(dot_path);
-	IKAssert(std::ios_base::failbit != file.rdstate());
-	if (F_DOT == type)
-		write_graphviz(file, *this);
-	else
-	{
-		boost::archive::binary_oarchive oa(file);
-		boost::serialization::save(oa, *this, (unsigned int)0);
-	}
+	fs::path path_t(dir);
+	std::string file_name_t(m_thetaBody->GetName_c()); file_name_t += exts[F_PG];
+	path_t.append(file_name_t);
+	SaveTransitions(path_t.u8string().c_str(), type);
 
 	fs::path htr_path(dir);
 	std::string htr_file_name(m_thetaBody->GetName_c()); htr_file_name += ".htr";
@@ -119,6 +111,7 @@ CPostureGraphClose2File::~CPostureGraphClose2File()
 {
 	CArtiBodyTree::Destroy(m_thetaBody);
 }
+
 
 CPostureGraphOpen::CPostureGraphOpen(const CFile2ArtiBody* theta)
 	: PostureGraphMatrix< VertexGen, EdgeGen>((std::size_t)(theta->frames()))
@@ -314,7 +307,7 @@ CPostureGraphClose2File* CPostureGraphOpen::GenerateClosePG(const CPostureGraphO
 	return graph_dst;
 }
 
-void CPostureGraphOpen::Save(const char* dir, FileType type) const
+void CPostureGraphOpen::Save(const char* dir, PG_FileType type) const
 {
 	fs::path file_path(dir);
 	std::string file_name(m_theta->root_joint()->name()); file_name += ".dot";
