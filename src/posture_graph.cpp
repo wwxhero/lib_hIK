@@ -222,7 +222,6 @@ EXIT:
 bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, const char* dir_out, Real epsErr)
 {
 	bool ok = false;
-	IPostureGraph* pg_gen = NULL;
 	try
 	{
 		CFile2ArtiBody htr2body(path_htr);
@@ -248,9 +247,11 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 		else
 			ETB_Convert(err_png, err_tb);
 
-		pg_gen = CPostureGraphGen::Generate(&htr2body, err_tb, epsErr);
+		CPostureGraphOpen e_epsilon(&htr2body);
+		CPostureGraphOpen::InitTransitions(e_epsilon, err_tb, epsErr);
+		CPostureGraphClose2File* pg_gen = CPostureGraphOpen::GenerateClosePG(e_epsilon, err_tb);
 		pg_gen->Save(dir_out);
-		CPostureGraphGen::Destroy(pg_gen);
+		delete pg_gen;
 		ok = true;
 	}
 	catch (std::string& err)
@@ -259,4 +260,18 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 		ok = false;
 	}
 	return ok;
+}
+
+
+bool convert_pg2dot(const char* path_src, const char* path_dst)
+{
+	// IPostureGraph* pg = CPostureGraphGen::LoadTransitions(path_src);
+	// bool ok = (NULL != pg);
+	// if (ok)
+	// {
+	// 	pg->SaveTransitions(path_dst, IPostureGraph::F_DOT);
+	// 	delete pg;
+	// }
+	// return ok;
+	return false;
 }
