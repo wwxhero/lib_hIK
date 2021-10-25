@@ -15,24 +15,7 @@
 #include "Math.hpp"
 #include "ArtiBody.hpp"
 
-class IPostureGraph
-{
-public:
-	enum FileType {F_PG = 0, F_DOT};
-	virtual ~IPostureGraph() {};
-	virtual void Save(const char* dir, FileType type = F_PG) const = 0;
-
-};
-
-
-class CPostureGraphGen
-{
-public:
-	static IPostureGraph* Generate(const CFile2ArtiBody* theta, const Eigen::MatrixXr& errTB, Real epsErr);
-	static IPostureGraph* LoadTransitions(const char* filePath);
-	static void Destroy(IPostureGraph* pg);
-};
-
+enum FileType {F_PG = 0, F_DOT};
 
 template<typename G>
 void Dump(G& g, const char* fileName, int lineNo)
@@ -100,8 +83,7 @@ protected:
 
 };
 
-class CPostureGraphClose : public IPostureGraph
-						 , public PostureGraphList<boost::no_property, boost::no_property>
+class CPostureGraphClose : public PostureGraphList<boost::no_property, boost::no_property>
 {
 public:
 	CPostureGraphClose(std::size_t n_vs)
@@ -271,8 +253,7 @@ struct EdgeGen
 	std::size_t deg;
 };
 
-class CPostureGraphOpen : public IPostureGraph
-						, public PostureGraphMatrix<VertexGen, EdgeGen>
+class CPostureGraphOpen : public PostureGraphMatrix<VertexGen, EdgeGen>
 
 {
 public:
