@@ -121,7 +121,7 @@ protected:
 public:
 	virtual ~CPostureGraphClose2File();
 
-	void Save(const char* dir, FileType type = F_DOT) const;
+	void Save(const char* dir, FileType type = F_PG) const;
 
 private:
 	const CFile2ArtiBody* c_thetaSrc_ref;

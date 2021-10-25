@@ -106,7 +106,7 @@ void CPostureGraphClose2File::Save(const char* dir, FileType type) const
 	else
 	{
 		boost::archive::binary_oarchive oa(file);
-		oa << *this;
+		boost::serialization::save(oa, *this, (unsigned int)0);
 	}
 
 	fs::path htr_path(dir);
