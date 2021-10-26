@@ -1,19 +1,23 @@
 #pragma once
 #include "ArtiBodyFile.hpp"
+#pragma warning(push)
+#pragma warning(disable: 4522 267)
 #include <boost/config.hpp>
-#include <iostream>
-#include <algorithm>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/adj_list_serialize.hpp>
 #include <boost/property_map/property_map.hpp>
-#include <string>
 #include <boost/graph/graphviz.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
+#pragma warning(pop)
+#include <iostream>
+#include <algorithm>
+#include <string>
 #include "filesystem_helper.hpp"
 #include "Math.hpp"
 #include "ArtiBody.hpp"
+
 
 enum PG_FileType {F_PG = 0, F_DOT};
 
@@ -152,9 +156,20 @@ class CFile2PostureGraphClose : public CPostureGraphClose
 public:
 	CFile2PostureGraphClose()
 		: CPostureGraphClose(0)
+		, m_thetas(NULL)
 	{
 	}
+
+	~CFile2PostureGraphClose()
+	{
+		if (NULL != m_thetas)
+			delete m_thetas;
+	}
 	bool Load(const char* dir, const char* pg_name);
+private:
+	bool LoadThetas(const char* filePath);
+
+	CFile2ArtiBody* m_thetas;
 };
 
 struct VertexGen

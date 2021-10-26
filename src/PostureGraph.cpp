@@ -313,9 +313,33 @@ bool CFile2PostureGraphClose::Load(const char* dir, const char* pg_name)
 	std::string filename_t(pg_name); filename_t += ".pg";
 	fs::path path_t(dir_path); path_t.append(filename_t);
 	bool loaded_t = LoadTransitions(path_t.u8string().c_str());
+
+	std::string filename_theta(pg_name); filename_theta += ".htr";
+	fs::path path_theta(dir_path); path_theta.append(filename_theta);
+	bool loaded_theta = LoadThetas(path_theta.u8string().c_str());
+
 	LOGIKVar(LogInfoCharPtr, pg_name);
 	LOGIKVar(LogInfoBool, loaded_t);
-	return loaded_t;
+	LOGIKVar(LogInfoBool, loaded_theta);
+	return loaded_t && loaded_theta;
+}
+
+bool CFile2PostureGraphClose::LoadThetas(const char* filePath)
+{
+	if (NULL != m_thetas)
+		delete m_thetas;
+	bool loaded = false;
+	try
+	{
+		m_thetas = new CFile2ArtiBody(filePath);
+		loaded = true;
+	}
+	catch(std::string& exp)
+	{
+		LOGIKVar(LogInfoCharPtr, exp.c_str());
+		m_thetas = NULL;
+	}
+	return loaded;
 }
 
 void CPostureGraphOpen::Save(const char* dir, PG_FileType type) const
