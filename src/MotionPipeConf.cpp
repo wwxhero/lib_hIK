@@ -219,6 +219,22 @@ namespace CONF
 			return NULL;
 	}
 
+	const wchar_t* CBodyConf::PG_dir_w() const
+	{
+		if (m_pgDir_w.size() > 0)
+			return m_pgDir_w.c_str();
+		else
+			return NULL;
+	}
+
+	const char* CBodyConf::PG_dir_c() const
+	{
+		if (m_record_c.size() > 0)
+			return m_record_c.c_str();
+		else
+			return NULL;
+	}
+
 	void CBodyConf::SetFileName(const char* filename)
 	{
 		m_fileName_c = filename;
@@ -231,6 +247,13 @@ namespace CONF
 		m_record_c = filename;
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 		m_record_w = converter.from_bytes(filename);
+	}
+
+	void CBodyConf::SetPGDir(const char* dir)
+	{
+		m_pgDir_c = dir;
+		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+		m_pgDir_w = converter.from_bytes(m_pgDir_c);
 	}
 
 #ifdef _DEBUG
@@ -412,6 +435,9 @@ namespace CONF
 					const char* rc_filename = ele->Attribute("record");
 					if (NULL != rc_filename)
 						SetRecord(rc_filename);
+					const char* pg_dir = ele->Attribute("PG_dir");
+					if (NULL != pg_dir)
+						SetPGDir(pg_dir);
 				}
 				else if("IK_Chain" == name)
 				{

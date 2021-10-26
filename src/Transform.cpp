@@ -201,7 +201,7 @@ Real TransformArchive::Error_q(const TransformArchive &tms, const TransformArchi
 	int n_tms = (int)tms.m_data.size();
 	int n_tms_prime = (int)tms_prime.m_data.size();
 	if (n_tms != n_tms_prime)
-		return n_tms;
+		return (Real)n_tms;
 	else
 	{
 		auto Error_q_i = [](const _TRANSFORM& tm_i, const _TRANSFORM& tm_prime_i) -> Real

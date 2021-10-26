@@ -185,11 +185,14 @@ namespace CONF
 		const char* file_c() const;
 		const wchar_t* record_w() const;
 		const char* record_c() const;
+		const wchar_t* PG_dir_w() const;
+		const char* PG_dir_c() const;
 
 		void AddScale(const char* name, Real x, Real y, Real z);
 		void AddTarget(const char* name);
 		void SetFileName(const char* fileName);
 		void SetRecord(const char* rc_file);
+		void SetPGDir(const char* pg_dir);
 
 		BODY_TYPE type() const;
 
@@ -217,6 +220,8 @@ namespace CONF
 		std::string m_fileName_c;
 		std::wstring m_record_w;
 		std::string m_record_c;
+		std::wstring m_pgDir_w;
+		std::string m_pgDir_c;
 	public:
 		std::vector<CIKChainConf> IK_Chains;
 	private:

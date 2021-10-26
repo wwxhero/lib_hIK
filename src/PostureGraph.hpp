@@ -76,12 +76,16 @@ public:
 		}
 	}
 
-	void LoadTransitions(const char* filePath)
+	bool LoadTransitions(const char* filePath)
 	{
 		std::ifstream file(filePath, std::ifstream::binary);
-		IKAssert(std::ios_base::failbit != file.rdstate());
-		boost::archive::binary_iarchive ia(file);
-		boost::serialization::load(ia, *this, (unsigned int)0);
+		bool loaded = (std::ios_base::failbit != file.rdstate());
+		if (loaded)
+		{
+			boost::archive::binary_iarchive ia(file);
+			boost::serialization::load(ia, *this, (unsigned int)0);
+		}
+		return loaded;
 	}
 };
 
@@ -150,7 +154,7 @@ public:
 		: CPostureGraphClose(0)
 	{
 	}
-
+	bool Load(const char* dir, const char* pg_name);
 };
 
 struct VertexGen

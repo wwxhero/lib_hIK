@@ -7,7 +7,9 @@
 CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
 	: m_rootBody(root)
 	, m_nSpecMax(0)
+	, m_pg(NULL)
 {
+
 }
 
 CIKGroupNode::CIKGroupNode(CIKGroupNode& src)
@@ -15,12 +17,15 @@ CIKGroupNode::CIKGroupNode(CIKGroupNode& src)
 	m_rootBody = src.m_rootBody;
 	m_kChains = std::move(src.m_kChains);
 	m_nSpecMax = src.m_nSpecMax;
+	m_pg = src.m_pg; src.m_pg = NULL;
 }
 
 CIKGroupNode::~CIKGroupNode()
 {
 	for (auto chain : m_kChains)
 		delete chain;
+	if (NULL != m_pg)
+		delete m_pg;
 }
 
 
@@ -30,6 +35,19 @@ void CIKGroupNode::SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& na
 {
 	for (auto chain : m_kChains)
 		chain->SetupTarget(nameSrc2bodyDst, src2dst_w, dst2src_w);
+}
+
+void CIKGroupNode::LoadPostureGraph(const char* pgDir)
+{
+	if (m_kChains.size() > 0)
+	{
+		m_pg = new CFile2PostureGraphClose();
+		if (!m_pg->Load(pgDir, m_rootBody->GetName_c()))
+		{
+			delete m_pg;
+			m_pg = NULL;
+		}
+	}
 }
 
 void CIKGroupNode::Dump(int n_indents) const
@@ -401,7 +419,7 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
 #if defined _DEBUG || defined SMOOTH_LOGGING
  				CIKGroupTreeGen::Dump(root_gen);
 #endif
-				auto GenerateNode = [](const CIKGroupNodeGen* src, CIKGroupNode** dst) -> bool
+				auto GenerateNode = [&ikChainConf](const CIKGroupNodeGen* src, CIKGroupNode** dst) -> bool
 					{
 						*dst = new CIKGroupNode(*(const_cast<CIKGroupNodeGen*>(src)));
 						return true;
@@ -431,6 +449,21 @@ void CIKGroupTree::SetupTargets(CIKGroupNode* root_ik
 	auto OnIKGroupNode = [&nameSrc2bodyDst, &src2dst_w, &dst2src_w](CIKGroupNode* gNode)
 		{
 			gNode->SetupTargets(nameSrc2bodyDst, src2dst_w, dst2src_w);
+		};
+
+	auto OffIKGroupNode = [](CIKGroupNode* gNode)
+		{
+
+		};
+
+	CIKGroupTree::TraverseDFS(root_ik, OnIKGroupNode, OffIKGroupNode);
+}
+
+void CIKGroupTree::LoadPG(CIKGroupNode* root_ik, const char* dirPath)
+{
+	auto OnIKGroupNode = [dirPath](CIKGroupNode* gNode)
+		{
+			gNode->LoadPostureGraph(dirPath);
 		};
 
 	auto OffIKGroupNode = [](CIKGroupNode* gNode)

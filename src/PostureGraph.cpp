@@ -307,6 +307,17 @@ CPostureGraphClose2File* CPostureGraphOpen::GenerateClosePG(const CPostureGraphO
 	return graph_dst;
 }
 
+bool CFile2PostureGraphClose::Load(const char* dir, const char* pg_name)
+{
+	fs::path dir_path(dir);
+	std::string filename_t(pg_name); filename_t += ".pg";
+	fs::path path_t(dir_path); path_t.append(filename_t);
+	bool loaded_t = LoadTransitions(path_t.u8string().c_str());
+	LOGIKVar(LogInfoCharPtr, pg_name);
+	LOGIKVar(LogInfoBool, loaded_t);
+	return loaded_t;
+}
+
 void CPostureGraphOpen::Save(const char* dir, PG_FileType type) const
 {
 	fs::path file_path(dir);

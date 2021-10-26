@@ -155,6 +155,24 @@ bool InitBody_Internal_ik(HBODY bodySrc
 
 	root_ikGroup = CIKGroupTree::Generate(CAST_2PBODY(hBody), *body_conf_i);
 
+	const wchar_t* pg_dir = body_conf_i->PG_dir_w();
+	if (NULL != pg_dir)
+	{
+		fs::path fullPath(rootConfDir);
+		fs::path relpath(pg_dir);
+		fullPath.append(relpath);
+		try
+		{
+			CIKGroupTree::LoadPG(root_ikGroup, fullPath.generic_u8string().c_str());
+		}
+		catch(std::string &exp)
+		{
+			LOGIKVarErr(LogInfoCharPtr, exp.c_str());
+			CIKGroupTree::Destroy(root_ikGroup);
+			root_ikGroup = NULL;
+		}
+	}
+
 	const wchar_t* record = body_conf_i->record_w();
 	if (NULL != record)
 	{
