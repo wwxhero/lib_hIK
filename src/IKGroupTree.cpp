@@ -42,11 +42,13 @@ void CIKGroupNode::LoadPostureGraph(const char* pgDir)
 	if (m_kChains.size() > 0)
 	{
 		m_pg = new CFile2PostureGraphClose();
-		if (!m_pg->Load(pgDir, m_rootBody->GetName_c()))
+		if (!m_pg->Load(pgDir, m_rootBody))
 		{
 			delete m_pg;
 			m_pg = NULL;
 		}
+		else
+			m_pg->SetActivePosture(0);
 	}
 }
 

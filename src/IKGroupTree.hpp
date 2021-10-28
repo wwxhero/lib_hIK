@@ -60,6 +60,17 @@ public:
 		if (NULL != g_parent) //for root of the three FK_Update<G_SPACE=true> has no effect but waist computational resource
 			CArtiBodyTree::FK_Update<true>(m_rootBody);
 
+		if (m_pg)
+		{
+			auto Err = [&]()
+				{
+					Real err = 0;
+					for (auto chain : m_kChains)
+						err += chain->Error();
+				};
+			m_pg->LocalMin(Err);
+		}
+
 		bool solved_all = false;
 		if (1 == n_chains)
 		{

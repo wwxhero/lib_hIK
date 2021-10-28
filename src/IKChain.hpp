@@ -28,6 +28,8 @@ public:
 	CIKChain(Algor algor, int n_iters);
 	virtual ~CIKChain();
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>& joint_confs);
+	virtual Real Error() const = 0;
+
 	void SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst
 					, const Eigen::Matrix3r& src2dst_w
 					, const Eigen::Matrix3r& dst2src_w);
@@ -44,6 +46,7 @@ public:
 	{
 		m_rootG = root_g;
 	}
+
 	int NIters() const
 	{
 		return m_nIters;
@@ -95,6 +98,12 @@ public:
 	CIKChainProj(const Real norm[3]);
 	virtual ~CIKChainProj();
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>&) override;
+
+	virtual Real Error() const
+	{
+		return (Real)0;
+	}
+
 	virtual void Dump(std::ostream& info) const override;
 	virtual bool BeginUpdate(const Transform_TR& w2g) override;
 	// this is a quick IK update solution

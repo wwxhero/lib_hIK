@@ -307,8 +307,9 @@ CPostureGraphClose2File* CPostureGraphOpen::GenerateClosePG(const CPostureGraphO
 	return graph_dst;
 }
 
-bool CFile2PostureGraphClose::Load(const char* dir, const char* pg_name)
+bool CFile2PostureGraphClose::Load(const char* dir, CArtiBodyNode* root)
 {
+	const char* pg_name = root->GetName_c();
 	fs::path dir_path(dir);
 	std::string filename_t(pg_name); filename_t += ".pg";
 	fs::path path_t(dir_path); path_t.append(filename_t);
@@ -321,7 +322,14 @@ bool CFile2PostureGraphClose::Load(const char* dir, const char* pg_name)
 	LOGIKVar(LogInfoCharPtr, pg_name);
 	LOGIKVar(LogInfoBool, loaded_t);
 	LOGIKVar(LogInfoBool, loaded_theta);
-	return loaded_t && loaded_theta;
+	bool loaded =  (loaded_t && loaded_theta);
+
+	if (loaded)
+		m_rootBody_ref = root;
+	else
+		m_rootBody_ref = NULL;
+
+	return loaded;
 }
 
 bool CFile2PostureGraphClose::LoadThetas(const char* filePath)

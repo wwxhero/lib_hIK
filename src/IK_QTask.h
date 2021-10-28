@@ -97,6 +97,13 @@ class IK_QPositionTask : public IK_QTask {
 		return dist_sqr < c_tt_epsilon_sqr;
 	}
 
+	Eigen::Vector3r Beta() const
+	{
+		Eigen::Vector3r pos = m_eef->GetTransformLocal2World()->getTranslation();
+		Eigen::Vector3r d_pos = m_goal - pos;
+		return d_pos;
+	}
+
 
  private:
 	Eigen::Vector3r m_goal;

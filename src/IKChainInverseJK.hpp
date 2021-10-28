@@ -138,6 +138,11 @@ public:
 		return true;
 	}
 
+	virtual Real Error() const
+	{
+		return m_taskP.Beta().squaredNorm();
+	}
+
 	// virtual void UpdateNext(int step) override;
 	// this is a quick IK update solution
 	virtual bool Update_AnyThread()

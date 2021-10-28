@@ -157,6 +157,7 @@ public:
 	CFile2PostureGraphClose()
 		: CPostureGraphClose(0)
 		, m_thetas(NULL)
+		, m_rootBody_ref(NULL)
 	{
 	}
 
@@ -165,11 +166,23 @@ public:
 		if (NULL != m_thetas)
 			delete m_thetas;
 	}
-	bool Load(const char* dir, const char* pg_name);
+	bool Load(const char* dir, CArtiBodyNode* rootBody);
+
+	int SetActivePosture(int pose_id)
+	{
+		return 0;
+	}
+
+	template<typename LAMBDA_Err>
+	int LocalMin(LAMBDA_Err err)
+	{
+		return 0;
+	}
 private:
 	bool LoadThetas(const char* filePath);
 
 	CFile2ArtiBody* m_thetas;
+	CArtiBodyNode* m_rootBody_ref;
 };
 
 struct VertexGen
