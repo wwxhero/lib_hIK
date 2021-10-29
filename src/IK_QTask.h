@@ -94,13 +94,23 @@ class IK_QPositionTask : public IK_QTask {
 		const Transform* l2w = m_eef->GetTransformLocal2World();
 		Eigen::Vector3r tt_eef = l2w->getTranslation();
 		Real dist_sqr = (tt_eef - m_goal).squaredNorm();
+#if defined _DEBUG
+		LOGIKVar(LogInfoCharPtr, m_eef->GetName_c());
+		LOGIKVar(LogInfoReal, dist_sqr);
+#endif
 		return dist_sqr < c_tt_epsilon_sqr;
 	}
 
 	Eigen::Vector3r Beta() const
 	{
-		Eigen::Vector3r pos = m_eef->GetTransformLocal2World()->getTranslation();
-		Eigen::Vector3r d_pos = m_goal - pos;
+		const Transform* l2w = m_eef->GetTransformLocal2World();
+		Eigen::Vector3r tt_eef = l2w->getTranslation();
+		Eigen::Vector3r d_pos = m_goal - tt_eef;
+#if defined _DEBUG
+		LOGIKVar(LogInfoCharPtr, m_eef->GetName_c());
+		Real dist_sqr = d_pos.squaredNorm();
+		LOGIKVar(LogInfoReal, dist_sqr);
+#endif
 		return d_pos;
 	}
 

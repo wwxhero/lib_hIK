@@ -21,7 +21,7 @@ public:
 
 	enum
 	{
-		ERROR_MAX = 100000
+		ERROR_MAX = USHRT_MAX
 	};
 
 	// static const char* s_Algor_str[];

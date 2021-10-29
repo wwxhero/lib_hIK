@@ -62,12 +62,23 @@ protected:
 
 };
 
-template<typename VertexData, typename EdgeData>
-class CPostureGraphClose : public PostureGraphList<VertexData, EdgeData>
+struct VertexSearch : public boost::no_property
+{
+	Real err;
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version)
+	{
+		err = CIKChain::ERROR_MAX;
+		ar & err;
+		err = CIKChain::ERROR_MAX;
+	}
+};
+
+class CPostureGraphClose : public PostureGraphList<VertexSearch, boost::no_property>
 {
 public:
 	CPostureGraphClose(std::size_t n_vs)
-		: PostureGraphList<VertexData, EdgeData>(n_vs)
+		: PostureGraphList<VertexSearch, boost::no_property>(n_vs)
 	{
 	}
 
@@ -98,7 +109,7 @@ public:
 };
 
 
-class CPostureGraphClose2File : public CPostureGraphClose<boost::no_property, boost::no_property>
+class CPostureGraphClose2File : public CPostureGraphClose
 {
 	friend class CPostureGraphOpen;
 public:
@@ -156,17 +167,9 @@ private:
 };
 
 
-struct VertexSearch
-{
-	Real err;
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version)
-	{
-		err = CIKChain::ERROR_MAX;
-	}
-};
 
-class CFile2PostureGraphClose : public CPostureGraphClose<VertexSearch, boost::no_property>
+
+class CFile2PostureGraphClose : public CPostureGraphClose
 {
 public:
 	CFile2PostureGraphClose()
@@ -188,25 +191,26 @@ public:
 	template<typename LAMBDA_Err>
 	static int LocalMin(CFile2PostureGraphClose& graph, LAMBDA_Err err)
 	{
-		auto ErrTheta = [graph, err](vertex_descriptor theta) -> Real
+		auto ErrTheta = [&graph, err](vertex_descriptor theta) -> Real
 			{
 				graph.m_thetas->UpdateMotion(theta, graph.m_rootBody_ref);
+				CArtiBodyTree::FK_Update<true>(graph.m_rootBody_ref);
 				return err();
 			};
 
 		class GreatorThetaErr
 		{
 		public:
-			explicit GreatorThetaErr(CFile2PostureGraphClose& a_graph)
-				: m_graph(a_graph)
+			explicit GreatorThetaErr(const CFile2PostureGraphClose& a_graph)
+				: m_graph_ref(a_graph)
 			{
 			}
 			bool operator()(const vertex_descriptor& left, const vertex_descriptor& right)
 			{
-				return m_graph[left].err > m_graph[right].err;
+				return m_graph_ref[left].err > m_graph_ref[right].err;
 			}
 		private:
-			CFile2PostureGraphClose m_graph;
+			const CFile2PostureGraphClose& m_graph_ref;
 		} greator_thetaErr(graph);
 
 		vertex_descriptor theta_star_k = graph.m_theta_star;
