@@ -48,7 +48,7 @@ void CIKGroupNode::LoadPostureGraph(const char* pgDir)
 			m_pg = NULL;
 		}
 		else
-			m_pg->SetActivePosture(0);
+			m_pg->SetActivePosture(0, true);
 	}
 }
 

@@ -1,5 +1,4 @@
 #pragma once
-#include "ArtiBodyFile.hpp"
 #pragma warning(push)
 #pragma warning(disable: 4522 267)
 #include <boost/config.hpp>
@@ -14,9 +13,13 @@
 #include <iostream>
 #include <algorithm>
 #include <string>
+#include <vector>
+#include <queue>
+#include "ArtiBodyFile.hpp"
 #include "filesystem_helper.hpp"
 #include "Math.hpp"
 #include "ArtiBody.hpp"
+#include "IKChain.hpp"
 
 
 enum PG_FileType {F_PG = 0, F_DOT};
@@ -59,11 +62,12 @@ protected:
 
 };
 
-class CPostureGraphClose : public PostureGraphList<boost::no_property, boost::no_property>
+template<typename VertexData, typename EdgeData>
+class CPostureGraphClose : public PostureGraphList<VertexData, EdgeData>
 {
 public:
 	CPostureGraphClose(std::size_t n_vs)
-		: PostureGraphList<boost::no_property, boost::no_property>(n_vs)
+		: PostureGraphList<VertexData, EdgeData>(n_vs)
 	{
 	}
 
@@ -94,7 +98,7 @@ public:
 };
 
 
-class CPostureGraphClose2File : public CPostureGraphClose
+class CPostureGraphClose2File : public CPostureGraphClose<boost::no_property, boost::no_property>
 {
 	friend class CPostureGraphOpen;
 public:
@@ -151,13 +155,25 @@ private:
 	CArtiBody2File m_thetaFile;
 };
 
-class CFile2PostureGraphClose : public CPostureGraphClose
+
+struct VertexSearch
+{
+	Real err;
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version)
+	{
+		err = CIKChain::ERROR_MAX;
+	}
+};
+
+class CFile2PostureGraphClose : public CPostureGraphClose<VertexSearch, boost::no_property>
 {
 public:
 	CFile2PostureGraphClose()
 		: CPostureGraphClose(0)
 		, m_thetas(NULL)
 		, m_rootBody_ref(NULL)
+		, m_theta_star(0)
 	{
 	}
 
@@ -167,22 +183,101 @@ public:
 			delete m_thetas;
 	}
 	bool Load(const char* dir, CArtiBodyNode* rootBody);
-
-	int SetActivePosture(int pose_id)
-	{
-		return 0;
-	}
+	int SetActivePosture(int pose_id, bool UpdatePose);
 
 	template<typename LAMBDA_Err>
-	int LocalMin(LAMBDA_Err err)
+	static int LocalMin(CFile2PostureGraphClose& graph, LAMBDA_Err err)
 	{
-		return 0;
+		auto ErrTheta = [graph, err](vertex_descriptor theta) -> Real
+			{
+				graph.m_thetas->UpdateMotion(theta, graph.m_rootBody_ref);
+				return err();
+			};
+
+		class GreatorThetaErr
+		{
+		public:
+			explicit GreatorThetaErr(CFile2PostureGraphClose& a_graph)
+				: m_graph(a_graph)
+			{
+			}
+			bool operator()(const vertex_descriptor& left, const vertex_descriptor& right)
+			{
+				return m_graph[left].err > m_graph[right].err;
+			}
+		private:
+			CFile2PostureGraphClose m_graph;
+		} greator_thetaErr(graph);
+
+		vertex_descriptor theta_star_k = graph.m_theta_star;
+		IKAssert(CIKChain::ERROR_MAX == graph[theta_star_k].err);
+
+
+		std::priority_queue<vertex_descriptor, std::vector<vertex_descriptor>, GreatorThetaErr> err_known (greator_thetaErr);
+		// std::priority_queue<vertex_descriptor> err_known;
+		std::list<vertex_descriptor> tagged;
+		graph[theta_star_k].err = ErrTheta(theta_star_k);
+		tagged.push_back(theta_star_k);
+		err_known.push(theta_star_k);
+
+		struct ThetaErr
+		{
+			vertex_descriptor theta;
+			Real err;
+		} theta_err_kp = {boost::num_vertices(graph), CIKChain::ERROR_MAX};
+		int n_min = 0;
+
+		const int N_CANDIDATES = 5;
+		bool descend_local_min = true;
+		while (err_known.size() > 0
+			&& descend_local_min)
+		{
+			vertex_descriptor theta = err_known.top();
+			Real err = graph[theta].err;
+			bool local_min = true;
+			auto vertices_range_neighbors = boost::adjacent_vertices(theta, graph);
+			for (auto it_v_n = vertices_range_neighbors.first
+				; it_v_n != vertices_range_neighbors.second
+				; it_v_n ++)
+			{
+				vertex_descriptor theta_n = *it_v_n;
+				Real err_n = graph[theta_n].err;
+				if (CIKChain::ERROR_MAX == err_n)
+				{
+					err_n = ErrTheta(theta_n);
+					graph[theta_n].err = err_n;
+					tagged.push_back(theta_n);
+					err_known.push(theta_n);
+				}
+				local_min = local_min && (err < err_n);
+			}
+
+			if (local_min)
+			{
+				descend_local_min = (err < theta_err_kp.err);
+				if (descend_local_min)
+				{
+					theta_err_kp.theta = theta;
+					theta_err_kp.err = err;
+				}
+				descend_local_min = (descend_local_min || n_min < N_CANDIDATES);
+				n_min ++;
+			}
+		}
+
+		for (auto theta_tagged : tagged)
+			graph[theta_tagged].err = CIKChain::ERROR_MAX;
+
+		return theta_err_kp.theta;
 	}
+
 private:
 	bool LoadThetas(const char* filePath);
 
 	CFile2ArtiBody* m_thetas;
 	CArtiBodyNode* m_rootBody_ref;
+	vertex_descriptor m_theta_star;
+
 };
 
 struct VertexGen

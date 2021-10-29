@@ -62,13 +62,15 @@ public:
 
 		if (m_pg)
 		{
-			auto Err = [&]()
+			auto Err = [&]() -> Real
 				{
 					Real err = 0;
 					for (auto chain : m_kChains)
 						err += chain->Error();
+					return err;
 				};
-			m_pg->LocalMin(Err);
+			int theta_min = CFile2PostureGraphClose::LocalMin(*m_pg, Err);
+			m_pg->SetActivePosture(theta_min, true);
 		}
 
 		bool solved_all = false;

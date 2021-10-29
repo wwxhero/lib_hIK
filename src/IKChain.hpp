@@ -19,6 +19,11 @@ public:
 		, Unknown
 	};
 
+	enum
+	{
+		ERROR_MAX = 100000
+	};
+
 	// static const char* s_Algor_str[];
 	// static Algor s_Algor_val[];
 	// static Algor to_Algor(const char* algor_str);
