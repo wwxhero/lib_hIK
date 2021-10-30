@@ -32,6 +32,7 @@
 #endif
 
 typedef float Real;
+#define REAL_MAX FLT_MAX
 
 #ifdef _DEBUG
 

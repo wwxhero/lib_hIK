@@ -149,7 +149,8 @@ void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::M
 // #if defined _DEBUG
 	Dump(graph, __FILE__, __LINE__);
 // #endif
-			//tag rm for each vertex
+
+	//tag rm for each vertex
 	auto v_range = boost::vertices(graph);
 	vertex_iterator it_v_end = v_range.second;
 	for (vertex_iterator it_v = v_range.first; it_v != it_v_end; it_v++)
@@ -328,6 +329,22 @@ bool CFile2PostureGraphClose::Load(const char* dir, CArtiBodyNode* root)
 		m_rootBody_ref = root;
 	else
 		m_rootBody_ref = NULL;
+
+#if defined _DEBUG
+	IKAssert(!loaded || m_thetas->frames() == num_vertices(*this));
+	if (loaded)
+	{
+		bool all_vertices_error_untagged = true;
+		//check error
+		auto v_range = boost::vertices(*this);
+		for (vertex_iterator it_v = v_range.first; it_v != v_range.second && all_vertices_error_untagged; it_v++)
+		{
+			const auto& v_property = (*this)[*it_v];
+			all_vertices_error_untagged = !ErrorTagged(v_property);
+		}
+		IKAssert(all_vertices_error_untagged);
+	}
+#endif
 
 	return loaded;
 }

@@ -19,10 +19,7 @@ public:
 		, Unknown
 	};
 
-	enum
-	{
-		ERROR_MAX = USHRT_MAX
-	};
+	static Real ERROR_MIN;
 
 	// static const char* s_Algor_str[];
 	// static Algor s_Algor_val[];

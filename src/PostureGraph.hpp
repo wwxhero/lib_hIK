@@ -68,11 +68,26 @@ struct VertexSearch : public boost::no_property
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version)
 	{
-		err = CIKChain::ERROR_MAX;
+		err = CIKChain::ERROR_MIN;
 		ar & err;
-		err = CIKChain::ERROR_MAX;
+		err = CIKChain::ERROR_MIN;
 	}
 };
+
+inline bool ErrorTagged(const VertexSearch& v_prop)
+{
+	return (v_prop.err > CIKChain::ERROR_MIN);
+}
+
+inline bool ErrorTagged(Real err)
+{
+	return (err > CIKChain::ERROR_MIN);
+}
+
+inline void EraseTag(VertexSearch& v_prop)
+{
+	v_prop.err = CIKChain::ERROR_MIN;
+}
 
 class CPostureGraphClose : public PostureGraphList<VertexSearch, boost::no_property>
 {
@@ -205,7 +220,7 @@ public:
 				: m_graph_ref(a_graph)
 			{
 			}
-			bool operator()(const vertex_descriptor& left, const vertex_descriptor& right)
+			bool operator()(const vertex_descriptor& left, const vertex_descriptor& right) const
 			{
 				return m_graph_ref[left].err > m_graph_ref[right].err;
 			}
@@ -214,11 +229,12 @@ public:
 		} greator_thetaErr(graph);
 
 		vertex_descriptor theta_star_k = graph.m_theta_star;
-		IKAssert(CIKChain::ERROR_MAX == graph[theta_star_k].err);
+		IKAssert(!ErrorTagged(graph[theta_star_k]));
+		LOGIKVar(LogInfoInt, theta_star_k);
 
 
 		std::priority_queue<vertex_descriptor, std::vector<vertex_descriptor>, GreatorThetaErr> err_known (greator_thetaErr);
-		// std::priority_queue<vertex_descriptor> err_known;
+		// std::queue<vertex_descriptor> err_known;
 		std::list<vertex_descriptor> tagged;
 		graph[theta_star_k].err = ErrTheta(theta_star_k);
 		tagged.push_back(theta_star_k);
@@ -228,15 +244,17 @@ public:
 		{
 			vertex_descriptor theta;
 			Real err;
-		} theta_err_kp = {boost::num_vertices(graph), CIKChain::ERROR_MAX};
+		} theta_err_kp = {boost::num_vertices(graph), REAL_MAX};
 		int n_min = 0;
 
-		const int N_CANDIDATES = 5;
+		const int N_CANDIDATES = 10;
 		bool descend_local_min = true;
-		while (err_known.size() > 0
+		while (!err_known.empty()
 			&& descend_local_min)
 		{
 			vertex_descriptor theta = err_known.top();
+			err_known.pop();
+			// vertex_descriptor theta = err_known.front();
 			Real err = graph[theta].err;
 			bool local_min = true;
 			auto vertices_range_neighbors = boost::adjacent_vertices(theta, graph);
@@ -245,16 +263,19 @@ public:
 				; it_v_n ++)
 			{
 				vertex_descriptor theta_n = *it_v_n;
-				Real err_n = graph[theta_n].err;
-				if (CIKChain::ERROR_MAX == err_n)
+				Real& err_n = graph[theta_n].err;
+				if (!ErrorTagged(err_n))
 				{
 					err_n = ErrTheta(theta_n);
-					graph[theta_n].err = err_n;
 					tagged.push_back(theta_n);
 					err_known.push(theta_n);
+					LOGIKVar(LogInfoInt, theta_n);
+					LOGIKVar(LogInfoReal, err_n);
 				}
 				local_min = local_min && (err < err_n);
 			}
+
+			LOGIKVar(LogInfoInt, theta);
 
 			if (local_min)
 			{
@@ -266,13 +287,17 @@ public:
 				}
 				descend_local_min = (descend_local_min || n_min < N_CANDIDATES);
 				n_min ++;
+				LOGIKVar(LogInfoInt, theta);
+				LOGIKVar(LogInfoReal, err);
 			}
 		}
 
 		for (auto theta_tagged : tagged)
-			graph[theta_tagged].err = CIKChain::ERROR_MAX;
+			EraseTag(graph[theta_tagged]);
+		IKAssert(-1 < (int)theta_err_kp.theta
+			&& (int)theta_err_kp.theta < graph.m_thetas->frames());
 
-		return theta_err_kp.theta;
+		return (int)theta_err_kp.theta;
 	}
 
 private:
