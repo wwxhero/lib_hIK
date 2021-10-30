@@ -48,7 +48,7 @@ void CIKGroupNode::LoadPostureGraph(const char* pgDir)
 			m_pg = NULL;
 		}
 		else
-			m_pg->SetActivePosture(0, true);
+			m_pg->SetActivePosture<false>(0, true);
 	}
 }
 
@@ -88,7 +88,7 @@ void CIKGroupNode::IKUpdate()
 				return err;
 			};
 		int theta_min = CFile2PostureGraphClose::LocalMin(*m_pg, Err);
-		m_pg->SetActivePosture(theta_min, true);
+		m_pg->SetActivePosture<true>(theta_min, true);
 	}
 
 	bool solved_all = false;
@@ -113,11 +113,11 @@ void CIKGroupNode::IKUpdate()
 			}
 		}
 		LOGIKVar(LogInfoBool, solved_all);
+	}
 
-		for (int i_chain = 0; i_chain < n_chains; i_chain++)
-		{
-			m_kChains[i_chain]->EndUpdate();
-		}
+	for (int i_chain = 0; i_chain < n_chains; i_chain++)
+	{
+		m_kChains[i_chain]->EndUpdate();
 	}
 
 

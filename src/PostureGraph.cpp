@@ -349,16 +349,7 @@ bool CFile2PostureGraphClose::Load(const char* dir, CArtiBodyNode* root)
 	return loaded;
 }
 
-int CFile2PostureGraphClose::SetActivePosture(int pose_id, bool UpdatePose)
-{
-	int pose_id_m = m_theta_star;
-	m_theta_star = pose_id;
-	if (UpdatePose)
-	{
-		m_thetas->UpdateMotion(pose_id, m_rootBody_ref);
-	}
-	return pose_id_m;
-}
+
 
 bool CFile2PostureGraphClose::LoadThetas(const char* filePath)
 {
