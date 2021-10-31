@@ -496,7 +496,7 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
 #if defined _DEBUG || defined SMOOTH_LOGGING
  				CIKGroupTreeGen::Dump(root_gen);
 #endif
-				auto GenerateNode = [&ikChainConf](const CIKGroupNodeGen* src, CIKGroupNode** dst) -> bool
+				auto GenerateNode = [](const CIKGroupNodeGen* src, CIKGroupNode** dst) -> bool
 					{
 						*dst = new CIKGroupNode(*(const_cast<CIKGroupNodeGen*>(src)));
 						return true;

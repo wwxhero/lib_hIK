@@ -406,7 +406,7 @@ public:
 	template<bool G_SPACE>
 	static void FK_Update(CArtiBodyNode* root)
 	{
-// START_PROFILER_AUTOFRAME(root->GetName_c(), 1)
+START_PROFILER_AUTOFRAME(root->GetName_c(), 1)
 		bool is_an_anim = (root->c_type&anim);
 		if (is_an_anim)
 		{
@@ -450,7 +450,7 @@ public:
 				}
 			}
 		}
-// STOP_PROFILER
+STOP_PROFILER
 	}
 
 	template<bool IS_SAVE>

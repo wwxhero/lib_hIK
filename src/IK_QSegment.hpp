@@ -42,7 +42,7 @@ public:
 public:
 	IK_QSegment(Type type, int n_dof);
 	virtual ~IK_QSegment();
-	virtual bool Initialize(CArtiBodyNode* from, CArtiBodyNode* to);
+	bool Initialize(CArtiBodyNode* from, CArtiBodyNode* to);
 
 	const char* GetName_c(int side = 0) const
 	{
