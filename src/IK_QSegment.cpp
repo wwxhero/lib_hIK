@@ -3,6 +3,7 @@
 
 BEGIN_ENUM_STR(IK_QSegment, Type)
 	ENUM_ITEM(R_xyz)
+	ENUM_ITEM(R_Spherical)
 END_ENUM_STR(IK_QSegment, Type)
 
 IK_QSegment::IK_QSegment(Type a_type, int n_dofs)
@@ -89,6 +90,8 @@ IK_QIxyzSegment::IK_QIxyzSegment(const Real weight[3])
 
 }
 
+
+
 bool IK_QIxyzSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp)
 {
 	if (m_locked[0] && m_locked[1] && m_locked[2])
@@ -105,6 +108,8 @@ bool IK_QIxyzSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r 
 					  && (m_locked[2] || FuzzyZero(delta.z())));
 	if (!zero_d_theta)
 	{
+		// Eigen::Matrix3r rot_m = m_joints[0]->GetTransform()->getRotation_m();
+		// Eigen::Vector3r theta = rot_m.eulerAngles(0, 1, 2);
 
 		m_theta += delta;
 
@@ -120,7 +125,6 @@ bool IK_QIxyzSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r 
 
 IK_QSphericalSegment::IK_QSphericalSegment(const Real weight[3])
 	: IK_QSegmentDOF3(weight)
-	, m_theta(Eigen::Quaternionr::Identity())
 {
 
 }
@@ -147,8 +151,9 @@ bool IK_QSphericalSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vect
 								, sin_theta_half * delta_u.x()
 								, sin_theta_half * delta_u.y()
 								, sin_theta_half * delta_u.z());
-		m_theta = m_theta * delta_q;
-		m_joints[0]->SetRotation(m_theta);
+		Eigen::Quaternionr theta = m_joints[0]->GetRotation();
+		Eigen::Quaternionr theta_prime = theta * delta_q;
+		m_joints[0]->SetRotation(theta_prime);
 	}
 
 	return false;

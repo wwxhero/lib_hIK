@@ -78,21 +78,23 @@ void CIKGroupNode::IKUpdate()
 	if (NULL != g_parent) //for root of the three FK_Update<G_SPACE=true> has no effect but waist computational resource
 		CArtiBodyTree::FK_Update<true>(m_rootBody);
 
+
 	if (m_pg)
 	{
 		auto Err = [&]() -> Real
-			{
-				Real err = 0;
-				for (auto chain : m_kChains)
-					err += chain->Error();
-				return err;
-			};
+		{
+			Real err = 0;
+			for (auto chain : m_kChains)
+				err += chain->Error();
+			return err;
+		};
+
 		int theta_min = CFile2PostureGraphClose::LocalMin(*m_pg, Err);
 		m_pg->SetActivePosture<true>(theta_min, true);
 	}
 
 	bool solved_all = false;
-	if (!m_pg)
+	// if (!m_pg)
 	{
 		if (1 == n_chains)
 		{

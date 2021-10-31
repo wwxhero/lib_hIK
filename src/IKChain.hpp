@@ -44,7 +44,7 @@ public:
 	virtual bool UpdateCompleted() const = 0;
 	virtual void EndUpdate() {};
 
-	void SegGRoot(CArtiBodyNode* root_g)
+	void SetGRoot(CArtiBodyNode* root_g)
 	{
 		m_rootG = root_g;
 	}

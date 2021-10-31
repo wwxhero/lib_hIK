@@ -31,7 +31,7 @@ public:
 			const char* warning = "Grouping multiple chain undermines the IK performance!!!";
 			LOGIKVarWarning(LogInfoCharPtr, warning);
 		}
-		chain->SegGRoot(m_rootBody);
+		chain->SetGRoot(m_rootBody);
 	}
 
 	void IKUpdate();

@@ -212,7 +212,7 @@ Real TransformArchive::Error_q(const TransformArchive &tms, const TransformArchi
 									+ tm_i.r.x * tm_prime_i.r.x
 									+ tm_i.r.y * tm_prime_i.r.y
 									+ tm_i.r.z * tm_prime_i.r.z;
-				cos_q_q_prime = min(c_err_max, max(c_err_min, abs(cos_q_q_prime)));
+				cos_q_q_prime = std::min(c_err_max, std::max(c_err_min, abs(cos_q_q_prime)));
 				return 1 - cos_q_q_prime;
 			};
 

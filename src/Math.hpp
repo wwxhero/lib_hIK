@@ -1,5 +1,16 @@
 #pragma once
 
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
+
+#include <algorithm>
+
+
 #pragma push_macro("new")
 #undef new
 
@@ -51,17 +62,26 @@ inline bool UnitVec(const Eigen::Vector3r& v)
 {
 	Real err = v.squaredNorm() - 1;
 	return -c_2epsilon < err
-					&& err < c_2epsilon;
+			&& err < c_2epsilon;
 }
 
-inline bool Equal(const Eigen::Quaternionr& q_this, const Eigen::Quaternionr& q_other)
+//increasing function in range(codomain) [0, 1]
+inline Real Error_q(const Eigen::Quaternionr& q_this, const Eigen::Quaternionr& q_other)
 {
-	Real err = q_this.dot(q_other);
-    Real err_r_0 = err - (Real)1;
-    Real err_r_1 = err + (Real)1;
-    bool r_eq = (-c_rotq_epsilon < err_r_0 && err_r_0 < c_rotq_epsilon)
-              || (-c_rotq_epsilon < err_r_1 && err_r_1 < c_rotq_epsilon);
-    return r_eq;
+	const Real c_err_min = (Real)0;
+	const Real c_err_max = (Real)1;
+	Real cos_q_q_prime =  q_this.w() * q_other.w()
+						+ q_this.x() * q_other.x()
+						+ q_this.y() * q_other.y()
+						+ q_this.z() * q_other.z();
+	cos_q_q_prime = std::min(c_err_max, std::max(c_err_min, abs(cos_q_q_prime)));
+	return 1 - cos_q_q_prime;
+}
+
+// err_q_epsilon in range [0 1], can be defined as 1-cos(0.5*alpha)
+inline bool Equal(const Eigen::Quaternionr& q_this, const Eigen::Quaternionr& q_other, const Real err_q_epsilon = c_err_q_epsilon)
+{
+	return Error_q(q_this, q_other) < err_q_epsilon;
 }
 
 inline bool FuzzyZero(Real x)
@@ -78,9 +98,9 @@ T wrap_pi(T rad)
   auto r_i_2pi = rad - k * pi_2;
   assert(r_i_2pi >= 0 && r_i_2pi < pi_2);
   if (r_i_2pi > M_PI)
-    rad_wrap = r_i_2pi - pi_2;
+	rad_wrap = r_i_2pi - pi_2;
   else
-    rad_wrap = r_i_2pi;
+	rad_wrap = r_i_2pi;
   return rad_wrap;
 }
 

@@ -30,12 +30,10 @@
 IK_QTask::IK_QTask(Type type
 				, int size
 				, bool primary
-				, const std::vector<IK_QSegment*> &segment
 				, CArtiBodyNode*& eef)
 		: c_type(type)
 		, m_size(size)
 		, m_primary(primary)
-		, m_segments(segment)
 		, m_weight(1.0)
 		, m_eef(eef)
 {
@@ -44,22 +42,9 @@ IK_QTask::IK_QTask(Type type
 // IK_QPositionTask
 
 IK_QPositionTask::IK_QPositionTask(bool primary
-								, const std::vector<IK_QSegment*> &segment
 								, CArtiBodyNode*& eef)
-		: IK_QTask(Position, 3, primary, segment, eef)
+		: IK_QTask(Position, 3, primary, eef)
 {
-	// computing clamping length
-	int num;
-
-	m_clamp_length = 0.0;
-	num = 0;
-
-	for (auto seg : m_segments) {
-		m_clamp_length += seg->MaxExtension();
-		num++;
-	}
-
-	m_clamp_length /= 2 * num;
 }
 
 void IK_QPositionTask::ComputeJacobian(IK_QJacobian &jacobian)
@@ -95,12 +80,54 @@ void IK_QPositionTask::ComputeJacobian(IK_QJacobian &jacobian)
 	}
 }
 
+bool IK_QPositionTask::Completed() const
+{
+	const Transform* l2w = m_eef->GetTransformLocal2World();
+	Eigen::Vector3r tt_eef = l2w->getTranslation();
+	Real dist_sqr = (tt_eef - m_goal).squaredNorm();
+#if defined _DEBUG
+	LOGIKVar(LogInfoCharPtr, m_eef->GetName_c());
+	LOGIKVar(LogInfoReal, dist_sqr);
+#endif
+	return dist_sqr < c_tt_epsilon_sqr;
+}
+
+Eigen::Vector3r IK_QPositionTask::Beta() const
+{
+	const Transform* l2w = m_eef->GetTransformLocal2World();
+	Eigen::Vector3r tt_eef = l2w->getTranslation();
+	Eigen::Vector3r d_pos = m_goal - tt_eef;
+#if defined _DEBUG
+	LOGIKVar(LogInfoCharPtr, m_eef->GetName_c());
+	Real dist_sqr = d_pos.squaredNorm();
+	LOGIKVar(LogInfoReal, dist_sqr);
+#endif
+	return d_pos;
+}
+
+void IK_QPositionTask::SetSegment(const std::vector<IK_QSegment*>& segments)
+{
+	m_segments = segments;
+	// computing clamping length
+	int num;
+
+	m_clamp_length = 0.0;
+	num = 0;
+
+	for (auto seg : m_segments) {
+		m_clamp_length += seg->MaxExtension();
+		num++;
+	}
+
+	m_clamp_length /= 2 * num;
+}
+
+
 // IK_QOrientationTask
 
 IK_QOrientationTask::IK_QOrientationTask(bool primary
-									, const std::vector<IK_QSegment*>& segment
 									, CArtiBodyNode*& eef)
-		: IK_QTask(Orientation, 3, primary, segment, eef)
+		: IK_QTask(Orientation, 3, primary, eef)
 {
 }
 
@@ -146,6 +173,17 @@ void IK_QOrientationTask::Complete()
 		Eigen::Quaternionr goal(m_goalQ);
 		m_eef->GetJoint()->SetRotation_w(goal);
 	}
+}
+
+bool IK_QOrientationTask::Completed() const
+{
+	Eigen::Quaternionr rot_eef = Transform::getRotation_q(m_eef->GetTransformLocal2World());
+	Real err = Error_q(rot_eef, m_goalQ);
+#if defined _DEBUG
+	LOGIKVar(LogInfoCharPtr, m_eef->GetName_c());
+	LOGIKVar(LogInfoReal, err);
+#endif
+	return err < c_err_q_epsilon;
 }
 
 

@@ -32,7 +32,7 @@ class IK_QTask {
  public:
 	enum Type { Position, Orientation };
 	// segment: is the one prior to end effector
-	IK_QTask(Type type, int size, bool primary, const std::vector<IK_QSegment*> &segment, CArtiBodyNode*& eef);
+	IK_QTask(Type type, int size, bool primary, CArtiBodyNode*& eef);
 	virtual ~IK_QTask()
 	{
 	}
@@ -61,6 +61,12 @@ class IK_QTask {
 	{
 		m_weight = sqrt(weight);
 	}
+
+	virtual void SetSegment(const std::vector<IK_QSegment*>& segments)
+	{
+		m_segments = segments;
+	}
+	
 	// Update Jacobian
 	virtual void ComputeJacobian(IK_QJacobian &jacobian) = 0;
 
@@ -72,14 +78,14 @@ protected:
 	int m_id;
 	int m_size;
 	bool m_primary;
-	const std::vector<IK_QSegment*>& m_segments;
+	std::vector<IK_QSegment*> m_segments;
 	CArtiBodyNode*& m_eef;
 	Real m_weight;
 };
 
 class IK_QPositionTask : public IK_QTask {
  public:
-	IK_QPositionTask(bool primary, const std::vector<IK_QSegment*> &segment, CArtiBodyNode*& eef);
+	IK_QPositionTask(bool primary, CArtiBodyNode*& eef);
 
 	void ComputeJacobian(IK_QJacobian &jacobian);
 
@@ -89,31 +95,9 @@ class IK_QPositionTask : public IK_QTask {
 	}
 
 	void Complete(){}
-	virtual bool Completed() const
-	{
-		const Transform* l2w = m_eef->GetTransformLocal2World();
-		Eigen::Vector3r tt_eef = l2w->getTranslation();
-		Real dist_sqr = (tt_eef - m_goal).squaredNorm();
-#if defined _DEBUG
-		LOGIKVar(LogInfoCharPtr, m_eef->GetName_c());
-		LOGIKVar(LogInfoReal, dist_sqr);
-#endif
-		return dist_sqr < c_tt_epsilon_sqr;
-	}
-
-	Eigen::Vector3r Beta() const
-	{
-		const Transform* l2w = m_eef->GetTransformLocal2World();
-		Eigen::Vector3r tt_eef = l2w->getTranslation();
-		Eigen::Vector3r d_pos = m_goal - tt_eef;
-#if defined _DEBUG
-		LOGIKVar(LogInfoCharPtr, m_eef->GetName_c());
-		Real dist_sqr = d_pos.squaredNorm();
-		LOGIKVar(LogInfoReal, dist_sqr);
-#endif
-		return d_pos;
-	}
-
+	virtual bool Completed() const;
+	Eigen::Vector3r Beta() const;
+	virtual void SetSegment(const std::vector<IK_QSegment*>& segments) override;
 
  private:
 	Eigen::Vector3r m_goal;
@@ -122,7 +106,7 @@ class IK_QPositionTask : public IK_QTask {
 
 class IK_QOrientationTask : public IK_QTask {
  public:
-	IK_QOrientationTask(bool primary, const std::vector<IK_QSegment*>& segment, CArtiBodyNode*& eef);
+	IK_QOrientationTask(bool primary, CArtiBodyNode*& eef);
 
 	void ComputeJacobian(IK_QJacobian &jacobian);
 
@@ -132,11 +116,7 @@ class IK_QOrientationTask : public IK_QTask {
 	}
 
 	void Complete();
-	virtual bool Completed() const
-	{
-		Eigen::Quaternionr rot_eef = Transform::getRotation_q(m_eef->GetTransformLocal2World());
-		return Equal(m_goalQ, rot_eef);
-	}
+	virtual bool Completed() const;
 
  private:
 	Eigen::Quaternionr m_goalQ;

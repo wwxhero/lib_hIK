@@ -9,8 +9,8 @@ class IKChainInverseJK : public CIKChainNumerical
 public:
 	IKChainInverseJK(CIKChain::Algor algor, Real weight_p, Real weight_r, int n_iter)
 		: Super(algor, n_iter)
-		, m_taskP(true, m_segments, m_eefSrc)
-		, m_taskR(true, m_segments, m_eefSrc)
+		, m_taskP(true, m_eefSrc)
+		, m_taskR(true, m_eefSrc)
 	{
 		if (weight_p > 0)
 			m_tasksReg.push_back(&m_taskP);
@@ -111,6 +111,9 @@ public:
 			}
 		}
 
+		m_taskP.SetSegment(m_segments);
+		m_taskR.SetSegment(m_segments);
+
 		return true;
 	}
 
@@ -148,6 +151,10 @@ public:
 	virtual bool Update_AnyThread()
 	{
 		// iterate
+		Real err = Error();
+		LOGIKVar(LogInfoReal, err);
+
+
 		bool solved = false;
 		bool updating = true;
 		int i_iter = 0;
@@ -203,6 +210,8 @@ public:
 
 			// check for convergence
 			CArtiBodyTree::FK_Update<true>(m_rootG);
+			err = Error();
+			LOGIKVar(LogInfoReal, err);
 
 			updating = (norm > 1e-3 || i_iter < 10);
 			solved = true;

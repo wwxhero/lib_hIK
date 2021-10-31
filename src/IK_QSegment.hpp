@@ -42,7 +42,7 @@ public:
 public:
 	IK_QSegment(Type type, int n_dof);
 	virtual ~IK_QSegment();
-	bool Initialize(CArtiBodyNode* from, CArtiBodyNode* to);
+	virtual bool Initialize(CArtiBodyNode* from, CArtiBodyNode* to);
 
 	const char* GetName_c(int side = 0) const
 	{
@@ -162,7 +162,6 @@ public:
 	IK_QSphericalSegment(const Real weight[3]);
 	virtual bool UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp);
 private:
-	Eigen::Quaternionr m_theta;
 };
 
 
