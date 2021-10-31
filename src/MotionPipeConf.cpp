@@ -102,7 +102,7 @@ namespace CONF
 	{
 		const char* name = attri_values[0];
 		IK_QSegment::Type type = (NULL == attri_values[1])
-							? IK_QSegment::R_xyz
+							? IK_QSegment::R_Spherical
 							: IK_QSegment::to_Type(attri_values[1]);
 		Real dexterity[] = {
 			(NULL == attri_values[2]) ? 1 : (Real)atof(attri_values[2]),

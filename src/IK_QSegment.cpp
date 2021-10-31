@@ -85,7 +85,6 @@ void IK_QSegmentDOF3::Lock(int dof_l, IK_QJacobian &jacobian, Eigen::Vector3r &d
 
 IK_QIxyzSegment::IK_QIxyzSegment(const Real weight[3])
 	: IK_QSegmentDOF3(weight)
-	, m_theta(Eigen::Vector3r::Zero())
 {
 
 }
@@ -108,16 +107,15 @@ bool IK_QIxyzSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r 
 					  && (m_locked[2] || FuzzyZero(delta.z())));
 	if (!zero_d_theta)
 	{
-		// Eigen::Matrix3r rot_m = m_joints[0]->GetTransform()->getRotation_m();
-		// Eigen::Vector3r theta = rot_m.eulerAngles(0, 1, 2);
-
-		m_theta += delta;
+		Eigen::Quaternionr theta = m_joints[0]->GetRotation();
 
 		// interpret dq as: x->y'->z'' == z->y->x
-		Eigen::AngleAxisr rz(m_theta[2], Eigen::Vector3r::UnitZ());
-		Eigen::AngleAxisr ry(m_theta[1], Eigen::Vector3r::UnitY());
-		Eigen::AngleAxisr rx(m_theta[0], Eigen::Vector3r::UnitX());
-		m_joints[0]->SetRotation(rx * ry * rz);
+		Eigen::AngleAxisr rz(delta[2], Eigen::Vector3r::UnitZ());
+		Eigen::AngleAxisr ry(delta[1], Eigen::Vector3r::UnitY());
+		Eigen::AngleAxisr rx(delta[0], Eigen::Vector3r::UnitX());
+		Eigen::Quaternionr theta_prime = theta*rx*ry*rz;
+
+		m_joints[0]->SetRotation(theta_prime);
 	}
 
 	return false;
