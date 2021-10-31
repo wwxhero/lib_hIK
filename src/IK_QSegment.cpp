@@ -3,6 +3,7 @@
 
 BEGIN_ENUM_STR(IK_QSegment, Type)
 	ENUM_ITEM(R_xyz)
+	ENUM_ITEM(R_Spherical)
 END_ENUM_STR(IK_QSegment, Type)
 
 IK_QSegment::IK_QSegment(Type a_type, int n_dofs)
@@ -84,10 +85,11 @@ void IK_QSegmentDOF3::Lock(int dof_l, IK_QJacobian &jacobian, Eigen::Vector3r &d
 
 IK_QIxyzSegment::IK_QIxyzSegment(const Real weight[3])
 	: IK_QSegmentDOF3(weight)
-	, m_theta(Eigen::Vector3r::Zero())
 {
 
 }
+
+
 
 bool IK_QIxyzSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp)
 {
@@ -105,14 +107,15 @@ bool IK_QIxyzSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r 
 					  && (m_locked[2] || FuzzyZero(delta.z())));
 	if (!zero_d_theta)
 	{
-
-		m_theta += delta;
+		Eigen::Quaternionr theta = m_joints[0]->GetRotation();
 
 		// interpret dq as: x->y'->z'' == z->y->x
-		Eigen::AngleAxisr rz(m_theta[2], Eigen::Vector3r::UnitZ());
-		Eigen::AngleAxisr ry(m_theta[1], Eigen::Vector3r::UnitY());
-		Eigen::AngleAxisr rx(m_theta[0], Eigen::Vector3r::UnitX());
-		m_joints[0]->SetRotation(rx * ry * rz);
+		Eigen::AngleAxisr rz(delta[2], Eigen::Vector3r::UnitZ());
+		Eigen::AngleAxisr ry(delta[1], Eigen::Vector3r::UnitY());
+		Eigen::AngleAxisr rx(delta[0], Eigen::Vector3r::UnitX());
+		Eigen::Quaternionr theta_prime = theta*rx*ry*rz;
+
+		m_joints[0]->SetRotation(theta_prime);
 	}
 
 	return false;
@@ -120,7 +123,6 @@ bool IK_QIxyzSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r 
 
 IK_QSphericalSegment::IK_QSphericalSegment(const Real weight[3])
 	: IK_QSegmentDOF3(weight)
-	, m_theta(Eigen::Quaternionr::Identity())
 {
 
 }
@@ -147,8 +149,9 @@ bool IK_QSphericalSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vect
 								, sin_theta_half * delta_u.x()
 								, sin_theta_half * delta_u.y()
 								, sin_theta_half * delta_u.z());
-		m_theta = m_theta * delta_q;
-		m_joints[0]->SetRotation(m_theta);
+		Eigen::Quaternionr theta = m_joints[0]->GetRotation();
+		Eigen::Quaternionr theta_prime = theta * delta_q;
+		m_joints[0]->SetRotation(theta_prime);
 	}
 
 	return false;

@@ -380,6 +380,24 @@ void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r
 	}
 }
 
+int CArtiBodyTree::GetBodies(const CArtiBodyNode* root
+							, const std::list<std::string>& names
+							, std::list<const CArtiBodyNode*>& nodes)
+{
+	std::set<std::string> set_names(names.begin(), names.end());
+	int n_bodies_interests = 0;
+	for (auto node : root->m_kinalst)
+	{
+		bool is_a_interest = (set_names.end() != set_names.find(node->GetName_c()));
+		if (is_a_interest)
+		{
+			nodes.push_back(node);
+			n_bodies_interests ++;
+		}
+	}
+	return n_bodies_interests;
+}
+
 #ifdef _DEBUG
 void CArtiBodyTree::Connect(CArtiBodyNode* from, CArtiBodyNode* to, CNN type)
 {

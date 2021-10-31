@@ -240,17 +240,17 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;LIB_HIK_EXPORTS;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;SMOOTH_LOGGING;WIN32;TIXML_USE_TICPP;TIXML_USE_STL;HARDASSERTION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;LIB_HIK_EXPORTS;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;WIN32;TIXML_USE_TICPP;TIXML_USE_STL;HARDASSERTION;SMOOTH_LOGGING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC);$(LIB_OPENCV_INC)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(LIB_TICPP_BIN)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ticppd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(LIB_TICPP_BIN);$(LIB_OPENCV_BIN)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ticppd.lib;opencv_world453d.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Shipping|Win32'">
@@ -324,7 +324,7 @@
       <PreprocessorDefinitions>NDEBUG;LIB_HIK_EXPORTS;_CRT_SECURE_NO_WARNINGS;_WINDOWS;_USRDLL;_USE_MATH_DEFINES;WIN32;TIXML_USE_TICPP;TIXML_USE_STL;SMOOTH_LOGGING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC);$(LIB_OPENCV_INC)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -333,8 +333,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(LIB_TICPP_BIN)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ticpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(LIB_TICPP_BIN);$(LIB_OPENCV_BIN)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ticpp.lib;opencv_world453.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
@@ -383,11 +383,14 @@
     <ClInclude Include="..\..\inc\fk_joint.h" />
     <ClInclude Include="..\..\inc\motion_pipeline.h" />
     <ClInclude Include="..\..\inc\pch.h" />
+    <ClInclude Include="..\..\inc\posture_graph.h" />
     <ClInclude Include="..\..\src\ArtiBody.hpp" />
     <ClInclude Include="..\..\src\ArtiBodyFile.hpp" />
     <ClInclude Include="..\..\src\bvh11_helper.hpp" />
+    <ClInclude Include="..\..\src\filesystem_helper.hpp" />
     <ClInclude Include="..\..\src\handle_helper.hpp" />
     <ClInclude Include="..\..\src\IKChain.hpp" />
+    <ClInclude Include="..\..\src\IKChainNumerical.hpp" />
     <ClInclude Include="..\..\src\IKChainInverseJK.hpp" />
     <ClInclude Include="..\..\src\IKGroupTree.hpp" />
     <ClInclude Include="..\..\src\IK_QJacobian.h" />
@@ -401,6 +404,7 @@
     <ClInclude Include="..\..\src\matrix3.h" />
     <ClInclude Include="..\..\src\MoNode.hpp" />
     <ClInclude Include="..\..\src\MotionPipeConf.hpp" />
+    <ClInclude Include="..\..\src\PostureGraph.hpp" />
     <ClInclude Include="..\..\src\Transform.hpp" />
     <ClInclude Include="..\..\src\treebase.hpp" />
   </ItemGroup>
@@ -412,6 +416,7 @@
     <ClCompile Include="..\..\src\bvh11_helper.cpp" />
     <ClCompile Include="..\..\src\IKChain.cpp" />
     <ClCompile Include="..\..\src\IKChainInverseJK.cpp" />
+    <ClCompile Include="..\..\src\IKChainNumerical.cpp" />
     <ClCompile Include="..\..\src\IKGroupTree.cpp" />
     <ClCompile Include="..\..\src\IK_QJacobian.cpp" />
     <ClCompile Include="..\..\src\IK_QSegment.cpp" />
@@ -428,6 +433,8 @@
     <ClCompile Include="..\..\src\MoNode.cpp" />
     <ClCompile Include="..\..\src\MotionPipeConf.cpp" />
     <ClCompile Include="..\..\src\motion_pipeline.cpp" />
+    <ClCompile Include="..\..\src\PostureGraph.cpp" />
+    <ClCompile Include="..\..\src\posture_graph.cpp" />
     <ClCompile Include="..\..\src\Transform.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="pch.cpp">
@@ -443,7 +450,19 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development_Editor|x64'">Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\..\..\boost.1.77.0.0\build\boost.targets" Condition="Exists('..\..\..\boost.1.77.0.0\build\boost.targets')" />
+    <Import Project="..\..\..\boost_serialization-vc141.1.77.0.0\build\boost_serialization-vc141.targets" Condition="Exists('..\..\..\boost_serialization-vc141.1.77.0.0\build\boost_serialization-vc141.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\..\boost.1.77.0.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\boost.1.77.0.0\build\boost.targets'))" />
+    <Error Condition="!Exists('..\..\..\boost_serialization-vc141.1.77.0.0\build\boost_serialization-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\boost_serialization-vc141.1.77.0.0\build\boost_serialization-vc141.targets'))" />
+  </Target>
 </Project>

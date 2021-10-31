@@ -7,7 +7,9 @@
 CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
 	: m_rootBody(root)
 	, m_nSpecMax(0)
+	, m_pg(NULL)
 {
+
 }
 
 CIKGroupNode::CIKGroupNode(CIKGroupNode& src)
@@ -15,12 +17,15 @@ CIKGroupNode::CIKGroupNode(CIKGroupNode& src)
 	m_rootBody = src.m_rootBody;
 	m_kChains = std::move(src.m_kChains);
 	m_nSpecMax = src.m_nSpecMax;
+	m_pg = src.m_pg; src.m_pg = NULL;
 }
 
 CIKGroupNode::~CIKGroupNode()
 {
 	for (auto chain : m_kChains)
 		delete chain;
+	if (NULL != m_pg)
+		delete m_pg;
 }
 
 
@@ -30,6 +35,96 @@ void CIKGroupNode::SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& na
 {
 	for (auto chain : m_kChains)
 		chain->SetupTarget(nameSrc2bodyDst, src2dst_w, dst2src_w);
+}
+
+void CIKGroupNode::LoadPostureGraph(const char* pgDir)
+{
+	if (m_kChains.size() > 0)
+	{
+		m_pg = new CFile2PostureGraphClose();
+		if (!m_pg->Load(pgDir, m_rootBody))
+		{
+			delete m_pg;
+			m_pg = NULL;
+		}
+		else
+			m_pg->SetActivePosture<false>(0, true);
+	}
+}
+
+void CIKGroupNode::IKUpdate()
+{
+	int n_chains = (int)m_kChains.size();
+	if (n_chains < 1)
+		return;
+	Transform_TR tm_w2g_tr;
+	CArtiBodyNode* g_parent = m_rootBody->GetParent();
+	if (NULL != g_parent)
+	{
+		const Transform* tm_w2g = g_parent->GetTransformWorld2Local();
+		IKAssert(t_tr == tm_w2g->Type());
+		tm_w2g_tr = *static_cast<const Transform_TR*>(tm_w2g);
+	}
+
+	bool exist_an_update = false;
+	for (int i_chain = 0; i_chain < n_chains; i_chain ++)
+	{
+		bool updating_i = m_kChains[i_chain]->BeginUpdate(tm_w2g_tr);
+		exist_an_update = (exist_an_update || updating_i);
+	}
+
+	if (!exist_an_update)
+		return;
+	if (NULL != g_parent) //for root of the three FK_Update<G_SPACE=true> has no effect but waist computational resource
+		CArtiBodyTree::FK_Update<true>(m_rootBody);
+
+
+	if (m_pg)
+	{
+		auto Err = [&]() -> Real
+		{
+			Real err = 0;
+			for (auto chain : m_kChains)
+				err += chain->Error();
+			return err;
+		};
+
+		int theta_min = CFile2PostureGraphClose::LocalMin(*m_pg, Err);
+		m_pg->SetActivePosture<true>(theta_min, true);
+	}
+
+	bool solved_all = false;
+	// if (!m_pg)
+	{
+		if (1 == n_chains)
+		{
+			solved_all = m_kChains[0]->Update();
+		}
+		else
+		{
+			for (int i_update = 0; i_update < n_chains && !solved_all; i_update ++)
+			{
+				for (auto& chain_i : m_kChains)
+					chain_i->Update();
+
+				solved_all = true;
+				for (auto chain_i = m_kChains.begin()
+					; solved_all && chain_i != m_kChains.end()
+					; chain_i ++)
+					solved_all = (*chain_i)->UpdateCompleted();
+			}
+		}
+		LOGIKVar(LogInfoBool, solved_all);
+	}
+
+	for (int i_chain = 0; i_chain < n_chains; i_chain++)
+	{
+		m_kChains[i_chain]->EndUpdate();
+	}
+
+
+
+	CArtiBodyTree::FK_Update<false>(m_rootBody);
 }
 
 void CIKGroupNode::Dump(int n_indents) const
@@ -44,6 +139,18 @@ void CIKGroupNode::Dump(int n_indents) const
 		}
 	logInfo << "}";
 	LOGIK(logInfo.str().c_str());
+}
+
+void CIKGroupNode::Dump(int n_indents, std::ostream& logInfo) const
+{
+	for (int i_indent = 0; i_indent < n_indents; i_indent++)
+		logInfo << "\t";
+	logInfo << "{";
+	for (auto chain : m_kChains)
+	{
+		chain->Dump(logInfo);
+	}
+	logInfo << "}";
 }
 
 
@@ -374,7 +481,8 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
 #if defined _DEBUG || defined SMOOTH_LOGGING
 		CArtiBodyClrTree::Dump(root_clr);	// step 1
 #endif
-		if (root_clr->Colored())
+		if (root_clr->Colored() 
+			|| (ikChainConf.Name2IKChainIdx(root->GetName_c()) > -1))	//root node is either colored or an end effector
 		{
  			CIKGroupNodeGen* root_gen = CIKGroupTreeGen::Generate(root_clr);
 			if (root_gen)
@@ -418,6 +526,21 @@ void CIKGroupTree::SetupTargets(CIKGroupNode* root_ik
 	auto OnIKGroupNode = [&nameSrc2bodyDst, &src2dst_w, &dst2src_w](CIKGroupNode* gNode)
 		{
 			gNode->SetupTargets(nameSrc2bodyDst, src2dst_w, dst2src_w);
+		};
+
+	auto OffIKGroupNode = [](CIKGroupNode* gNode)
+		{
+
+		};
+
+	CIKGroupTree::TraverseDFS(root_ik, OnIKGroupNode, OffIKGroupNode);
+}
+
+void CIKGroupTree::LoadPG(CIKGroupNode* root_ik, const char* dirPath)
+{
+	auto OnIKGroupNode = [dirPath](CIKGroupNode* gNode)
+		{
+			gNode->LoadPostureGraph(dirPath);
 		};
 
 	auto OffIKGroupNode = [](CIKGroupNode* gNode)

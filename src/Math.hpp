@@ -1,5 +1,28 @@
 #pragma once
 
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
+
+#include <algorithm>
+
+const Real c_epsilon = 1e-5f;
+const Real c_2epsilon = 2e-5f;
+const Real c_5epsilon = 5e-5f;
+const Real c_10epsilon = 1e-4f;
+const Real c_100epsilon = 1e-3f;
+const Real c_rotm_epsilon = (Real)0.005;
+const Real c_tt_epsilon = (Real)1.5; 				//in centimeter
+const Real c_tt_epsilon_sqr = (Real)2.25;
+const Real c_rotq_epsilon = (Real)1.0/(Real)180.0;	//err_dot: [1, 0] -> err_deg [0, 180]
+const Real c_rotq_epsilon_sqrnorm = (Real)0.002;
+
+const Real c_err_q_epsilon = (Real)1 - (Real)cos((Real)5/(Real)180 * 0.5 * 3.1416);
+
 #pragma push_macro("new")
 #undef new
 
@@ -51,17 +74,26 @@ inline bool UnitVec(const Eigen::Vector3r& v)
 {
 	Real err = v.squaredNorm() - 1;
 	return -c_2epsilon < err
-					&& err < c_2epsilon;
+			&& err < c_2epsilon;
 }
 
-inline bool Equal(const Eigen::Quaternionr& q_this, const Eigen::Quaternionr& q_other)
+//increasing function in range(codomain) [0, 1]
+inline Real Error_q(const Eigen::Quaternionr& q_this, const Eigen::Quaternionr& q_other)
 {
-	Real err = q_this.dot(q_other);
-    Real err_r_0 = err - (Real)1;
-    Real err_r_1 = err + (Real)1;
-    bool r_eq = (-c_rotq_epsilon < err_r_0 && err_r_0 < c_rotq_epsilon)
-              || (-c_rotq_epsilon < err_r_1 && err_r_1 < c_rotq_epsilon);
-    return r_eq;
+	const Real c_err_min = (Real)0;
+	const Real c_err_max = (Real)1;
+	Real cos_q_q_prime =  q_this.w() * q_other.w()
+						+ q_this.x() * q_other.x()
+						+ q_this.y() * q_other.y()
+						+ q_this.z() * q_other.z();
+	cos_q_q_prime = std::min(c_err_max, std::max(c_err_min, abs(cos_q_q_prime)));
+	return 1 - cos_q_q_prime;
+}
+
+// err_q_epsilon in range [0 1], can be defined as 1-cos(0.5*alpha)
+inline bool Equal(const Eigen::Quaternionr& q_this, const Eigen::Quaternionr& q_other, const Real err_q_epsilon = c_err_q_epsilon)
+{
+	return Error_q(q_this, q_other) < err_q_epsilon;
 }
 
 inline bool FuzzyZero(Real x)
@@ -78,9 +110,9 @@ T wrap_pi(T rad)
   auto r_i_2pi = rad - k * pi_2;
   assert(r_i_2pi >= 0 && r_i_2pi < pi_2);
   if (r_i_2pi > M_PI)
-    rad_wrap = r_i_2pi - pi_2;
+	rad_wrap = r_i_2pi - pi_2;
   else
-    rad_wrap = r_i_2pi;
+	rad_wrap = r_i_2pi;
   return rad_wrap;
 }
 
@@ -88,6 +120,12 @@ inline Real rad2deg(Real rad)
 {
 	const Real r2d = (Real)180 / (Real)M_PI;
 	return r2d * wrap_pi(rad);
+}
+
+inline Real deg2rad(Real deg)
+{
+	const Real d2r = (Real)M_PI / (Real)180;
+	return wrap_pi(d2r*deg);
 }
 
 struct Plane

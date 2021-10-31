@@ -406,7 +406,7 @@ public:
 	template<bool G_SPACE>
 	static void FK_Update(CArtiBodyNode* root)
 	{
-START_PROFILER_AUTOFRAME(root->GetName_c(), 50000)
+START_PROFILER_AUTOFRAME(root->GetName_c(), 1)
 		bool is_an_anim = (root->c_type&anim);
 		if (is_an_anim)
 		{
@@ -453,12 +453,46 @@ START_PROFILER_AUTOFRAME(root->GetName_c(), 50000)
 STOP_PROFILER
 	}
 
+	template<bool IS_SAVE>
+	static void Serialize(CArtiBodyNode* root, TransformArchive& tms)
+	{
+		if (IS_SAVE)
+			tms.Resize((int)root->m_kinalst.size());
+		
+		int i_tm = 0;
+		auto onEnterBody = [&i_tm, &tms](CArtiBodyNode* body)
+			{
+				_TRANSFORM& tm_i = tms[i_tm ++];
+				if (IS_SAVE)
+				{
+					Transform* tm_joint_i = body->GetJoint()->GetTransform();
+					tm_joint_i->CopyTo(tm_i);
+				}
+				else // is restore
+				{
+					Transform* tm_joint_i = body->GetJoint()->GetTransform();
+					tm_joint_i->CopyFrom(tm_i);
+				}
+			};
+		auto onLeaveBody = [](CArtiBodyNode* body)
+			{
+
+			};
+		CArtiBodyTree::TraverseDFS(root, onEnterBody, onLeaveBody);
+		if (!IS_SAVE) // == IS_RESTORE
+			FK_Update<false>(root);
+	}
+
+//the following code for building posture graph, not for real-time usage
 	static int BodyCMP(const char* const pts_interest[], int n_interests, const CArtiBodyNode* body_s, const CArtiBodyNode* body_d, HBODY err_nodes[], Real err_oris[]);
 	static void Body_T_Test(const CArtiBodyNode* body
 					, const Eigen::Vector3r& dir_up
 					, const std::vector<std::string>& pts_interest
 					, int part_idx_range[parts_total][2]
 					, Real err[]);
+	static int GetBodies(const CArtiBodyNode* root
+						, const std::list<std::string>& names
+						, std::list<const CArtiBodyNode*>& nodes);
 
 #ifdef _DEBUG
 	static void Connect(CArtiBodyNode* from, CArtiBodyNode* to, CNN type);

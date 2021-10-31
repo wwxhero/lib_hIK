@@ -8,6 +8,8 @@ BEGIN_ENUM_STR(CIKChain, Algor)
 	ENUM_ITEM(Unknown)
 END_ENUM_STR(CIKChain, Algor)
 
+Real CIKChain::ERROR_MIN = -c_tt_epsilon_sqr;
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKChain:
 
@@ -62,7 +64,7 @@ void CIKChain::SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc
 	const Transform* local2world_src = m_eefSrc->GetTransformLocal2World();
 	Eigen::Matrix3r linear_local2world_src = local2world_src->getLinear();
 	Eigen::Matrix3r linear_local2world_prime_dst = src2dst_w * linear_local2world_src * m_dst2srcW;
-	Eigen::Matrix3r offsetDst = linear_local2world_dst.inverse() * linear_local2world_prime_dst;
+	Eigen::Matrix3r offsetDst = linear_local2world_dst.inverse() * linear_local2world_prime_dst; // offsetDst: [target_l2w * offset = eef_l2w]_dst
 	m_src2dstW_Offset = offsetDst * src2dst_w;
 }
 
@@ -82,6 +84,14 @@ bool CIKChain::BeginUpdate(const Transform_TR& w2g)
 
 	_TRANSFORM target_src_w_tm;
 	target_src_w.CopyTo(target_src_w_tm);
+	const Real err_b = (Real)0.05;
+	const Real sd = (Real)1;
+	const Real range[] = { sd - err_b, sd + err_b };
+	IKAssert(range[0] < target_src_w_tm.s.x && target_src_w_tm.s.x < range[1]
+		&&	range[0] < target_src_w_tm.s.y && target_src_w_tm.s.y < range[1]
+		&&	range[0] < target_src_w_tm.s.z && target_src_w_tm.s.z < range[1]);
+	target_src_w_tm.s.x = target_src_w_tm.s.y = target_src_w_tm.s.z = (Real)1;
+
 	_TRANSFORM eef_src_w_tm;
 	m_eefSrc->GetTransformLocal2World()->CopyTo(eef_src_w_tm);
 	bool valid_update = !Equal(eef_src_w_tm, target_src_w_tm);
@@ -111,7 +121,7 @@ bool CIKChain::BeginUpdate(const Transform_TR& w2g)
 	return valid_update;
 }
 
-void CIKChain::Dump(std::stringstream& info) const
+void CIKChain::Dump(std::ostream& info) const
 {
 	info << "{";
 	for (auto seg : m_nodes)
@@ -148,7 +158,7 @@ bool CIKChainProj::Init(const CArtiBodyNode* eef, int len, const std::vector<CON
 	return initialized;
 }
 
-void CIKChainProj::Dump(std::stringstream& info) const
+void CIKChainProj::Dump(std::ostream& info) const
 {
 	info << "CIKChainProj:";
 	CIKChain::Dump(info);
@@ -162,7 +172,7 @@ bool CIKChainProj::BeginUpdate(const Transform_TR& w2g)
 	return true;
 }
 
-bool CIKChainProj::UpdateAll()
+bool CIKChainProj::Update()
 {
 	_TRANSFORM goal;
 	m_eefSrc->GetGoal(goal);

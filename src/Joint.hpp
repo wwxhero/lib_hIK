@@ -14,6 +14,7 @@ public:
 	virtual const Transform* GetTransform() const = 0;
 	virtual Transform* GetTransform() = 0;
 	virtual void SetLinear(const Eigen::Matrix3r& rotm) = 0;
+	virtual Eigen::Quaternionr GetRotation() const = 0;
 	virtual void SetRotation(const Eigen::Quaternionr& rotq) = 0;
 	virtual void SetRotation_w(const Eigen::Quaternionr& rotq) = 0;
 	virtual void SetTranslation(const Eigen::Vector3r& tt) = 0;
@@ -63,6 +64,11 @@ public:
 	virtual void SetRotation(const Eigen::Quaternionr& rotq)
 	{
 		m_tm.setRotation(rotq);
+	}
+
+	virtual Eigen::Quaternionr GetRotation() const
+	{
+		return m_tm.getRotation_q();
 	}
 
 	virtual void SetRotation_w(const Eigen::Quaternionr& rotq)

@@ -168,7 +168,7 @@ CFile2ArtiBody::CFile2ArtiBody(const std::string& path)
 
 }
 
-CArtiBodyNode* CFile2ArtiBody::CreateBody(BODY_TYPE type)
+CArtiBodyNode* CFile2ArtiBody::CreateBody(BODY_TYPE type) const
 {
 	switch(type)
 	{
@@ -182,10 +182,10 @@ CArtiBodyNode* CFile2ArtiBody::CreateBody(BODY_TYPE type)
 	}
 }
 
-CArtiBodyNode* CFile2ArtiBody::CreateBodyBVH()
+CArtiBodyNode* CFile2ArtiBody::CreateBodyBVH() const
 {
-	CArtiBodyNode* (*create_arti_body)(bvh11::BvhObject&, Joint_bvh_ptr)
-		= [] (bvh11::BvhObject& bvh_src, Joint_bvh_ptr j_bvh) -> CArtiBodyNode*
+	CArtiBodyNode* (*create_arti_body)(const bvh11::BvhObject&, Joint_bvh_ptr)
+		= [] (const bvh11::BvhObject& bvh_src, Joint_bvh_ptr j_bvh) -> CArtiBodyNode*
 			{
 				auto name = j_bvh->name().c_str();
 				auto tm_bvh = bvh_src.GetTransformationRelativeToParent(j_bvh, -1);
@@ -253,7 +253,7 @@ CArtiBodyNode* CFile2ArtiBody::CreateBodyBVH()
 	return root_b_hik;
 }
 
-CArtiBodyNode* CFile2ArtiBody::CreateBodyHTR()
+CArtiBodyNode* CFile2ArtiBody::CreateBodyHTR() const
 {
 	CArtiBodyNode* body_bvh = NULL;
 	CArtiBodyNode* body_htr = NULL;
@@ -275,27 +275,55 @@ CArtiBodyNode* CFile2ArtiBody::CreateBodyHTR()
 	}
 }
 
-void CFile2ArtiBody::UpdateMotion(int i_frame, CArtiBodyNode* body)
+void CFile2ArtiBody::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints)
 {
-	auto onEnterBound_pose = [&src = *this, i_frame](Bound b_this)
+	unsigned int n_frames = frames();
+	err_out.resize(n_frames, n_frames);
+	// err_out.create(n_frames, n_frames, CV_16U);
+	CArtiBodyNode* body_i = CreateBody(BODY_TYPE::htr);
+	std::list<const CArtiBodyNode*> interest_bodies_i;
+	int n_bodies_i = CArtiBodyTree::GetBodies(body_i, joints, interest_bodies_i);
+	TransformArchive tm_data_i(n_bodies_i);
+
+	CArtiBodyNode* body_j = CreateBody(BODY_TYPE::htr);
+	std::list<const CArtiBodyNode*> interest_bodies_j;
+	int n_bodies_j = CArtiBodyTree::GetBodies(body_j, joints, interest_bodies_j);
+	TransformArchive tm_data_j(n_bodies_j);
+
+	bool ok = (n_bodies_i == n_bodies_j);
+	IKAssert(ok);
+
+	auto UpdateTransforms = [] (std::list<const CArtiBodyNode*>& interest_bodies, TransformArchive& tm_data)
 		{
-			const Joint_bvh_ptr joint_bvh = b_this.first;
-			CArtiBodyNode* body_hik = b_this.second;
-			Eigen::Affine3d delta_l = src.GetLocalDeltaTM(joint_bvh, i_frame);
-			Eigen::Quaterniond r(delta_l.linear());
-			Eigen::Vector3d tt(delta_l.translation());
-			IJoint* body_joint = body_hik->GetJoint();
-			body_joint->SetRotation(Eigen::Quaternionr((Real)r.w(), (Real)r.x(), (Real)r.y(), (Real)r.z()));
-			body_joint->SetTranslation(Eigen::Vector3r((Real)tt.x(), (Real)tt.y(), (Real)tt.z()));
+			int i_tm = 0;
+			for (auto body : interest_bodies)
+			{
+				_TRANSFORM& tm_i = tm_data[i_tm ++];
+				body->GetJoint()->GetTransform()->CopyTo(tm_i);
+			}
 		};
-	auto onLeaveBound_pose = [](Bound b_this) {};
 
-	Bound root = std::make_pair(root_joint(), body);
-	TraverseBFS_boundtree_norecur(root, onEnterBound_pose, onLeaveBound_pose);
 
-	CArtiBodyTree::FK_Update<false>(body);
+	for (unsigned int i_frame = 0; i_frame < n_frames; i_frame++)
+	{
+		UpdateMotion(i_frame, body_i);
+		// CArtiBodyTree::Serialize<true>(body_i, tm_data_i);
+		UpdateTransforms(interest_bodies_i, tm_data_i);
+		for (unsigned int j_frame = 0; j_frame < n_frames; j_frame++)
+		{
+			UpdateMotion(j_frame, body_j);
+			// CArtiBodyTree::Serialize<true>(body_j, tm_data_j);
+			UpdateTransforms(interest_bodies_j, tm_data_j);
+			// auto& vis_scale_ij = err_out.at<unsigned short>(i_frame, j_frame);
+			auto& vis_scale_ij = err_out(i_frame, j_frame);
+			auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
+			// vis_scale_ij = (unsigned short)(err_ij * USHRT_MAX);
+			vis_scale_ij = err_ij;
+		}
+	}
+	CArtiBodyTree::Destroy(body_i);
+	CArtiBodyTree::Destroy(body_j);
 }
-
 
 CBodyLogger::CBodyLogger(const CArtiBodyNode* root, const char* path) throw (...)
 	: m_bodyFile(root, 1)

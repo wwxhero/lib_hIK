@@ -45,95 +45,45 @@ void init_mopipe(MotionPipeInternal* mopipe)
 	mopipe->logger = NULL;
 }
 
-bool InitBody_Internal(HBODY bodySrc
-					, const wchar_t* rootConfDir
-					, const CMotionPipeConf& mp_conf
-					, int i_body
-					, HBODY& hBody
-					, unsigned int &frames
-					, HBVH& hBVH
-					, CIKGroupNode* &root_ikGroup
-					, CBodyLogger* &logger)
+bool InitBody_Internal_fk(const wchar_t* rootConfDir
+						, const CBodyConf* body_conf_i
+						, BODY_TYPE body_type
+						, HBODY &hBody
+						, unsigned int &frames
+						, HBVH& hBVH)
 {
-	const CBodyConf* body_confs[] = {&mp_conf.Source, &mp_conf.Destination};
-	const CBodyConf* body_conf_i = body_confs[i_body];
 	bool initialized = false;
+	fs::path fullPath(rootConfDir);
+	fs::path relpath(body_conf_i->file_w());
+	fullPath.append(relpath);
 	switch(body_conf_i->type())
 	{
 		case BODY_TYPE::bvh:
 		{
-			fs::path fullPath(rootConfDir);
-			fs::path relpath(body_conf_i->file_w());
-			fullPath.append(relpath);
 			hBVH = load_bvh_w(fullPath.c_str());
 			IKAssert(VALID_HANDLE(hBVH));
 			bool bvh_load = (VALID_HANDLE(hBVH)
 			 			&& VALID_HANDLE(hBody = create_tree_body_bvh(hBVH)));
 		 	LOGIKVar(LogInfoBool, bvh_load);
-		 	if (bvh_load)
-		 		frames = get_n_frames(hBVH);
 		 	initialized = bvh_load;
 		 	break;
 		}
 
 		case BODY_TYPE::htr:
 		{
-			IKAssert(VALID_HANDLE(bodySrc));
-			const wchar_t* (*matches)[2] = NULL;
-			int n_match = mp_conf.Pair.Data_alloc(&matches);
-			HBODY body_htr_1 = H_INVALID;
-			HBODY body_htr_2 = H_INVALID;
+			hBVH = load_bvh_w(fullPath.c_str());
+			IKAssert(VALID_HANDLE(hBVH));
 			Real identity[3][3] = {
-				{1, 0, 0},
-				{0, 1, 0},
-				{0, 0, 1}
-			};
-			if (!(clone_body_interests_htr(bodySrc, &body_htr_1, matches, n_match, false, identity)  	// body_htr_1 is an intermediate body, orient bone with src bone information
-			 			&& clone_body_htr(body_htr_1, &body_htr_2, mp_conf.m_inv))) 			// body_htr_2 is the result, orient bone with the interest bone information
-			 		body_htr_2 = H_INVALID;
-
-			CPairsConf::Data_free(matches, n_match);
-
-			#if 0 // defined _DEBUG
-				UE_LOG(LogHIK, Display, TEXT("ArtiBody_SIM"));
-				DBG_printOutSkeletalHierachy(body_htr_1);
-				UE_LOG(LogHIK, Display, TEXT("ArtiBody_SIM2"));
-				DBG_printOutSkeletalHierachy(body_htr_2);
-			#endif
-
-			if (VALID_HANDLE(body_htr_1))
-			 		destroy_tree_body(body_htr_1);
-			hBody = body_htr_2;
-
-			root_ikGroup = CIKGroupTree::Generate(CAST_2PBODY(hBody), *body_conf_i);
-
-			const wchar_t* record = body_conf_i->record_w();
-			if (NULL != record)
-			{
-				fs::path fullPath(rootConfDir);
-				fs::path relpath(record);
-				fullPath.append(relpath);
-				try
-				{
-					static int s_file_id = 0;
-					std::stringstream path;
-					path << fullPath.generic_u8string().c_str();
-					path << "_" << s_file_id ++;
-					logger = new CBodyLogger(CAST_2PBODY(hBody), path.str().c_str());
-					logger->LogHeader();
-				}
-				catch(std::string &exp)
-				{
-					LOGIKVarErr(LogInfoCharPtr, exp.c_str());
-					logger = NULL;
-				}
-			}
-
-			bool valid_fk_body = VALID_HANDLE(hBody);
-			bool valid_ik_group = (NULL != root_ikGroup);
-			IKAssert(valid_fk_body);
-			IKAssert(valid_ik_group);
-			initialized = valid_fk_body && valid_ik_group;
+					{1, 0, 0},
+					{0, 1, 0},
+					{0, 0, 1}
+				};
+			HBODY hTemp = H_INVALID;
+			initialized = (VALID_HANDLE(hBVH)
+			 			&& VALID_HANDLE((hTemp = create_tree_body_bvh(hBVH)))
+			 			&& clone_body_htr(hTemp, &hBody, identity));
+			if (VALID_HANDLE(hTemp))
+				destroy_tree_body(hTemp);
 			break;
 		}
 
@@ -145,6 +95,111 @@ bool InitBody_Internal(HBODY bodySrc
 
 	}
 
+	if (!initialized)
+	{
+		if (VALID_HANDLE(hBVH))
+			unload_bvh(hBVH);
+		hBVH = H_INVALID;
+
+		if (VALID_HANDLE(hBody))
+			destroy_tree_body(hBody);
+		hBody = H_INVALID;
+
+		frames = 0;
+
+	}
+	else
+	{
+		frames = get_n_frames(hBVH);
+	}
+
+	return initialized;
+}
+
+bool InitBody_Internal_ik(HBODY bodySrc
+					, const wchar_t* rootConfDir
+					, const CMotionPipeConf& mp_conf
+					, const CBodyConf* body_conf_i
+					, HBODY& hBody
+					, CIKGroupNode* &root_ikGroup
+					, CBodyLogger* &logger)
+{
+	bool initialized = false;
+
+	IKAssert(VALID_HANDLE(bodySrc));
+	const wchar_t* (*matches)[2] = NULL;
+	int n_match = mp_conf.Pair.Data_alloc(&matches);
+	HBODY body_htr_1 = H_INVALID;
+	HBODY body_htr_2 = H_INVALID;
+	Real identity[3][3] = {
+		{1, 0, 0},
+		{0, 1, 0},
+		{0, 0, 1}
+	};
+	if (!(clone_body_interests_htr(bodySrc, &body_htr_1, matches, n_match, false, identity)  	// body_htr_1 is an intermediate body, orient bone with src bone information
+	 			&& clone_body_htr(body_htr_1, &body_htr_2, mp_conf.m_inv))) 			// body_htr_2 is the result, orient bone with the interest bone information
+	 		body_htr_2 = H_INVALID;
+
+	CPairsConf::Data_free(matches, n_match);
+
+	#if 0 // defined _DEBUG
+		UE_LOG(LogHIK, Display, TEXT("ArtiBody_SIM"));
+		DBG_printOutSkeletalHierachy(body_htr_1);
+		UE_LOG(LogHIK, Display, TEXT("ArtiBody_SIM2"));
+		DBG_printOutSkeletalHierachy(body_htr_2);
+	#endif
+
+	if (VALID_HANDLE(body_htr_1))
+	 		destroy_tree_body(body_htr_1);
+	hBody = body_htr_2;
+
+	root_ikGroup = CIKGroupTree::Generate(CAST_2PBODY(hBody), *body_conf_i);
+
+	const wchar_t* pg_dir = body_conf_i->PG_dir_w();
+	if (NULL != pg_dir)
+	{
+		fs::path fullPath(rootConfDir);
+		fs::path relpath(pg_dir);
+		fullPath.append(relpath);
+		try
+		{
+			CIKGroupTree::LoadPG(root_ikGroup, fullPath.generic_u8string().c_str());
+		}
+		catch(std::string &exp)
+		{
+			LOGIKVarErr(LogInfoCharPtr, exp.c_str());
+			CIKGroupTree::Destroy(root_ikGroup);
+			root_ikGroup = NULL;
+		}
+	}
+
+	const wchar_t* record = body_conf_i->record_w();
+	if (NULL != record)
+	{
+		fs::path fullPath(rootConfDir);
+		fs::path relpath(record);
+		fullPath.append(relpath);
+		try
+		{
+			static int s_file_id = 0;
+			std::stringstream path;
+			path << fullPath.generic_u8string().c_str();
+			path << "_" << s_file_id ++;
+			logger = new CBodyLogger(CAST_2PBODY(hBody), path.str().c_str());
+			logger->LogHeader();
+		}
+		catch(std::string &exp)
+		{
+			LOGIKVarErr(LogInfoCharPtr, exp.c_str());
+			logger = NULL;
+		}
+	}
+
+	bool valid_fk_body = VALID_HANDLE(hBody);
+	bool valid_ik_group = (NULL != root_ikGroup);
+	IKAssert(valid_fk_body);
+	IKAssert(valid_ik_group);
+	initialized = valid_fk_body && valid_ik_group;
 	return initialized;
 }
 
@@ -211,30 +266,34 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 				HBVH bvh = H_INVALID;
 				CIKGroupNode* root_ik = NULL;
 				CBodyLogger* logger = NULL;
-				bool initialized = InitBody_Internal(body_ref
-													, fullPath.parent_path().c_str()
-													, *mp_conf
-													, i_bodyConf
+				const CBodyConf* body_confs[] = {&(mp_conf->Source), &(mp_conf->Destination)};
+				const CBodyConf* body_conf_i = body_confs[i_bodyConf];
+				bool initialized = false;
+				BODY_TYPE body_type = body_conf_i->type();
+				bool exists_fk_source = (body_type&BODY_TYPE::sim) || (body_type&BODY_TYPE::anim);
+				if (exists_fk_source)
+				{
+					initialized = InitBody_Internal_fk(fullPath.parent_path().c_str()
+													, body_conf_i
+													, body_type
 													, mopipe->bodies[i_bodyConf]
 													, mopipe->n_frames
-													, bvh
-													, root_ik
-													, logger);
-				IKAssert(initialized);
-				// IKAssert(VALID_HANDLE(bvh) == (NULL == root_ik));
-				if (VALID_HANDLE(bvh))
-				{
-					mopipe->bvh = bvh;
+													, mopipe->bvh);
 					mopipe->i_frame = -1;
 					mopipe->type = MotionPipeInternal::FK;
 				}
 				else
 				{
-					IKAssert(root_ik);
-					mopipe->root_ik = root_ik;
-					mopipe->logger = logger;
+					initialized = InitBody_Internal_ik(body_ref
+													, fullPath.parent_path().c_str()
+													, *mp_conf
+													, body_conf_i
+													, mopipe->bodies[i_bodyConf]
+													, mopipe->root_ik
+													, mopipe->logger);
 					mopipe->type = MotionPipeInternal::IK;
 				}
+				IKAssert(initialized);
 			}
 			body_ref = mopipe->bodies[i_bodyConf];
 		}
@@ -404,7 +463,10 @@ void ik_update(MotionPipe* mopipe)
 					{
 					};
 
+START_PROFILER_AUTOFRAME_IK(100)
 	CIKGroupTree::TraverseDFS(mopipe_internal->root_ik, OnGroupNode, OffGroupNode);
+STOP_PROFILER_IK
+	// CArtiBodyTree::Serialize<false>(root_body, tm_data);
 	const int c_idxSim = 0;
 	motion_sync(mopipe->mo_nodes[c_idxSim]);
 	if (NULL != mopipe_internal->logger)
@@ -413,7 +475,6 @@ void ik_update(MotionPipe* mopipe)
 
 HMOTIONNODE	create_tree_motion_node(HBODY mo_src)
 {
-	//todo: create a tree node that represents motions of the articulated body mo_src
 	CArtiBodyNode* body = CAST_2PBODY(mo_src);
 	CMoNode* mo = new CMoNode(body);
 	return CAST_2HMONODE(mo);

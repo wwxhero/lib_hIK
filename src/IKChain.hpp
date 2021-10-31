@@ -19,6 +19,8 @@ public:
 		, Unknown
 	};
 
+	static Real ERROR_MIN;
+
 	// static const char* s_Algor_str[];
 	// static Algor s_Algor_val[];
 	// static Algor to_Algor(const char* algor_str);
@@ -28,22 +30,25 @@ public:
 	CIKChain(Algor algor, int n_iters);
 	virtual ~CIKChain();
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>& joint_confs);
+	virtual Real Error() const = 0;
+
 	void SetupTarget(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst
 					, const Eigen::Matrix3r& src2dst_w
 					, const Eigen::Matrix3r& dst2src_w);
 
-	virtual void Dump(std::stringstream& info) const;
+	virtual void Dump(std::ostream& info) const;
 
 	virtual bool BeginUpdate(const Transform_TR& w2g);
 	// this is a quick IK update solution
-	virtual bool UpdateAll() = 0;
+	virtual bool Update() = 0;
 	virtual bool UpdateCompleted() const = 0;
 	virtual void EndUpdate() {};
 
-	void SegGRoot(CArtiBodyNode* root_g)
+	void SetGRoot(CArtiBodyNode* root_g)
 	{
 		m_rootG = root_g;
 	}
+
 	int NIters() const
 	{
 		return m_nIters;
@@ -95,10 +100,16 @@ public:
 	CIKChainProj(const Real norm[3]);
 	virtual ~CIKChainProj();
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>&) override;
-	virtual void Dump(std::stringstream& info) const override;
+
+	virtual Real Error() const
+	{
+		return (Real)0;
+	}
+
+	virtual void Dump(std::ostream& info) const override;
 	virtual bool BeginUpdate(const Transform_TR& w2g) override;
 	// this is a quick IK update solution
-	virtual bool UpdateAll();
+	virtual bool Update();
 	virtual bool UpdateCompleted() const
 	{
 		return true;

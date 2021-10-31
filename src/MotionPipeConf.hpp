@@ -75,6 +75,62 @@ namespace CONF
 		std::wstring m_str;
 	};
 
+	template<class TDerived>
+	class ConfDoc
+	{
+	public:
+		template<typename LAMaccess>
+		static bool TraverseBFS_XML_tree(const TiXmlNode* root, LAMaccess OnXmlNode)
+		{
+			std::queue<const TiXmlNode*> bfs_q;
+			bfs_q.push(root);
+			bool keep_traversing = true;
+			while (!bfs_q.empty() && keep_traversing)
+			{
+				const TiXmlNode* node = bfs_q.front();
+				bfs_q.pop();
+				keep_traversing = OnXmlNode(node);
+				for (auto child = node->FirstChild()
+					; NULL != child && keep_traversing
+					; child = child->NextSibling())
+					bfs_q.push(child);
+			}
+			return keep_traversing;
+		}
+
+		static TDerived* Load(const std::wstring& confXML)
+		{
+			std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+			std::string path_c = converter.to_bytes(confXML);
+			return Load(path_c);
+		}
+
+		static TDerived* Load(const std::string& path_c)
+		{
+			TiXmlDocument* doc = new TiXmlDocument(path_c);
+			TDerived* conf = NULL;
+			bool loadOkay = doc->LoadFile();
+			if (loadOkay)
+			{
+				conf = new TDerived();
+				if (!conf->Initialize(doc))
+				{
+					delete conf;
+					conf = NULL;
+				}
+			}
+			delete doc;
+			return conf;
+		}
+
+		static void UnLoad(TDerived* conf)
+		{
+			delete conf;
+		}
+
+		virtual bool Initialize(const TiXmlNode* doc) = 0;
+	};
+
 	class CIKChainConf
 	{
 	public:
@@ -116,8 +172,9 @@ namespace CONF
 		std::vector<CJointConf> Joints;
 	};
 
-	class CBodyConf
+	class CBodyConf : public ConfDoc<CBodyConf>
 	{
+		friend class ConfDoc<CBodyConf>;
 	public:
 		CBodyConf();
 		int Scale_alloc(B_Scale* &scales) const;
@@ -128,11 +185,14 @@ namespace CONF
 		const char* file_c() const;
 		const wchar_t* record_w() const;
 		const char* record_c() const;
+		const wchar_t* PG_dir_w() const;
+		const char* PG_dir_c() const;
 
 		void AddScale(const char* name, Real x, Real y, Real z);
 		void AddTarget(const char* name);
 		void SetFileName(const char* fileName);
 		void SetRecord(const char* rc_file);
+		void SetPGDir(const char* pg_dir);
 
 		BODY_TYPE type() const;
 
@@ -152,7 +212,7 @@ namespace CONF
 #ifdef _DEBUG
 		void Dump_Dbg() const;
 #endif
-
+		virtual bool Initialize(const TiXmlNode* doc);
 	private:
 		std::vector<B_ScaleEx> m_scales;
 		std::vector<Name> m_targets;
@@ -160,6 +220,8 @@ namespace CONF
 		std::string m_fileName_c;
 		std::wstring m_record_w;
 		std::string m_record_c;
+		std::wstring m_pgDir_w;
+		std::string m_pgDir_c;
 	public:
 		std::vector<CIKChainConf> IK_Chains;
 	private:
@@ -183,39 +245,18 @@ namespace CONF
 	};
 
 
-	class CMotionPipeConf
+	class CMotionPipeConf : public ConfDoc<CMotionPipeConf>
 	{
+		friend class ConfDoc<CMotionPipeConf>;
 	private:
 		CMotionPipeConf();
 		~CMotionPipeConf();
-		bool Initialize(TiXmlDocument* doc);
-
-	private:
-		template<typename LAMaccess>
-		static bool TraverseBFS_XML_tree(const TiXmlNode* root, LAMaccess OnXmlNode)
-		{
-			std::queue<const TiXmlNode*> bfs_q;
-			bfs_q.push(root);
-			bool keep_traversing = true;
-			while (!bfs_q.empty() && keep_traversing)
-			{
-				const TiXmlNode* node = bfs_q.front();
-				bfs_q.pop();
-				keep_traversing = OnXmlNode(node);
-				for (auto child = node->FirstChild()
-					; NULL != child && keep_traversing
-					; child = child->NextSibling())
-					bfs_q.push(child);
-			}
-			return keep_traversing;
-		}
+		virtual bool Initialize(const TiXmlNode* doc);
 
 	public:
 	#ifdef _DEBUG
 		void Dump_Dbg() const;
 	#endif
-		static CMotionPipeConf* Load(const wchar_t* confXML);
-		static void UnLoad(CMotionPipeConf* conf);
 	public:
 		CMoNode::RETAR_TYPE sync;
 		Real m[3][3];

@@ -205,7 +205,7 @@ void LogInfoTM(const char *file, unsigned int line, const char *token, const _TR
 
 void LOGIKFlush()
 {
-#if defined SMOOTH_LOGGING
+#if defined SMOOTH_LOGGING || defined PROFILE
 	g_LoggerFast.Flush();
 #endif
 }

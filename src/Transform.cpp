@@ -196,3 +196,22 @@ void Transform_TR::CopyFrom(const _TRANSFORM& tm)
 	Init(tm);
 }
 
+Real TransformArchive::Error_q(const TransformArchive &tms, const TransformArchive &tms_prime)
+{
+	int n_tms = (int)tms.m_data.size();
+	int n_tms_prime = (int)tms_prime.m_data.size();
+	if (n_tms != n_tms_prime)
+		return (Real)n_tms;
+	else
+	{
+		Real error_sum = (Real)0;
+		for (int i_tm = 0; i_tm < n_tms; i_tm ++)
+		{
+			const _TRANSFORM& tm_i = tms.m_data[i_tm];
+			const _TRANSFORM& tm_prime_i = tms_prime.m_data[i_tm];
+			error_sum += ::Error_q(Eigen::Quaternionr(tm_i.r.w, tm_i.r.x, tm_i.r.y, tm_i.r.z)
+								, Eigen::Quaternionr(tm_prime_i.r.w, tm_prime_i.r.x, tm_prime_i.r.y, tm_prime_i.r.z));
+		}
+		return error_sum;
+	}
+}

@@ -1,7 +1,9 @@
 #pragma once
+#include <vector>
 #include "articulated_body.h"
 #include "Math.hpp"
 #include "ik_logger.h"
+
 
 inline bool NoScale(const _TRANSFORM& tm)
 {
@@ -321,7 +323,7 @@ public:
 	{
 		auto abs_rotq = m_rotq.squaredNorm();
 		Real err = abs_rotq - (Real)1;
-		return -c_2epsilon < err && err < +c_2epsilon;
+		return -c_rotq_epsilon_sqrnorm < err && err < +c_rotq_epsilon_sqrnorm;
 	}
 
 	Transform_TR operator=(const Transform_TR& other)
@@ -333,4 +335,29 @@ public:
 
 private:
 	Eigen::Vector3r m_tt;
+};
+
+
+class TransformArchive
+{
+public:
+	TransformArchive()
+	{
+	}
+	explicit TransformArchive(int n_transforms)
+	{
+		Resize(n_transforms);
+	}
+	void Resize(int sz)
+	{
+		m_data.resize(sz);
+	}
+	_TRANSFORM& operator[](int i)
+	{
+		IKAssert(i < (int)m_data.size());
+		return m_data[i];
+	}
+	static Real Error_q(const TransformArchive &tm, const TransformArchive &tm_prime); //in range [0, 1]
+private:
+	std::vector<_TRANSFORM> m_data;
 };
