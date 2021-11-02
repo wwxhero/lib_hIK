@@ -14,14 +14,15 @@ CArtiBody2File::CArtiBody2File(const CArtiBodyNode* root_src, int n_frames) // t
 	auto Offset = [](const CArtiBodyNode* body) -> Eigen::Vector3d
 		{
 			const CArtiBodyNode* body_p = body->GetParent();
+			Eigen::Vector3r offset_r;
 			if (nullptr == body_p)
-				return Eigen::Vector3d::Zero();
+				offset_r = body->GetTransformLocal2World()->getTranslation();
 			else
 			{
-				Eigen::Vector3r offset_r = body->GetTransformLocal2World()->getTranslation()
-											- body_p->GetTransformLocal2World()->getTranslation();
-				return Eigen::Vector3d(offset_r.x(), offset_r.y(), offset_r.z());
+				offset_r = body->GetTransformLocal2World()->getTranslation()
+							- body_p->GetTransformLocal2World()->getTranslation();
 			}
+			return Eigen::Vector3d(offset_r.x(), offset_r.y(), offset_r.z());
 		};
 
 	auto root_dst = std::shared_ptr<Joint>(new Joint(root_src->GetName_c(), nullptr));
@@ -218,8 +219,8 @@ CArtiBodyNode* CFile2ArtiBody::CreateBodyBVH() const
 					{(Real)tt.x(), (Real)tt.y(), (Real)tt.z()}
 				};
 				auto b_hik = CArtiBodyTree::CreateSimNode(name, &tm_hik, BODY_TYPE::bvh, jtm);
-				assert(nullptr != j_bvh->parent()
-					|| tt.norm() < c_epsilon);
+				//assert(nullptr != j_bvh->parent()
+				//	|| tt.norm() < c_epsilon);
 
 				return b_hik;
 			};
