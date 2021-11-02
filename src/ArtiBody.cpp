@@ -53,29 +53,39 @@ bool CArtiBodyTree::CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst,
 {
 	*dst = NULL;
 	CArtiBodyNode* src_parent = src->GetParent();
+	bool jtm_copy = (NULL == name_dst_opt);
 	const wchar_t* name_dst = (NULL == name_dst_opt ? src->GetName_w() : name_dst_opt);
+	TM_TYPE jtm = TM_TYPE::t_none;
 	bool is_root = (NULL == src_parent);
+	if (jtm_copy)
+		jtm = src->c_jtmflag;
+	else
+	{
+		if (is_root)
+			jtm = t_tr;
+		else
+			jtm = t_r;
+	}
+
+	const Transform* l2w_this = src->GetTransformLocal2World();
+	Eigen::Vector3r offset;
 	if (is_root)
 	{
-		_TRANSFORM l2p_0_tm = {
-			{1, 1, 1},
-			{1, 0, 0, 0},
-			{0, 0, 0}
-		};
-		*dst = CreateSimNode(name_dst, &l2p_0_tm, bvh, t_tr, true);
+		offset = l2w_this->getTranslation();
 	}
 	else
 	{
 		const Transform* l2w_parent = src_parent->GetTransformLocal2World();
 		const Transform* l2w_this = src->GetTransformLocal2World();
-		auto offset = l2w_this->getTranslation() - l2w_parent->getTranslation();
-		_TRANSFORM l2p_0_tm = {
-			{1, 1, 1},
-			{1, 0, 0, 0},
-			{offset.x(), offset.y(), offset.z()}
-		};
-		*dst = CreateSimNode(name_dst, &l2p_0_tm, bvh, t_r, true);
+		offset = l2w_this->getTranslation() - l2w_parent->getTranslation();
 	}
+
+	_TRANSFORM l2p_0_tm = {
+		{1, 1, 1},
+		{1, 0, 0, 0},
+		{offset.x(), offset.y(), offset.z()}
+	};
+	*dst = CreateSimNode(name_dst, &l2p_0_tm, bvh, jtm, true);
 	return NULL != *dst;
 }
 
@@ -166,8 +176,12 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 			{rot_q.w(), rot_q.x(), rot_q.y(), rot_q.z()},
 			{tt_this.x(), tt_this.y(), tt_this.z()}
 		};
-		// entity node and hip node are tr nodes: translation + rotation
-		TM_TYPE tm_type = ((is_root || NULL == parent_src->GetParent()) ? t_tr : t_r);
+		bool jtm_copy = (NULL == name_dst_opt);
+		TM_TYPE tm_type = t_none;
+		if (jtm_copy)
+			tm_type = src->c_jtmflag;
+		else
+			tm_type = ((is_root || NULL == parent_src->GetParent()) ? t_tr : t_r); 		// entity node and hip node are tr nodes: translation + rotation
 		const wchar_t* name_dst = (NULL == name_dst_opt ? src->GetName_w() : name_dst_opt);
 		*dst = CreateSimNode(name_dst, &tm, htr, tm_type, false);
 

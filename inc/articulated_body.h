@@ -48,6 +48,7 @@ enum TM_TYPE {
 	t_tr = t_tt|t_r,
 	t_s	 = 0x00000010,
 	t_trs = t_tt|t_r|t_s,
+	t_none = 0
 };
 
 enum PART {

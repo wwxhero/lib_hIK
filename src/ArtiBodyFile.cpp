@@ -184,26 +184,34 @@ CArtiBodyNode* CFile2ArtiBody::CreateBody(BODY_TYPE type) const
 
 CArtiBodyNode* CFile2ArtiBody::CreateBodyBVH() const
 {
-	CArtiBodyNode* (*create_arti_body)(const bvh11::BvhObject&, Joint_bvh_ptr)
-		= [] (const bvh11::BvhObject& bvh_src, Joint_bvh_ptr j_bvh) -> CArtiBodyNode*
+	// CArtiBodyNode* (*create_arti_body)(const bvh11::BvhObject&, Joint_bvh_ptr)
+	auto create_arti_body = [&] (const bvh11::BvhObject& bvh_src, Joint_bvh_ptr j_bvh) -> CArtiBodyNode*
 			{
 				auto name = j_bvh->name().c_str();
 				auto tm_bvh = bvh_src.GetTransformationRelativeToParent(j_bvh, -1);
 				Eigen::Quaterniond rq(tm_bvh.linear());
-				Eigen::Vector3d tt;
-				TM_TYPE jtm;
-				bool is_root = (nullptr == j_bvh->parent());
-				if (is_root)
+				Eigen::Vector3d tt(tm_bvh.translation());
+				TM_TYPE jtm = t_none;
+				bool exists_tt = false;
+				bool exists_r = false;
+				for (auto i_channel : j_bvh->associated_channels_indices())
 				{
-					tt = Eigen::Vector3d::Zero();
-					jtm = t_tr; //translation and rotation joint
+					exists_tt = ( exists_tt
+								|| Channel::Xposition == channels_[i_channel].type
+								|| Channel::Yposition == channels_[i_channel].type
+								|| Channel::Zposition == channels_[i_channel].type );
+					exists_r  = (  exists_r
+								|| Channel::Xrotation == channels_[i_channel].type
+								|| Channel::Yrotation == channels_[i_channel].type
+								|| Channel::Zrotation == channels_[i_channel].type );
+					if (exists_tt && exists_r)
+						break;
 				}
-				else
-				{
-					tt = tm_bvh.translation();
-					jtm = t_r; //rotation joint
-				}
-
+				IKAssert(exists_tt || exists_r);
+				if (exists_tt)
+					jtm = (TM_TYPE)(jtm | t_tt);
+				if (exists_r)
+					jtm = (TM_TYPE)(jtm | t_r);
 				_TRANSFORM tm_hik = {
 					{1, 1, 1},
 					{(Real)rq.w(), (Real)rq.x(), (Real)rq.y(), (Real)rq.z()},
