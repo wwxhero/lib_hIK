@@ -61,43 +61,53 @@ void LogInfo(const char* file, unsigned int line, const char *info)
 
 void LogInfoWCharPtr(const char *file, unsigned int line, const char *token, const wchar_t* v)
 {
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-	std::wstring strV_w(v);
-	std::string strV_c = converter.to_bytes(strV_w);
+	if (NULL == v)
+		LogInfoPtr(file, line, token, v);
+	else
+	{
+		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+		std::wstring strV_w(v);
+		std::string strV_c = converter.to_bytes(strV_w);
 #ifndef SMOOTH_LOGGING
-	fprintf(stdout
-		, "[%s:%d] %s = %s\n"
-		, file_short(file)
-		, line
-		, token
-		, strV_c.c_str());
-	fflush(stdout);
+		fprintf(stdout
+			, "[%s:%d] %s = %s\n"
+			, file_short(file)
+			, line
+			, token
+			, strV_c.c_str());
+		fflush(stdout);
 #else
-	g_LoggerFast.OutFmt("[%s:%d] %s = %s\n"
-						, file_short(file)
-						, line
-						, token
-						, strV_c.c_str());
+		g_LoggerFast.OutFmt("[%s:%d] %s = %s\n"
+			, file_short(file)
+			, line
+			, token
+			, strV_c.c_str());
 #endif
+	}
 }
 
 void LogInfoCharPtr(const char *file, unsigned int line, const char *token, const char* v)
 {
+	if (NULL == v)
+		LogInfoPtr(file, line, token, v);
+	else
+	{
 #ifndef SMOOTH_LOGGING
-	fprintf(stdout
-		, "[%s:%d] %s = %s\n"
-		, file_short(file)
-		, line
-		, token
-		, v);
-	fflush(stdout);
+		fprintf(stdout
+			, "[%s:%d] %s = %s\n"
+			, file_short(file)
+			, line
+			, token
+			, v);
+		fflush(stdout);
 #else
-	g_LoggerFast.OutFmt("[%s:%d] %s = %s\n"
-						, file_short(file)
-						, line
-						, token
-						, v);
+		g_LoggerFast.OutFmt("[%s:%d] %s = %s\n"
+							, file_short(file)
+							, line
+							, token
+							, v);
 #endif
+	}
 }
 
 void LogInfoPtr(const char* file, unsigned int line, const char* token, const void* v)
@@ -239,7 +249,7 @@ void LogInfoReal3x3_m(const char* file, unsigned int line, const char* token, co
 	LogInfo3x3_m<Real>(file, line, token, m);
 }
 
-void LogInfoDouble3x3(const char* file, unsigned int line, const char* token, const double* m)
+void LogInfoReal3x3(const char* file, unsigned int line, const char* token, const Real* m)
 {
 #ifndef SMOOTH_LOGGING
 	fprintf(stdout
@@ -247,23 +257,23 @@ void LogInfoDouble3x3(const char* file, unsigned int line, const char* token, co
 		, file_short(file)
 		, line
 		, token
-		, m[0], m[1], m[2]
-		, m[3], m[4], m[5]
-		, m[6], m[7], m[8]);
+		, m[0], m[3], m[6]
+		, m[1], m[4], m[7]
+		, m[2], m[5], m[8]);
 	fflush(stdout);
 #else
 	g_LoggerFast.OutFmt("[%s:%d] %s = [%.8f\t%.8f\t%.8f;\t%.8f\t%.8f\t%.8f;\t%.8f\t%.8f\t%.8f]\n"
 						, file_short(file)
 						, line
 						, token
-						, m[0], m[1], m[2]
-						, m[3], m[4], m[5]
-						, m[6], m[7], m[8]);
+						, m[0], m[3], m[6]
+						, m[1], m[4], m[7]
+						, m[2], m[5], m[8]);
 #endif
 
 }
 
-void LogInfoDouble1x3(const char* file, unsigned int line, const char* token, const double* v)
+void LogInfoReal1x3(const char* file, unsigned int line, const char* token, const Real* v)
 {
 #ifndef SMOOTH_LOGGING
 	fprintf(stdout

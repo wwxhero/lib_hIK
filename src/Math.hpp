@@ -69,6 +69,7 @@ typedef AngleAxis<Real> AngleAxisr;
 #pragma pop_macro("new")
 
 void vec_roll_to_mat3_normalized(const Eigen::Vector3r& nor, const Real roll, Eigen::Matrix3r& rotm);
+void vec_to_mat3_normalized_sim(const Eigen::Vector3r& nor, Eigen::Matrix3r& rotm);
 
 inline bool UnitVec(const Eigen::Vector3r& v)
 {

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Math.hpp"
+#include "ik_logger.h"
 
 /* Calculates the rest matrix of a bone based on its vector and a roll around that vector. */
 /**
@@ -75,59 +76,89 @@ void vec_roll_to_mat3_normalized(const Eigen::Vector3r& nor, const Real roll, Ei
 #define THETA_THRESHOLD_NEGY 1.0e-9f
 #define THETA_THRESHOLD_NEGY_CLOSE 1.0e-5f
 
-  assert(nor.norm() < 1 + c_epsilon
-  		&& nor.norm() > 1 - c_epsilon);
+	assert(nor.norm() < 1 + c_epsilon
+			&& nor.norm() > 1 - c_epsilon);
 
 
-  Real theta = 1.0f + nor[1];
+	Real theta = 1.0f + nor[1];
 
-  /* With old algo, 1.0e-13f caused T23954 and T31333, 1.0e-6f caused T27675 and T30438,
-   * so using 1.0e-9f as best compromise.
-   *
-   * New algo is supposed much more precise, since less complex computations are performed,
-   * but it uses two different threshold values...
-   *
-   * Note: When theta is close to zero, we have to check we do have non-null X/Z components as well
-   *       (due to float precision errors, we can have nor = (0.0, -0.99999994, 0.0)...).
-   */
-  if (theta > THETA_THRESHOLD_NEGY_CLOSE || ((nor[0] || nor[2]) && theta > THETA_THRESHOLD_NEGY)) {
-  	/* nor is *not* -Y.
-  	 * We got these values for free... so be happy with it... ;)
-  	 */
-  	bMatrix(1, 0) = -nor[0];
-  	bMatrix(0, 1) = nor[0];
-  	bMatrix(1, 1) = nor[1];
-  	bMatrix(2, 1) = nor[2];
-  	bMatrix(1, 2) = -nor[2];
-  	if (theta > THETA_THRESHOLD_NEGY_CLOSE) {
-  	  /* If nor is far enough from -Y, apply the general case. */
-  	  bMatrix(0, 0) = 1 - nor[0] * nor[0] / theta;
-  	  bMatrix(2, 2) = 1 - nor[2] * nor[2] / theta;
-  	  bMatrix(2, 0) = bMatrix(0, 2) = -nor[0] * nor[2] / theta;
-  	}
-  	else {
-  	  /* If nor is too close to -Y, apply the special case. */
-  	  theta = nor[0] * nor[0] + nor[2] * nor[2];
-  	  bMatrix(0, 0) = (nor[0] + nor[2]) * (nor[0] - nor[2]) / -theta;
-  	  bMatrix(2, 2) = -bMatrix(0, 0);
-  	  bMatrix(2, 0) =  bMatrix(0, 2) = 2.0f * nor[0] * nor[2] / theta;
-  	}
-  }
-  else {
-    /* If nor is -Y, simple symmetry by Z axis. */
-    bMatrix.setIdentity();
-    bMatrix(0, 0) = bMatrix(1, 1) = -1.0;
-  }
+	/* With old algo, 1.0e-13f caused T23954 and T31333, 1.0e-6f caused T27675 and T30438,
+	 * so using 1.0e-9f as best compromise.
+	 *
+	 * New algo is supposed much more precise, since less complex computations are performed,
+	 * but it uses two different threshold values...
+	 *
+	 * Note: When theta is close to zero, we have to check we do have non-null X/Z components as well
+	 *       (due to float precision errors, we can have nor = (0.0, -0.99999994, 0.0)...).
+	 */
+	if (theta > THETA_THRESHOLD_NEGY_CLOSE || ((nor[0] || nor[2]) && theta > THETA_THRESHOLD_NEGY)) {
+		/* nor is *not* -Y.
+		 * We got these values for free... so be happy with it... ;)
+		 */
+		bMatrix(1, 0) = -nor[0];
+		bMatrix(0, 1) = nor[0];
+		bMatrix(1, 1) = nor[1];
+		bMatrix(2, 1) = nor[2];
+		bMatrix(1, 2) = -nor[2];
+		if (theta > THETA_THRESHOLD_NEGY_CLOSE) {
+			/* If nor is far enough from -Y, apply the general case. */
+			bMatrix(0, 0) = 1 - nor[0] * nor[0] / theta;
+			bMatrix(2, 2) = 1 - nor[2] * nor[2] / theta;
+			bMatrix(2, 0) = bMatrix(0, 2) = -nor[0] * nor[2] / theta;
+		}
+		else {
+			/* If nor is too close to -Y, apply the special case. */
+			theta = nor[0] * nor[0] + nor[2] * nor[2];
+			bMatrix(0, 0) = (nor[0] + nor[2]) * (nor[0] - nor[2]) / -theta;
+			bMatrix(2, 2) = -bMatrix(0, 0);
+			bMatrix(2, 0) =  bMatrix(0, 2) = 2.0f * nor[0] * nor[2] / theta;
+		}
+	}
+	else {
+		/* If nor is -Y, simple symmetry by Z axis. */
+		bMatrix.setIdentity();
+		bMatrix(0, 0) = bMatrix(1, 1) = -1.0;
+	}
 
-  /* Make Roll matrix */
-  bool with_roll = (roll < -c_epsilon) || (c_epsilon < roll);
-  if (with_roll)
-  {
-	  Eigen::Matrix3r rMatrix = Eigen::AngleAxis<Real>(roll, nor).toRotationMatrix();
-	  bMatrix = rMatrix * bMatrix;
-  }
+	/* Make Roll matrix */
+	bool with_roll = (roll < -c_epsilon) || (c_epsilon < roll);
+	if (with_roll)
+	{
+		Eigen::Matrix3r rMatrix = Eigen::AngleAxis<Real>(roll, nor).toRotationMatrix();
+		bMatrix = rMatrix * bMatrix;
+	}
 
 
 #undef THETA_THRESHOLD_NEGY
 #undef THETA_THRESHOLD_NEGY_CLOSE
+}
+
+
+void vec_to_mat3_normalized_sim(const Eigen::Vector3r& nor, Eigen::Matrix3r& rotm)
+{
+	const Eigen::Vector3r up_sim = Eigen::Vector3r::UnitY();
+	const Eigen::Vector3r forward_sim = Eigen::Vector3r::UnitZ();
+	// Eigen::Vector3r& x = rot.col(0);
+	// Eigen::Vector3r& y = rot.col(1);
+	// Eigen::Vector3r& z = rot.col(2);
+	Eigen::Vector3r x;
+	Eigen::Vector3r y = nor;
+	Eigen::Vector3r xX = y.cross(forward_sim);
+	const Real sin_epsilon = sin(deg2rad((Real)1));
+	Real X = xX.norm();
+	if (sin_epsilon < X)
+		x = xX/X;
+	else
+		x = up_sim;
+	Eigen::Vector3r z = x.cross(y);
+	rotm.col(0) = x;
+	rotm.col(1) = y;
+	rotm.col(2) = z;
+#ifdef _DEBUG
+	IKAssert(
+		rotm(0, 0) == x(0) && rotm(0, 1) == y(0) && rotm(0, 2) == z(0) &&
+		rotm(1, 0) == x(1) && rotm(1, 1) == y(1) && rotm(1, 2) == z(1) &&
+		rotm(2, 0) == x(2) && rotm(2, 1) == y(2) && rotm(2, 2) == z(2) );
+#endif
+
 }

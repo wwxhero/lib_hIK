@@ -150,7 +150,7 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 		if (valid_nor)
 		{
 			Eigen::Matrix3r rot_m;
-			vec_roll_to_mat3_normalized(nor, 0, rot_m);
+			vec_to_mat3_normalized_sim(nor, rot_m);
 			rot_q = rot_m;
 #ifdef _DEBUG
 			Eigen::Vector3r nor_prime = rot_m * Eigen::Vector3r::UnitY();
@@ -164,8 +164,12 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 				msg << src->GetName_c() << ":" << std::endl
 										 << "\tnor = \n" << nor << std::endl
 										 << "\trot_m = \n"<< rot_m << std::endl;
-				LOGIK(msg.str().c_str());
+				LOGIKVarErr(LogInfoCharPtr, msg.str().c_str());
 			}
+			LOGIKVar(LogInfoWCharPtr, src->GetName_w());
+			LOGIKVar(LogInfoWCharPtr, name_dst_opt);
+			LOGIKVar(LogInfoReal1x3, nor.data());
+			LOGIKVar(LogInfoReal3x3, rot_m.data());
 #endif
 		}
 		else
