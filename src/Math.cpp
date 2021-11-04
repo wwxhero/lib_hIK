@@ -138,9 +138,6 @@ void vec_to_mat3_normalized_sim(const Eigen::Vector3r& nor, Eigen::Matrix3r& rot
 {
 	const Eigen::Vector3r up_sim = Eigen::Vector3r::UnitY();
 	const Eigen::Vector3r forward_sim = Eigen::Vector3r::UnitZ();
-	// Eigen::Vector3r& x = rot.col(0);
-	// Eigen::Vector3r& y = rot.col(1);
-	// Eigen::Vector3r& z = rot.col(2);
 	Eigen::Vector3r x;
 	Eigen::Vector3r y = nor;
 	Eigen::Vector3r xX = y.cross(forward_sim);

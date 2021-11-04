@@ -48,6 +48,7 @@ bool CIKChainNumerical::Init(const CArtiBodyNode* eef, int len, const std::vecto
 			type = IK_QSegment::R_xyz;
 			p_dex = &dex_default;
 		}
+
 		IK_QSegment* seg = NULL;
 		switch (type)
 		{
@@ -114,4 +115,35 @@ bool CIKChainNumerical::Update()
 	// StopSearch(search, m_pg);
 
 	return Update_AnyThread();
+}
+
+Real CIKChainNumerical::Error() const
+{
+	_TRANSFORM tm_t;
+	m_eefSrc->GetGoal(tm_t);
+	const Transform* tm_eef = m_eefSrc->GetTransformLocal2World();
+	Real err_r = ::Error_q(Eigen::Quaternionr(tm_t.r.w, tm_t.r.x, tm_t.r.y, tm_t.r.z)
+						, Transform::getRotation_q(tm_eef));
+
+	// the following error is computed based on CCD IK
+	Real err_tt = 0;
+	Eigen::Vector3r tt_t(tm_t.tt.x, tm_t.tt.y, tm_t.tt.z);
+	Eigen::Vector3r tt_eef = tm_eef->getTranslation();
+	auto it_seg = m_segments.end();
+	const Real half = (Real)0.5;
+	Real stiffness_i = (Real)1 / (Real)m_segments.size();
+	while (it_seg != m_segments.begin())
+	{
+		it_seg --;
+		auto seg = *it_seg;
+		Eigen::Vector3r p_i = seg->GlobalStart();
+		Real err_pi = half*((Real)1 - (tt_eef - p_i).dot(tt_t - p_i)); 
+		err_r += err_pi * stiffness_i; // *seg->Stiffness_n();
+	}
+
+	LOGIKVar(LogInfoReal, err_tt);
+	LOGIKVar(LogInfoReal, err_r);
+
+	return c_taskW_r * err_r
+		+ c_taskW_t * err_tt;
 }
