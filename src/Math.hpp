@@ -15,6 +15,7 @@ const Real c_2epsilon = 2e-5f;
 const Real c_5epsilon = 5e-5f;
 const Real c_10epsilon = 1e-4f;
 const Real c_100epsilon = 1e-3f;
+const Real c_epsilonsqrt = 3e-3f;
 const Real c_rotm_epsilon = (Real)0.005;
 const Real c_tt_epsilon = (Real)1.5; 				//in centimeter
 const Real c_tt_epsilon_sqr = (Real)2.25;

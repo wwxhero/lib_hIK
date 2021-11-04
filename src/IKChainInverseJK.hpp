@@ -8,7 +8,7 @@ class IKChainInverseJK : public CIKChainNumerical
 	typedef CIKChainNumerical Super;
 public:
 	IKChainInverseJK(CIKChain::Algor algor, Real weight_p, Real weight_r, int n_iter)
-		: Super(algor, n_iter)
+		: Super(algor, n_iter, weight_p, weight_r)
 		, m_taskP(true, m_eefSrc)
 		, m_taskR(true, m_eefSrc)
 	{
@@ -139,11 +139,6 @@ public:
 
 		// Real dt = analyze_time();
 		return true;
-	}
-
-	virtual Real Error() const
-	{
-		return m_taskP.Beta().squaredNorm();
 	}
 
 	// virtual void UpdateNext(int step) override;
