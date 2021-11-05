@@ -479,8 +479,6 @@ STOP_PROFILER
 
 			};
 		CArtiBodyTree::TraverseDFS(root, onEnterBody, onLeaveBody);
-		if (!IS_SAVE) // == IS_RESTORE
-			FK_Update<false>(root);
 	}
 
 //the following code for building posture graph, not for real-time usage

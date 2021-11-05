@@ -160,13 +160,13 @@ void CArtiBody2File::OutputMotion(CArtiBody2File& bf, int i_frame, LoggerFast& l
 CFile2ArtiBody::CFile2ArtiBody(const char* path)
 	: bvh11::BvhObject(std::string(path))
 {
-
+	Initialize();
 }
 
 CFile2ArtiBody::CFile2ArtiBody(const std::string& path)
 	: bvh11::BvhObject(path)
 {
-
+	Initialize();
 }
 
 CArtiBodyNode* CFile2ArtiBody::CreateBody(BODY_TYPE type) const
@@ -181,6 +181,40 @@ CArtiBodyNode* CFile2ArtiBody::CreateBody(BODY_TYPE type) const
 			IKAssert(0);
 			return NULL;
 	}
+}
+
+void CFile2ArtiBody::Initialize()
+{
+	CArtiBodyNode* body = CreateBodyHTR(); //the body type is trivial, since only the body joint is used which is indepedant of the body type
+
+	int n_frames = frames();
+	m_motions.resize(n_frames);
+
+	int i_frame = 0;
+
+	auto onEnterBound_pose = [&src = *this, &i_frame](Bound b_this)
+	{
+		const Joint_bvh_ptr joint_bvh = b_this.first;
+		CArtiBodyNode* body_hik = b_this.second;
+		Eigen::Affine3d delta_l = src.GetLocalDeltaTM(joint_bvh, i_frame);
+		Eigen::Quaterniond r(delta_l.linear());
+		Eigen::Vector3d tt(delta_l.translation());
+		IJoint* body_joint = body_hik->GetJoint();
+		body_joint->SetRotation(Eigen::Quaternionr((Real)r.w(), (Real)r.x(), (Real)r.y(), (Real)r.z()));
+		body_joint->SetTranslation(Eigen::Vector3r((Real)tt.x(), (Real)tt.y(), (Real)tt.z()));
+	};
+	auto onLeaveBound_pose = [](Bound b_this) {};
+
+	Bound root = std::make_pair(root_joint(), body);
+
+	for (i_frame = 0; i_frame < n_frames; i_frame ++)
+	{
+		TraverseBFS_boundtree_norecur(root, onEnterBound_pose, onLeaveBound_pose); //to pose body
+		TransformArchive& tms_i = m_motions[i_frame];
+		CArtiBodyTree::Serialize<true>(body, tms_i);
+	}
+
+	CArtiBodyTree::Destroy(body);
 }
 
 CArtiBodyNode* CFile2ArtiBody::CreateBodyBVH() const

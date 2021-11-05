@@ -94,7 +94,8 @@ void AssertionFail(const char *file, unsigned int line);
 			CArtiBodyNode* ___root_body = CAST_2PBODY(mopipe->bodies[0]); \
 			CArtiBodyTree::Serialize<true>(___root_body, ___tm_data); \
 			START_PROFILER_AUTOFRAME("ik", rounds); \
-			CArtiBodyTree::Serialize<false>(___root_body, ___tm_data);
+			CArtiBodyTree::Serialize<false>(___root_body, ___tm_data); \
+			CArtiBodyTree::FK_Update<false>(___root_body);
 
 #		define STOP_PROFILER_IK \
 			} \
