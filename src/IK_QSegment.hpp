@@ -118,13 +118,18 @@ public:
 	// set joint weights (per axis)
 	virtual void SetWeight(int dof_l, Real w) = 0;
 
-
+	// in (0, 1) == [eps, 1-eps]
+	Real Stiffness()
+	{
+		return m_stiffness;
+	}
 protected:
 	Real m_scale;
 	CArtiBodyNode* m_bodies[2];
 	IJoint*	m_joints[2];
 	Real m_max_extension;
 	int m_DoF_id;
+	Real m_stiffness;
 public:
 	const Type c_type;
 	const int c_num_DoFs;

@@ -132,7 +132,6 @@ Real CIKChainNumerical::Error() const
 	auto it_seg = m_segments.end();
 	const Real half = (Real)0.5;
 	Real sigma_stiffness = (Real)0;
-	Real stiffness_i = (Real)1;
 	while (it_seg != m_segments.begin())
 	{
 		it_seg --;
@@ -146,7 +145,8 @@ Real CIKChainNumerical::Error() const
 			&& norm_pi_eef > c_epsilonsqrt)
 		{
 			Real err_pi = half * ((Real)1 - pi_eef.dot(pi_t)/(norm_pi_t * norm_pi_eef));
-			err_tt += err_pi * stiffness_i; // *seg->Stiffness_n();
+			Real stiffness_i = seg->Stiffness();
+			err_tt += err_pi * stiffness_i;
 			sigma_stiffness = sigma_stiffness + stiffness_i;
 		}
 	}

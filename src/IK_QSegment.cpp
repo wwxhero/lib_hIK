@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "IK_QSegment.hpp"
 
+#define STIFFNESS_EPS ((Real)0.1)
+
 BEGIN_ENUM_STR(IK_QSegment, Type)
 	ENUM_ITEM(R_xyz)
 	ENUM_ITEM(R_Spherical)
@@ -12,6 +14,7 @@ IK_QSegment::IK_QSegment(Type a_type, int n_dofs)
 	, m_joints{NULL, NULL}
 	, m_max_extension((Real)0)
 	, m_DoF_id(-1)
+	, m_stiffness(STIFFNESS_EPS)
 	, c_type(a_type)
 	, c_num_DoFs(n_dofs)
 	, c_idxFrom(0)
@@ -42,6 +45,10 @@ IK_QSegmentDOF3::IK_QSegmentDOF3(const Real weight[3])
 	, m_weight{weight[0], weight[1], weight[2]}
 	, m_locked {false, false, false}
 {
+	Real dex = 0.33333333333 * (m_weight[0] + m_weight[1] + m_weight[2]); // sigma(w) / 3
+	Real b = 1 - STIFFNESS_EPS;
+	Real k = 2 * STIFFNESS_EPS - 1;
+	m_stiffness = dex * k + b;
 }
 
 int IK_QSegmentDOF3::Weight(Real w[6]) const
@@ -156,3 +163,5 @@ bool IK_QSphericalSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vect
 
 	return false;
 }
+
+#undef STIFFNESS_EPS
