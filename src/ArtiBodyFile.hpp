@@ -59,7 +59,7 @@ public:
 	CArtiBodyNode* CreateBody(BODY_TYPE type) const;
 	
 	template<bool G_SPACE = false>
-	void UpdateMotion(int i_frame, CArtiBodyNode* body) const
+	void PoseBody(int i_frame, CArtiBodyNode* body) const
 	{
 		IKAssert(i_frame < (int)m_motions.size());
 		TransformArchive& tms_i = const_cast<TransformArchive&>(m_motions[i_frame]);

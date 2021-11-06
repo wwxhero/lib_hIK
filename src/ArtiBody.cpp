@@ -38,10 +38,6 @@ bool CArtiBodyTree::CloneNode_fbx(const CArtiBodyNode* src, CArtiBodyNode** dst,
 	_TRANSFORM l2p_0_tm;
 	l2p_tm->CopyTo(l2p_0_tm);
 
-	CArtiBodyNode* src_parent = src->GetParent();
-	bool is_root = (NULL == src_parent);
-	if (is_root)
-		l2p_0_tm.tt.x = l2p_0_tm.tt.y = l2p_0_tm.tt.z = 0;
 
 	const wchar_t* name_dst = (NULL == name_dst_opt ? src->GetName_w() : name_dst_opt);
 
@@ -53,7 +49,7 @@ bool CArtiBodyTree::CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst,
 {
 	*dst = NULL;
 	CArtiBodyNode* src_parent = src->GetParent();
-	bool jtm_copy = (NULL == name_dst_opt);
+	bool jtm_copy = (src->c_type&sim);
 	const wchar_t* name_dst = (NULL == name_dst_opt ? src->GetName_w() : name_dst_opt);
 	TM_TYPE jtm = TM_TYPE::t_none;
 	bool is_root = (NULL == src_parent);
@@ -180,7 +176,7 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 			{rot_q.w(), rot_q.x(), rot_q.y(), rot_q.z()},
 			{tt_this.x(), tt_this.y(), tt_this.z()}
 		};
-		bool jtm_copy = (NULL == name_dst_opt);
+		bool jtm_copy = (src->c_type&sim);
 		TM_TYPE tm_type = t_none;
 		if (jtm_copy)
 			tm_type = src->c_jtmflag;

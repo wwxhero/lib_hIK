@@ -59,7 +59,7 @@ void CPostureGraphClose2File::Initialize(CPostureGraphClose2File& graph, const R
 	for (it_reg_v ++; it_reg_v != reg.V.end(); it_reg_v ++) // skip the 'T' posture to avoid a self-pointing edge
 	{
 		const auto& reg_v = *it_reg_v;
-		graph.c_thetaSrc_ref->UpdateMotion((int)reg_v.v_src, graph.m_thetaBody);
+		graph.c_thetaSrc_ref->PoseBody((int)reg_v.v_src, graph.m_thetaBody);
 		graph.m_thetaFile.UpdateMotion((int)reg_v.v_dst);
 		lstV_ERR0.push_back({reg_v.v_dst, errTB_src(0, reg_v.v_src)});
 	}

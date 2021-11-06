@@ -209,7 +209,7 @@ public:
 		m_theta_star = pose_id;
 		if (UpdatePose)
 		{
-			m_thetas->UpdateMotion<G_SPACE>(pose_id, m_rootBody_ref);
+			m_thetas->PoseBody<G_SPACE>(pose_id, m_rootBody_ref);
 		}
 		return pose_id_m;
 	}
@@ -219,7 +219,7 @@ public:
 	{
 		auto ErrTheta = [&graph, err](vertex_descriptor theta) -> Real
 			{
-				graph.m_thetas->UpdateMotion(theta, graph.m_rootBody_ref);
+				graph.m_thetas->PoseBody(theta, graph.m_rootBody_ref);
 				CArtiBodyTree::FK_Update<true>(graph.m_rootBody_ref);
 				return err();
 			};

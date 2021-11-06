@@ -180,7 +180,7 @@ bool dissect(const char* confXML, const char* path_htr, const char* dir_out)
 
 		for (int i_frame = 0; i_frame < n_frames; i_frame++)
 		{
-			htr.UpdateMotion(i_frame, body_root);
+			htr.PoseBody(i_frame, body_root);
 			for (auto sec : section)
 			{
 				CArtiBodyTree::FK_Update<true>(sec.group_root);

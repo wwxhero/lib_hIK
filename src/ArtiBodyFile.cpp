@@ -349,12 +349,12 @@ void CFile2ArtiBody::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::st
 
 	for (unsigned int i_frame = 0; i_frame < n_frames; i_frame++)
 	{
-		UpdateMotion(i_frame, body_i);
+		PoseBody(i_frame, body_i);
 		// CArtiBodyTree::Serialize<true>(body_i, tm_data_i);
 		UpdateTransforms(interest_bodies_i, tm_data_i);
 		for (unsigned int j_frame = 0; j_frame < n_frames; j_frame++)
 		{
-			UpdateMotion(j_frame, body_j);
+			PoseBody(j_frame, body_j);
 			// CArtiBodyTree::Serialize<true>(body_j, tm_data_j);
 			UpdateTransforms(interest_bodies_j, tm_data_j);
 			// auto& vis_scale_ij = err_out.at<unsigned short>(i_frame, j_frame);
