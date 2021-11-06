@@ -348,7 +348,6 @@ void pose_nonrecur(HBODY body_root, const bvh11::BvhObject& bvh, int i_frame)
 
 	Bound root = std::make_pair(bvh.root_joint(), body_root);
 	TraverseBFS_boundtree_norecur(root, onEnterBound_pose, onLeaveBound_pose);
-
 	update_fk(body_root);
 }
 
@@ -518,6 +517,13 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 		if (resetted)
 		{
 			pose_nonrecur(h_driver, bvh_src, frame_bvh11);
+			// pose body except the root joint
+			_TRANSFORM delta_l_tm = {
+					{1, 1, 1},		//scale is trivial
+					{1, 0, 0, 0},	//rotation
+					{0, 0, 0},		//trivial
+			};
+			set_joint_transform(h_driver, &delta_l_tm);
 			resetted = clone_body_fbx(h_driver, &h_driveeProxy); // reset = false
 		}
 
