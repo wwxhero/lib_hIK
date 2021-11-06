@@ -200,7 +200,7 @@ int body_cmp(const char* const pts_interest[], int n_interests, HBODY body_s, HB
 	return CArtiBodyTree::BodyCMP(pts_interest, n_interests, artiBody_s, artiBody_d, err_nodes, err_oris);
 }
 
-void body_T_test(HBODY body, const Real up[3]
+void body_T_test(HBODY body, const Real up[3], const Real forward[3]
 			, const char* const pts_interest[], int n_interests
 			, int part_body_idx_range[parts_total][2]
 			, Real err[])
@@ -208,8 +208,10 @@ void body_T_test(HBODY body, const Real up[3]
 	CArtiBodyNode* artiBody = CAST_2PBODY(body);
 	std::vector<std::string> pts(pts_interest, pts_interest + n_interests);
 	Eigen::Vector3r dir_up(up[0], up[1], up[2]); dir_up.normalize();
+	Eigen::Vector3r dir_forward(forward[0], forward[1], forward[2]); dir_forward.normalize();
 	CArtiBodyTree::Body_T_Test(artiBody
 							, dir_up
+							, dir_forward
 							, pts
 							, part_body_idx_range
 							, err);

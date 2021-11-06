@@ -347,7 +347,7 @@ int CArtiBodyTree::BodyCMP(const char* const pts_interest[], int n_interests, co
 	return n_err_nodes;
 }
 
-void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r& dir_up
+void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r& dir_up, const Eigen::Vector3r& dir_forward
 					, const std::vector<std::string>& names_interest
 					, int part_body_idx_range[parts_total][2]
 					, Real err[])
@@ -377,11 +377,13 @@ void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r
 	int idx_right_arm_base = part_body_idx_range[right_arm][0];
 	int idx_left_arm_base = part_body_idx_range[left_arm][0];
 
-	Eigen::Vector3r dir_right =	(name2body[names_interest[idx_right_arm_base]]->GetTransformLocal2World()->getTranslation()
-								- name2body[names_interest[idx_left_arm_base]]->GetTransformLocal2World()->getTranslation())
-								.normalized();
-	Eigen::Vector3r dir_front = dir_up.cross(dir_right);
-	dir_right = dir_front.cross(dir_up);
+	// Eigen::Vector3r dir_right =	(name2body[names_interest[idx_right_arm_base]]->GetTransformLocal2World()->getTranslation()
+	// 							- name2body[names_interest[idx_left_arm_base]]->GetTransformLocal2World()->getTranslation())
+	// 							.normalized();
+	// Eigen::Vector3r dir_front = dir_up.cross(dir_right);
+	// dir_right = dir_front.cross(dir_up);
+
+	Eigen::Vector3r dir_right = dir_forward.cross(dir_up);
 
 	PART parts[] = {spine, left_leg, right_leg, left_arm, right_arm};
 	Eigen::Vector3r dirs[] = {dir_up, -dir_up, -dir_up, -dir_right, dir_right};

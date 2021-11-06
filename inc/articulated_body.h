@@ -86,7 +86,7 @@ HIKLIB(void,			get_body_transform_l2w)(HBODY body, _TRANSFORM* tm_l2w);
 HIKLIB(void,			get_body_transform_l2p)(HBODY body, _TRANSFORM* tm_l2w);
 
 HIKLIB(void,			log_body_node)(HBODY body);
-HIKLIB(void,			body_T_test)(HBODY body, const Real up[3]
+HIKLIB(void,			body_T_test)(HBODY body, const Real up[3], const Real forward[3]
 								, const char* const pts_interest[], int n_interests
 								, int part_idx_range[parts_total][2]
 								, Real err[]);
