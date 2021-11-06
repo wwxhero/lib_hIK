@@ -45,9 +45,10 @@ IK_QSegmentDOF3::IK_QSegmentDOF3(const Real weight[3])
 	, m_weight{weight[0], weight[1], weight[2]}
 	, m_locked {false, false, false}
 {
-	Real dex = 0.33333333333 * (m_weight[0] + m_weight[1] + m_weight[2]); // sigma(w) / 3
-	Real b = 1 - STIFFNESS_EPS;
-	Real k = 2 * STIFFNESS_EPS - 1;
+	const Real b = 1 - STIFFNESS_EPS;
+	const Real k = 2 * STIFFNESS_EPS - 1;
+	const Real one_third = (Real)1/(Real)3;
+	Real dex = one_third * (m_weight[0] + m_weight[1] + m_weight[2]); // sigma(w) / 3
 	m_stiffness = dex * k + b;
 }
 
