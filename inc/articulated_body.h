@@ -90,6 +90,8 @@ HIKLIB(void,			body_T_test)(HBODY body, const Real up[3], const Real forward[3]
 								, const char* const pts_interest[], int n_interests
 								, int part_idx_range[parts_total][2]
 								, Real err[]);
+HIKLIB(void,			body_EQ_test)(HBODY body_s, HBODY body_d, const char* const pts_interest[], int n_interests
+								, Real err[]);
 HIKLIB(HBODY*,			alloc_bodies)(HBODY root, int *n_bodies);
 HIKLIB(void,			free_bodies)(HBODY* bodies);
 

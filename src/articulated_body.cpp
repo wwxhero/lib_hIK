@@ -193,13 +193,6 @@ void log_body_node(HBODY body)
 	LOGIK(logInfo.str().c_str());
 }
 
-int body_cmp(const char* const pts_interest[], int n_interests, HBODY body_s, HBODY body_d, HBODY* err_nodes, Real* err_oris)
-{
-	CArtiBodyNode* artiBody_s = CAST_2PBODY(body_s);
-	CArtiBodyNode* artiBody_d = CAST_2PBODY(body_d);
-	return CArtiBodyTree::BodyCMP(pts_interest, n_interests, artiBody_s, artiBody_d, err_nodes, err_oris);
-}
-
 void body_T_test(HBODY body, const Real up[3], const Real forward[3]
 			, const char* const pts_interest[], int n_interests
 			, int part_body_idx_range[parts_total][2]
@@ -215,6 +208,16 @@ void body_T_test(HBODY body, const Real up[3], const Real forward[3]
 							, pts
 							, part_body_idx_range
 							, err);
+}
+
+void body_EQ_test(HBODY body_s, HBODY body_d, const char* const pts_interest[], int n_interests, Real err[])
+{
+	CArtiBodyNode* artiBody_s = CAST_2PBODY(body_s);
+	CArtiBodyNode* artiBody_d = CAST_2PBODY(body_d);
+	std::vector<std::string> interests;
+	for (int i_interest = 0; i_interest < n_interests; i_interest ++)
+		interests.push_back(pts_interest[i_interest]);
+	CArtiBodyTree::Body_EQ_Test(artiBody_s, artiBody_d, interests, err);
 }
 
 HBODY* alloc_bodies(HBODY root, int *n_bodies)

@@ -524,6 +524,7 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 					{0, 0, 0},		//trivial
 			};
 			set_joint_transform(h_driver, &delta_l_tm);
+			update_fk(h_driver);
 			resetted = clone_body_fbx(h_driver, &h_driveeProxy); // reset = false
 		}
 

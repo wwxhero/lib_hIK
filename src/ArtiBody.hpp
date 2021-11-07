@@ -482,12 +482,15 @@ STOP_PROFILER
 	}
 
 //the following code for building posture graph, not for real-time usage
-	static int BodyCMP(const char* const pts_interest[], int n_interests, const CArtiBodyNode* body_s, const CArtiBodyNode* body_d, HBODY err_nodes[], Real err_oris[]);
 	static void Body_T_Test(const CArtiBodyNode* body
 					, const Eigen::Vector3r& dir_up
 					, const Eigen::Vector3r& dir_forward
 					, const std::vector<std::string>& pts_interest
 					, int part_idx_range[parts_total][2]
+					, Real err[]);
+	static void Body_EQ_Test(const CArtiBodyNode* body_s
+					, const CArtiBodyNode* body_d
+					, const std::vector<std::string>& pts_interest
 					, Real err[]);
 	static int GetBodies(const CArtiBodyNode* root
 						, const std::list<std::string>& names
