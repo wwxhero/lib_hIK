@@ -194,6 +194,7 @@ void CFile2ArtiBody::Initialize()
 
 	auto onEnterBound_pose = [&src = *this, &i_frame](Bound b_this)
 	{
+		IKAssert(b_this.first->name() == b_this.second->GetName_c());
 		const Joint_bvh_ptr joint_bvh = b_this.first;
 		CArtiBodyNode* body_hik = b_this.second;
 		Eigen::Affine3d delta_l = src.GetLocalDeltaTM(joint_bvh, i_frame);
@@ -349,12 +350,12 @@ void CFile2ArtiBody::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::st
 
 	for (unsigned int i_frame = 0; i_frame < n_frames; i_frame++)
 	{
-		PoseBody(i_frame, body_i);
+		PoseBody<false>(i_frame, body_i);
 		// CArtiBodyTree::Serialize<true>(body_i, tm_data_i);
 		UpdateTransforms(interest_bodies_i, tm_data_i);
 		for (unsigned int j_frame = 0; j_frame < n_frames; j_frame++)
 		{
-			PoseBody(j_frame, body_j);
+			PoseBody<false>(j_frame, body_j);
 			// CArtiBodyTree::Serialize<true>(body_j, tm_data_j);
 			UpdateTransforms(interest_bodies_j, tm_data_j);
 			// auto& vis_scale_ij = err_out.at<unsigned short>(i_frame, j_frame);

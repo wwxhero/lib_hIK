@@ -219,8 +219,7 @@ public:
 	{
 		auto ErrTheta = [&graph, err](vertex_descriptor theta) -> Real
 			{
-				graph.m_thetas->PoseBody(theta, graph.m_rootBody_ref);
-				CArtiBodyTree::FK_Update<true>(graph.m_rootBody_ref);
+				graph.m_thetas->PoseBody<true>(theta, graph.m_rootBody_ref);
 				return err();
 			};
 

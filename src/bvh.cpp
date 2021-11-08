@@ -689,7 +689,7 @@ bool convert(const char* src, const char* dst, bool htr2bvh)
 			for (int i_frame = 0; i_frame < n_frames; i_frame ++)
 			{
 				PROFILE_FRAME(i_frame);
-				bvh_src.PoseBody(i_frame, bodies[0]);
+				bvh_src.PoseBody<false>(i_frame, bodies[0]);
 				CMoTree::Motion_sync(&mo_node_src);
 				bvh_reset.UpdateMotion(i_frame);
 			}
@@ -704,7 +704,7 @@ bool convert(const char* src, const char* dst, bool htr2bvh)
 	}
 
 	for (auto body : bodies)
-		delete body;
+		CArtiBodyTree::Destroy(body);
 	return ret;
 
 }
