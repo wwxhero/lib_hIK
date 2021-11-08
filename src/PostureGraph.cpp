@@ -318,7 +318,7 @@ bool CFile2PostureGraphClose::Load(const char* dir, CArtiBodyNode* root)
 
 	std::string filename_theta(pg_name); filename_theta += ".htr";
 	fs::path path_theta(dir_path); path_theta.append(filename_theta);
-	bool loaded_theta = LoadThetas(path_theta.u8string().c_str());
+	bool loaded_theta = LoadThetas(path_theta.u8string().c_str(), root);
 
 	LOGIKVar(LogInfoCharPtr, pg_name);
 	LOGIKVar(LogInfoBool, loaded_t);
@@ -351,14 +351,14 @@ bool CFile2PostureGraphClose::Load(const char* dir, CArtiBodyNode* root)
 
 
 
-bool CFile2PostureGraphClose::LoadThetas(const char* filePath)
+bool CFile2PostureGraphClose::LoadThetas(const char* filePath, const CArtiBodyNode* convension)
 {
 	if (NULL != m_thetas)
 		delete m_thetas;
 	bool loaded = false;
 	try
 	{
-		m_thetas = new CFile2ArtiBody(filePath);
+		m_thetas = new CFile2ArtiBody(filePath, convension);
 		m_theta_star = 0;
 		loaded = true;
 	}

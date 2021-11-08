@@ -54,41 +54,23 @@ private:
 class CFile2ArtiBody : public bvh11::BvhObject
 {
 public:
-	CFile2ArtiBody(const char* path);
-	CFile2ArtiBody(const std::string& path);
+	CFile2ArtiBody(const char* path, const CArtiBodyNode* body_std = NULL);
+	CFile2ArtiBody(const std::string& path, const CArtiBodyNode* body_std = NULL);
 	CArtiBodyNode* CreateBody(BODY_TYPE type) const;
 	
 	template<bool G_SPACE>
 	void PoseBody(int i_frame, CArtiBodyNode* body) const
 	{
-		// IKAssert(i_frame < (int)m_motions.size());
-		// TransformArchive& tms_i = const_cast<TransformArchive&>(m_motions[i_frame]);
-		// CArtiBodyTree::Serialize<false>(body, tms_i);
-		// CArtiBodyTree::FK_Update<G_SPACE>(body);
-		auto onEnterBound_pose = [&src = *this, i_frame](Bound b_this)
-		{
-			IKAssert(b_this.first->name() == b_this.second->GetName_c());
-			LOGIKVar(LogInfoCharPtr, b_this.first->name().c_str());
-			LOGIKVar(LogInfoCharPtr, b_this.second->GetName_c());
-			const Joint_bvh_ptr joint_bvh = b_this.first;
-			CArtiBodyNode* body_hik = b_this.second;
-			Eigen::Affine3d delta_l = src.GetLocalDeltaTM(joint_bvh, i_frame);
-			Eigen::Quaterniond r(delta_l.linear());
-			Eigen::Vector3d tt(delta_l.translation());
-			IJoint* body_joint = body_hik->GetJoint();
-			body_joint->SetRotation(Eigen::Quaternionr((Real)r.w(), (Real)r.x(), (Real)r.y(), (Real)r.z()));
-			body_joint->SetTranslation(Eigen::Vector3r((Real)tt.x(), (Real)tt.y(), (Real)tt.z()));
-		};
-		auto onLeaveBound_pose = [](Bound b_this) {};
-
-		Bound root = std::make_pair(root_joint(), body);
-		TraverseBFS_boundtree_norecur(root, onEnterBound_pose, onLeaveBound_pose);
+		IKAssert(i_frame < (int)m_motions.size());
+		TransformArchive& tms_i = const_cast<TransformArchive&>(m_motions[i_frame]);
+		CArtiBodyTree::Serialize<false>(body, tms_i);
 		CArtiBodyTree::FK_Update<G_SPACE>(body);
 	}
 
 	void ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints);
 private:
 	void Initialize();
+	void Initialize(const CArtiBodyNode* body_std);
 
 	CArtiBodyNode* CreateBodyBVH() const;
 	CArtiBodyNode* CreateBodyHTR() const;
@@ -104,6 +86,9 @@ private:
 		while (!queBFS.empty())
 		{
 			auto b_this = queBFS.front();
+			queBFS.pop();
+			IKAssert(b_this.first->name()
+					== b_this.second->GetName_c());
 			auto joint_bvh = b_this.first;
 			const CArtiBodyNode* body_hik = b_this.second;
 			auto& children_bvh = joint_bvh->children();
@@ -119,7 +104,6 @@ private:
 				queBFS.push(b_child);
 				OnEnterBound(b_child);
 			}
-			queBFS.pop();
 			OnLeaveBound(b_this);
 		}
 	}

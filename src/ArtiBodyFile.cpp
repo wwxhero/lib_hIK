@@ -157,16 +157,22 @@ void CArtiBody2File::OutputMotion(CArtiBody2File& bf, int i_frame, LoggerFast& l
 }
 
 
-CFile2ArtiBody::CFile2ArtiBody(const char* path)
+CFile2ArtiBody::CFile2ArtiBody(const char* path, const CArtiBodyNode* body_std)
 	: bvh11::BvhObject(std::string(path))
 {
-	Initialize();
+	if (NULL == body_std)
+		Initialize();
+	else
+		Initialize(body_std);
 }
 
-CFile2ArtiBody::CFile2ArtiBody(const std::string& path)
+CFile2ArtiBody::CFile2ArtiBody(const std::string& path, const CArtiBodyNode* body_std)
 	: bvh11::BvhObject(path)
 {
-	Initialize();
+	if (NULL == body_std)
+		Initialize();
+	else
+		Initialize(body_std);
 }
 
 CArtiBodyNode* CFile2ArtiBody::CreateBody(BODY_TYPE type) const
@@ -216,6 +222,127 @@ void CFile2ArtiBody::Initialize()
 	}
 
 	CArtiBodyTree::Destroy(body);
+}
+
+// the standard body might not be compatible with the file,
+// the name of the body/joint is used for creating the map between standard and the file
+// the motions is created for the standard body
+// throw expcetion in case the given standard is not compatible with the file
+void CFile2ArtiBody::Initialize(const CArtiBodyNode* a_root_std)
+{
+	std::string exp("the standard body is not compatible with the bvh/htr file");
+	int n_frames = frames();
+	m_motions.resize(n_frames);
+
+	CArtiBodyNode* root_std = NULL;
+	auto CloneNode = [](const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt) -> bool
+		{
+			return CArtiBodyTree::CloneNode_htr(src, dst, Eigen::Matrix3r::Identity(), name_dst_opt);
+		};
+	CArtiBodyTree::Clone(a_root_std, &root_std, CloneNode);
+	std::unique_ptr<CArtiBodyNode, void(*)(CArtiBodyNode*)> root_std_gc(
+																root_std
+																, [](CArtiBodyNode* ptr)
+																	{
+																		CArtiBodyTree::Destroy(ptr);
+																	});
+
+	struct CHANNEL
+	{
+		const char* name;
+		const CArtiBodyNode* body_file;
+		CArtiBodyNode* body_std;
+	};
+
+	CArtiBodyNode* root_file = CreateBodyHTR(); //the body type is trivial, since only the body joint is used which is indepedant of the body type
+
+	std::unique_ptr<CArtiBodyNode, void(*)(CArtiBodyNode*)> root_file_gc(
+																root_file
+																, [](CArtiBodyNode* ptr)
+        															{
+        															    CArtiBodyTree::Destroy(ptr);
+        															});
+
+	std::vector<CHANNEL> channels;
+
+	auto OnEnterBody_file = [&channels](CArtiBodyNode* body)
+		{
+			CHANNEL c = {body->GetName_c(), body, NULL};
+			channels.push_back(c);
+		};
+
+	auto OnLeaveBody_file = [](CArtiBodyNode* body)
+		{
+
+		};
+
+	CArtiBodyTree::TraverseDFS(root_file, OnEnterBody_file, OnLeaveBody_file);
+
+	std::map<std::string, std::size_t> name2channel_i;
+	for (std::size_t i_channel = 0; i_channel < channels.size(); i_channel++)
+	{
+		name2channel_i[channels[i_channel].name] = i_channel;
+	}
+
+
+	auto OnEnterBody_std = [&channels, &name2channel_i = std::as_const(name2channel_i), exp](CArtiBodyNode* body)
+		{
+			auto it_c = name2channel_i.find(body->GetName_c());
+			if (name2channel_i.end() == it_c)
+				throw exp;
+			else
+			{
+				channels[it_c->second].body_std = body;
+			}
+		};
+
+	auto OnLeaveBody_std = [](CArtiBodyNode* body)
+		{
+		};
+
+	CArtiBodyTree::TraverseDFS(root_std, OnEnterBody_std, OnLeaveBody_std);
+
+	for (auto channel : channels)
+	{
+		if (NULL == channel.body_file
+			|| NULL == channel.body_std)
+			throw exp;
+	}
+
+	int i_frame = 0;
+
+	auto onEnterBound_pose = [&src = *this, &i_frame](Bound b_this)
+	{
+		IKAssert(b_this.first->name() == b_this.second->GetName_c());
+		const Joint_bvh_ptr joint_bvh = b_this.first;
+		CArtiBodyNode* body_hik = b_this.second;
+		Eigen::Affine3d delta_l = src.GetLocalDeltaTM(joint_bvh, i_frame);
+		Eigen::Quaterniond r(delta_l.linear());
+		Eigen::Vector3d tt(delta_l.translation());
+		IJoint* body_joint = body_hik->GetJoint();
+		body_joint->SetRotation(Eigen::Quaternionr((Real)r.w(), (Real)r.x(), (Real)r.y(), (Real)r.z()));
+		body_joint->SetTranslation(Eigen::Vector3r((Real)tt.x(), (Real)tt.y(), (Real)tt.z()));
+	};
+	auto onLeaveBound_pose = [](Bound b_this) {};
+
+	Bound root_file_bnd = std::make_pair(root_joint(), root_file);
+
+	for (i_frame = 0; i_frame < n_frames; i_frame ++)
+	{
+		TraverseBFS_boundtree_norecur(root_file_bnd, onEnterBound_pose, onLeaveBound_pose); //to pose body
+		for (auto channel : channels)
+		{
+			IJoint* joint_std_i = channel.body_std->GetJoint();
+			const IJoint* joint_file_i = channel.body_file->GetJoint();
+			const Transform* tm_file_i = joint_file_i->GetTransform();
+			joint_std_i->SetRotation(Transform::getRotation_q(tm_file_i));
+			joint_std_i->SetTranslation(tm_file_i->getTranslation());
+		}
+
+		TransformArchive& tms_i = m_motions[i_frame];
+		CArtiBodyTree::Serialize<true>(root_std, tms_i);
+	}
+
 }
 
 CArtiBodyNode* CFile2ArtiBody::CreateBodyBVH() const
@@ -302,9 +429,9 @@ CArtiBodyNode* CFile2ArtiBody::CreateBodyHTR() const
 	CArtiBodyNode* body_bvh = NULL;
 	CArtiBodyNode* body_htr = NULL;
 	auto CloneNode = [](const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt) -> bool
-	{
-		return CArtiBodyTree::CloneNode_htr(src, dst, Eigen::Matrix3r::Identity(), name_dst_opt);
-	};
+		{
+			return CArtiBodyTree::CloneNode_htr(src, dst, Eigen::Matrix3r::Identity(), name_dst_opt);
+		};
 	bool created = (NULL != (body_bvh = CreateBodyBVH())
 					&& CArtiBodyTree::Clone(body_bvh, &body_htr, CloneNode));
 	if (body_bvh)

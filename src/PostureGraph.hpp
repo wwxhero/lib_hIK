@@ -311,7 +311,7 @@ public:
 	}
 
 private:
-	bool LoadThetas(const char* filePath);
+	bool LoadThetas(const char* filePath, const CArtiBodyNode* convension);
 
 	CFile2ArtiBody* m_thetas;
 	CArtiBodyNode* m_rootBody_ref;
