@@ -364,7 +364,9 @@ bool CFile2PostureGraphClose::LoadThetas(const char* filePath, const CArtiBodyNo
 	}
 	catch(std::string& exp)
 	{
-		LOGIKVar(LogInfoCharPtr, exp.c_str());
+		std::stringstream errInfo;
+		errInfo << "Load " << filePath << " " << exp;
+		LOGIKVarErr(LogInfoCharPtr, errInfo.str().c_str());
 		m_thetas = NULL;
 	}
 	return loaded;

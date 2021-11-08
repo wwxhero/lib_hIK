@@ -304,8 +304,9 @@ void CFile2ArtiBody::Initialize(const CArtiBodyNode* a_root_std)
 
 	for (auto channel : channels)
 	{
-		if (NULL == channel.body_file
-			|| NULL == channel.body_std)
+		bool valid_c_i = (NULL == channel.body_std
+							|| NULL != channel.body_file); // NULL != body_std -> NULL != body_file
+		if (!valid_c_i)
 			throw exp;
 	}
 
@@ -332,6 +333,10 @@ void CFile2ArtiBody::Initialize(const CArtiBodyNode* a_root_std)
 		TraverseBFS_boundtree_norecur(root_file_bnd, onEnterBound_pose, onLeaveBound_pose); //to pose body
 		for (auto channel : channels)
 		{
+			bool through = (NULL != channel.body_std
+							&& NULL != channel.body_file);
+			if (!through)
+				continue;
 			IJoint* joint_std_i = channel.body_std->GetJoint();
 			const IJoint* joint_file_i = channel.body_file->GetJoint();
 			const Transform* tm_file_i = joint_file_i->GetTransform();
