@@ -6,6 +6,7 @@
 #include "ik_logger.h"
 #include "Joint.hpp"
 
+
 class CArtiBodyRef2File : public bvh11::BvhObject
 {
 public:
@@ -51,30 +52,12 @@ private:
 	const CArtiBodyNode* m_bodyRoot;
 };
 
-class CFile2ArtiBodyBase : public bvh11::BvhObject
+class CArtiBodyFile : public bvh11::BvhObject
 {
 protected:
-	CFile2ArtiBodyBase(const char* path);
-	CFile2ArtiBodyBase(const std::string& path);
-	template<bool G_SPACE>
-	void PoseBody(int i_frame, CArtiBodyNode* body) const
-	{
-		IKAssert(i_frame < (int)m_motions.size());
-		TransformArchive& tms_i = const_cast<TransformArchive&>(m_motions[i_frame]);
-		CArtiBodyTree::Serialize<false>(body, tms_i);
-		CArtiBodyTree::FK_Update<G_SPACE>(body);
-	}
-public:
-	template<bool G_SPACE>
-	void PoseBody(int i_frame) const
-	{
-		PoseBody<G_SPACE>(i_frame, m_rootBody);
-	}
+	CArtiBodyFile(const char* path);
+	CArtiBodyFile(const std::string& path);
 
-	void ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints);
-
-	const CArtiBodyNode* GetBody() const { return m_rootBody; }
-	CArtiBodyNode* GetBody() { return m_rootBody;  }
 protected:
 	static BODY_TYPE toType(const std::string& path);
 	CArtiBodyNode* CreateBody(BODY_TYPE type) const;
@@ -115,26 +98,67 @@ protected:
 	}
 protected:
 	std::vector<TransformArchive> m_motions;
-	CArtiBodyNode* m_rootBody;
 };
 
-class CFile2ArtiBody : public CFile2ArtiBodyBase
+class CFile2ArtiBody : public CArtiBodyFile
 {
 public:
 	CFile2ArtiBody(const char* path);
 	CFile2ArtiBody(const std::string& path);
 	virtual ~CFile2ArtiBody();
+public:
+	template<bool G_SPACE>
+	void PoseBody(int i_frame) const
+	{
+		PoseBody<G_SPACE>(i_frame, m_rootBody);
+	}
+
+	void ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints);
+
+
+	const CArtiBodyNode* GetBody() const { return m_rootBody; }
+	CArtiBodyNode* GetBody() { return m_rootBody;  }
+protected:
+	template<bool G_SPACE>
+	void PoseBody(int i_frame, CArtiBodyNode* body) const
+	{
+		IKAssert(i_frame < (int)m_motions.size());
+		TransformArchive& tms_i = const_cast<TransformArchive&>(m_motions[i_frame]);
+		CArtiBodyTree::Serialize<false>(body, tms_i);
+		CArtiBodyTree::FK_Update<G_SPACE>(body);
+	}
+
 private:
 	void Initialize();
+private:
+	CArtiBodyNode* m_rootBody;
 };
 
-class CFile2ArtiBodyRef : public CFile2ArtiBodyBase
+// it should be optimized to get rid of derivation to avoid unnecessary memory consumption from BvhObject from runtime.
+class CFile2ArtiBodyRef : public CArtiBodyFile
 {
 public:
 	CFile2ArtiBodyRef(const char* path, CArtiBodyNode* body_ref);
 	CFile2ArtiBodyRef(const std::string& path, CArtiBodyNode* body_ref);
+	template<bool G_SPACE>
+	void PoseBody(int i_frame) const
+	{
+		const TransformArchive& motion_i = m_motions[i_frame];
+		std::size_t n_tms = m_jointsRef.size();
+		for (std::size_t j_tm = 0; j_tm < n_tms; j_tm ++)
+		{
+			const _TRANSFORM& tm_ij = motion_i[j_tm];
+			IJoint* joint_j = m_jointsRef[j_tm];
+			joint_j->GetTransform()->CopyFrom(tm_ij);
+		}
+		CArtiBodyTree::FK_Update<G_SPACE>(m_rootRef);
+	}
 private:
-	void Initialize(const CArtiBodyNode* body_std);
+	void Initialize(CArtiBodyNode* body_std);
+
+private:
+	std::vector<IJoint*> m_jointsRef;
+	CArtiBodyNode* m_rootRef;
 };
 
 class CBodyLogger

@@ -357,6 +357,13 @@ public:
 		IKAssert(i < (int)m_data.size());
 		return m_data[i];
 	}
+
+	const _TRANSFORM& operator[](int i) const
+	{
+		IKAssert(i < (int)m_data.size());
+		return m_data[i];
+	}
+
 	static Real Error_q(const TransformArchive &tm, const TransformArchive &tm_prime); //in range [0, 1]
 private:
 	std::vector<_TRANSFORM> m_data;
