@@ -32,8 +32,7 @@ void Dump(G& g, const char* fileName, int lineNo)
 CPostureGraphClose2File::CPostureGraphClose2File(std::size_t n_vs, const CFile2ArtiBody* theta_src)
 	: CPostureGraphClose(n_vs)
 	, c_thetaSrc_ref(theta_src)
-	, m_thetaBody(theta_src->CreateBody(BODY_TYPE::htr))
-	, m_thetaFile(m_thetaBody, (int)n_vs)
+	, m_thetaFile(theta_src->GetBody(), (int)n_vs)
 {
 }
 
@@ -59,7 +58,7 @@ void CPostureGraphClose2File::Initialize(CPostureGraphClose2File& graph, const R
 	for (it_reg_v ++; it_reg_v != reg.V.end(); it_reg_v ++) // skip the 'T' posture to avoid a self-pointing edge
 	{
 		const auto& reg_v = *it_reg_v;
-		graph.c_thetaSrc_ref->PoseBody<false>((int)reg_v.v_src, graph.m_thetaBody);
+		graph.c_thetaSrc_ref->PoseBody<false>((int)reg_v.v_src);
 		graph.m_thetaFile.UpdateMotion((int)reg_v.v_dst);
 		lstV_ERR0.push_back({reg_v.v_dst, errTB_src(0, reg_v.v_src)});
 	}
@@ -95,21 +94,22 @@ void CPostureGraphClose2File::Initialize(CPostureGraphClose2File& graph, const R
 
 void CPostureGraphClose2File::Save(const char* dir, PG_FileType type) const
 {
+	std::string file_name(c_thetaSrc_ref->GetBody()->GetName_c());
+
 	std::string exts[] = { ".pg", ".dot" };
 	fs::path path_t(dir);
-	std::string file_name_t(m_thetaBody->GetName_c()); file_name_t += exts[F_PG];
+	std::string file_name_t(file_name); file_name_t += exts[type];
 	path_t.append(file_name_t);
 	SaveTransitions(path_t.u8string().c_str(), type);
 
 	fs::path htr_path(dir);
-	std::string htr_file_name(m_thetaBody->GetName_c()); htr_file_name += ".htr";
+	std::string htr_file_name(file_name); htr_file_name += ".htr";
 	htr_path.append(htr_file_name);
 	m_thetaFile.WriteBvhFile(htr_path.u8string().c_str());
 }
 
 CPostureGraphClose2File::~CPostureGraphClose2File()
 {
-	CArtiBodyTree::Destroy(m_thetaBody);
 }
 
 
@@ -325,11 +325,6 @@ bool CFile2PostureGraphClose::Load(const char* dir, CArtiBodyNode* root)
 	LOGIKVar(LogInfoBool, loaded_theta);
 	bool loaded =  (loaded_t && loaded_theta);
 
-	if (loaded)
-		m_rootBody_ref = root;
-	else
-		m_rootBody_ref = NULL;
-
 #if defined _DEBUG
 	IKAssert(!loaded || m_thetas->frames() == num_vertices(*this));
 	if (loaded)
@@ -351,14 +346,14 @@ bool CFile2PostureGraphClose::Load(const char* dir, CArtiBodyNode* root)
 
 
 
-bool CFile2PostureGraphClose::LoadThetas(const char* filePath, const CArtiBodyNode* convension)
+bool CFile2PostureGraphClose::LoadThetas(const char* filePath, CArtiBodyNode* body_ref)
 {
 	if (NULL != m_thetas)
 		delete m_thetas;
 	bool loaded = false;
 	try
 	{
-		m_thetas = new CFile2ArtiBody(filePath, convension);
+		m_thetas = new CFile2ArtiBodyRef(filePath, body_ref);
 		m_theta_star = 0;
 		loaded = true;
 	}

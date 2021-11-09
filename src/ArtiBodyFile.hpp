@@ -6,14 +6,14 @@
 #include "ik_logger.h"
 #include "Joint.hpp"
 
-class CArtiBody2File : public bvh11::BvhObject
+class CArtiBodyRef2File : public bvh11::BvhObject
 {
 public:
-	CArtiBody2File(const CArtiBodyNode* root_src, int n_frames);
+	CArtiBodyRef2File(const CArtiBodyNode* root_src, int n_frames);
 	void UpdateMotion(int i_frame);
 
-	static void OutputHeader(CArtiBody2File& bf, LoggerFast &logger);
-	static void OutputMotion(CArtiBody2File& bf, int i_frame, LoggerFast& logger);
+	static void OutputHeader(CArtiBodyRef2File& bf, LoggerFast &logger);
+	static void OutputMotion(CArtiBodyRef2File& bf, int i_frame, LoggerFast& logger);
 private:
 	void SetJointChannel(const CArtiBodyNode* body, std::shared_ptr<bvh11::Joint> joint);
 	typedef std::shared_ptr<const bvh11::Joint> Joint_bvh_ptr;
@@ -51,13 +51,11 @@ private:
 	const CArtiBodyNode* m_bodyRoot;
 };
 
-class CFile2ArtiBody : public bvh11::BvhObject
+class CFile2ArtiBodyBase : public bvh11::BvhObject
 {
-public:
-	CFile2ArtiBody(const char* path, const CArtiBodyNode* body_std = NULL);
-	CFile2ArtiBody(const std::string& path, const CArtiBodyNode* body_std = NULL);
-	CArtiBodyNode* CreateBody(BODY_TYPE type) const;
-	
+protected:
+	CFile2ArtiBodyBase(const char* path);
+	CFile2ArtiBodyBase(const std::string& path);
 	template<bool G_SPACE>
 	void PoseBody(int i_frame, CArtiBodyNode* body) const
 	{
@@ -66,12 +64,20 @@ public:
 		CArtiBodyTree::Serialize<false>(body, tms_i);
 		CArtiBodyTree::FK_Update<G_SPACE>(body);
 	}
+public:
+	template<bool G_SPACE>
+	void PoseBody(int i_frame) const
+	{
+		PoseBody<G_SPACE>(i_frame, m_rootBody);
+	}
 
 	void ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints);
-private:
-	void Initialize();
-	void Initialize(const CArtiBodyNode* body_std);
 
+	const CArtiBodyNode* GetBody() const { return m_rootBody; }
+	CArtiBodyNode* GetBody() { return m_rootBody;  }
+protected:
+	static BODY_TYPE toType(const std::string& path);
+	CArtiBodyNode* CreateBody(BODY_TYPE type) const;
 	CArtiBodyNode* CreateBodyBVH() const;
 	CArtiBodyNode* CreateBodyHTR() const;
 	typedef std::shared_ptr<const bvh11::Joint> Joint_bvh_ptr;
@@ -107,8 +113,28 @@ private:
 			OnLeaveBound(b_this);
 		}
 	}
-private:
+protected:
 	std::vector<TransformArchive> m_motions;
+	CArtiBodyNode* m_rootBody;
+};
+
+class CFile2ArtiBody : public CFile2ArtiBodyBase
+{
+public:
+	CFile2ArtiBody(const char* path);
+	CFile2ArtiBody(const std::string& path);
+	virtual ~CFile2ArtiBody();
+private:
+	void Initialize();
+};
+
+class CFile2ArtiBodyRef : public CFile2ArtiBodyBase
+{
+public:
+	CFile2ArtiBodyRef(const char* path, CArtiBodyNode* body_ref);
+	CFile2ArtiBodyRef(const std::string& path, CArtiBodyNode* body_ref);
+private:
+	void Initialize(const CArtiBodyNode* body_std);
 };
 
 class CBodyLogger
@@ -119,7 +145,7 @@ public:
 	void LogHeader();
 	void LogMotion();
 private:
-	CArtiBody2File m_bodyFile;
+	CArtiBodyRef2File m_bodyFile;
 	LoggerFast m_logger;
 	unsigned int m_nMotions;
 };
