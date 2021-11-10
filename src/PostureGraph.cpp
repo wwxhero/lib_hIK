@@ -32,8 +32,7 @@ void Dump(G& g, const char* fileName, int lineNo)
 CPostureGraphClose2File::CPostureGraphClose2File(std::size_t n_vs, const CFile2ArtiBody* theta_src)
 	: CPostureGraphClose(n_vs)
 	, c_thetaSrc_ref(theta_src)
-	, m_thetaBody(theta_src->CreateBody(BODY_TYPE::htr))
-	, m_thetaFile(m_thetaBody, (int)n_vs)
+	, m_thetaFile(theta_src->GetBody(), (int)n_vs)
 {
 }
 
@@ -59,7 +58,7 @@ void CPostureGraphClose2File::Initialize(CPostureGraphClose2File& graph, const R
 	for (it_reg_v ++; it_reg_v != reg.V.end(); it_reg_v ++) // skip the 'T' posture to avoid a self-pointing edge
 	{
 		const auto& reg_v = *it_reg_v;
-		graph.c_thetaSrc_ref->UpdateMotion((int)reg_v.v_src, graph.m_thetaBody);
+		graph.c_thetaSrc_ref->PoseBody<false>((int)reg_v.v_src);
 		graph.m_thetaFile.UpdateMotion((int)reg_v.v_dst);
 		lstV_ERR0.push_back({reg_v.v_dst, errTB_src(0, reg_v.v_src)});
 	}
@@ -68,9 +67,10 @@ void CPostureGraphClose2File::Initialize(CPostureGraphClose2File& graph, const R
 	{
 		boost::add_edge(reg_e.v_0, reg_e.v_1, graph);
 	}
-//#if defined _DEBUG
+
+#if defined _DEBUG
 	Dump(graph, __FILE__, __LINE__);
-//#endif
+#endif
 
 	lstV_ERR0.sort(V_ERRCompare()); // by err_0
 
@@ -87,29 +87,29 @@ void CPostureGraphClose2File::Initialize(CPostureGraphClose2File& graph, const R
 		  && n_cnn_T < deg_average
 		; it_v_err ++, n_cnn_T ++)
 		boost::add_edge(0, it_v_err->v_dst, graph);
-//#if defined _DEBUG
+#if defined _DEBUG
 	Dump(graph, __FILE__, __LINE__);
-//#endif
+#endif
 
 }
 
-void CPostureGraphClose2File::Save(const char* dir, PG_FileType type) const
+void CPostureGraphClose2File::Save(const char* dir) const
 {
-	std::string exts[] = { ".pg", ".dot" };
+	std::string file_name(c_thetaSrc_ref->GetBody()->GetName_c());
+
 	fs::path path_t(dir);
-	std::string file_name_t(m_thetaBody->GetName_c()); file_name_t += exts[F_PG];
+	std::string file_name_t(file_name); file_name_t += ".pg";
 	path_t.append(file_name_t);
-	SaveTransitions(path_t.u8string().c_str(), type);
+	SaveTransitions(path_t.u8string().c_str(), F_PG);
 
 	fs::path htr_path(dir);
-	std::string htr_file_name(m_thetaBody->GetName_c()); htr_file_name += ".htr";
+	std::string htr_file_name(file_name); htr_file_name += ".htr";
 	htr_path.append(htr_file_name);
 	m_thetaFile.WriteBvhFile(htr_path.u8string().c_str());
 }
 
 CPostureGraphClose2File::~CPostureGraphClose2File()
 {
-	CArtiBodyTree::Destroy(m_thetaBody);
 }
 
 
@@ -130,9 +130,9 @@ void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::M
 	for (int i_frame = i_frame_start; i_frame < i_frame_end; i_frame++)
 		boost::add_edge(i_frame, i_frame + 1, graph);
 
-// #if defined _DEBUG
+#if defined _DEBUG
 	Dump(graph, __FILE__, __LINE__);
-// #endif
+#endif
 
 	// err_epsilon = (1-cos(theta_eps_deg*deg2rad/2))*65535;
 	Real err_epsilon = (1 - cos(deg2rad(epsErr_deg) / (Real)2));
@@ -318,17 +318,12 @@ bool CFile2PostureGraphClose::Load(const char* dir, CArtiBodyNode* root)
 
 	std::string filename_theta(pg_name); filename_theta += ".htr";
 	fs::path path_theta(dir_path); path_theta.append(filename_theta);
-	bool loaded_theta = LoadThetas(path_theta.u8string().c_str());
+	bool loaded_theta = LoadThetas(path_theta.u8string().c_str(), root);
 
 	LOGIKVar(LogInfoCharPtr, pg_name);
 	LOGIKVar(LogInfoBool, loaded_t);
 	LOGIKVar(LogInfoBool, loaded_theta);
 	bool loaded =  (loaded_t && loaded_theta);
-
-	if (loaded)
-		m_rootBody_ref = root;
-	else
-		m_rootBody_ref = NULL;
 
 #if defined _DEBUG
 	IKAssert(!loaded || m_thetas->frames() == num_vertices(*this));
@@ -351,20 +346,22 @@ bool CFile2PostureGraphClose::Load(const char* dir, CArtiBodyNode* root)
 
 
 
-bool CFile2PostureGraphClose::LoadThetas(const char* filePath)
+bool CFile2PostureGraphClose::LoadThetas(const char* filePath, CArtiBodyNode* body_ref)
 {
 	if (NULL != m_thetas)
 		delete m_thetas;
 	bool loaded = false;
 	try
 	{
-		m_thetas = new CFile2ArtiBody(filePath);
+		m_thetas = new CFile2ArtiBodyRef(filePath, body_ref);
 		m_theta_star = 0;
 		loaded = true;
 	}
 	catch(std::string& exp)
 	{
-		LOGIKVar(LogInfoCharPtr, exp.c_str());
+		std::stringstream errInfo;
+		errInfo << "Load " << filePath << " " << exp;
+		LOGIKVarErr(LogInfoCharPtr, errInfo.str().c_str());
 		m_thetas = NULL;
 	}
 	return loaded;

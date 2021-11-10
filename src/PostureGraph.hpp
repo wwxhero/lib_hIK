@@ -173,12 +173,11 @@ protected:
 public:
 	virtual ~CPostureGraphClose2File();
 
-	void Save(const char* dir, PG_FileType type = F_PG) const;
+	void Save(const char* dir) const;
 
 private:
 	const CFile2ArtiBody* c_thetaSrc_ref;
-	CArtiBodyNode* m_thetaBody;
-	CArtiBody2File m_thetaFile;
+	CArtiBodyRef2File m_thetaFile;
 };
 
 
@@ -190,7 +189,6 @@ public:
 	CFile2PostureGraphClose()
 		: CPostureGraphClose(0)
 		, m_thetas(NULL)
-		, m_rootBody_ref(NULL)
 		, m_theta_star(0)
 	{
 	}
@@ -209,7 +207,7 @@ public:
 		m_theta_star = pose_id;
 		if (UpdatePose)
 		{
-			m_thetas->UpdateMotion<G_SPACE>(pose_id, m_rootBody_ref);
+			m_thetas->PoseBody<G_SPACE>(pose_id);
 		}
 		return pose_id_m;
 	}
@@ -219,8 +217,7 @@ public:
 	{
 		auto ErrTheta = [&graph, err](vertex_descriptor theta) -> Real
 			{
-				graph.m_thetas->UpdateMotion(theta, graph.m_rootBody_ref);
-				CArtiBodyTree::FK_Update<true>(graph.m_rootBody_ref);
+				graph.m_thetas->PoseBody<true>(theta);
 				return err();
 			};
 
@@ -312,10 +309,9 @@ public:
 	}
 
 private:
-	bool LoadThetas(const char* filePath);
+	bool LoadThetas(const char* filePath, CArtiBodyNode* body_ref);
 
-	CFile2ArtiBody* m_thetas;
-	CArtiBodyNode* m_rootBody_ref;
+	CFile2ArtiBodyRef* m_thetas;
 	vertex_descriptor m_theta_star;
 
 };

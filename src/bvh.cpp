@@ -308,6 +308,8 @@ inline void TraverseBFS_boundtree_norecur(Bound root, LAMaccessEnter OnEnterBoun
 	while (!queBFS.empty())
 	{
 		Bound b_this = queBFS.front();
+		queBFS.pop();
+		IKAssert(b_this.first->name() == body_name_c(b_this.second));
 		Joint_bvh_ptr joint_bvh = b_this.first;
 		HBODY body_hik = b_this.second;
 		auto& children_bvh = joint_bvh->children();
@@ -323,7 +325,7 @@ inline void TraverseBFS_boundtree_norecur(Bound root, LAMaccessEnter OnEnterBoun
 			queBFS.push(b_child);
 			OnEnterBound(b_child);
 		}
-		queBFS.pop();
+
 		OnLeaveBound(b_this);
 	}
 }
@@ -348,7 +350,6 @@ void pose_nonrecur(HBODY body_root, const bvh11::BvhObject& bvh, int i_frame)
 
 	Bound root = std::make_pair(bvh.root_joint(), body_root);
 	TraverseBFS_boundtree_norecur(root, onEnterBound_pose, onLeaveBound_pose);
-
 	update_fk(body_root);
 }
 
@@ -406,16 +407,30 @@ HBODY create_tree_body_bvh_file(const wchar_t* path_src)
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 	auto path_src_c = converter.to_bytes(path_src);
 	CFile2ArtiBody bvh(path_src_c);
-	CArtiBodyNode* body = bvh.CreateBody(BODY_TYPE::bvh);
-	return CAST_2HBODY(body);
+	const CArtiBodyNode* body_bvh = bvh.GetBody();
+	if (BODY_TYPE::bvh == body_bvh->c_type)
+	{
+		CArtiBodyNode* body_ret = NULL;
+		CArtiBodyTree::Clone(body_bvh, &body_ret, CArtiBodyTree::CloneNode_bvh);
+		return CAST_2HBODY(body_ret);
+	}
+	else
+		return H_INVALID;
 }
 
 HBODY create_tree_body_bvh(HBVH hBvh)
 {
 	CFile2ArtiBody* bvh = CAST_2PBVH(hBvh);
-	CArtiBodyNode* body = bvh->CreateBody(BODY_TYPE::bvh);
-	HBODY h_root = CAST_2HBODY(body);
-	return h_root;
+	const CArtiBodyNode* body_bvh = bvh->GetBody();
+	if (BODY_TYPE::bvh == body_bvh->c_type)
+	{
+		CArtiBodyNode* body_ret = NULL;
+		CArtiBodyTree::Clone(body_bvh, &body_ret, CArtiBodyTree::CloneNode_bvh);
+		return CAST_2HBODY(body_ret);
+	}
+	else
+		return H_INVALID;
+
 }
 
 
@@ -518,6 +533,14 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 		if (resetted)
 		{
 			pose_nonrecur(h_driver, bvh_src, frame_bvh11);
+			// pose body except the root joint
+			_TRANSFORM delta_l_tm = {
+					{1, 1, 1},		//scale is trivial
+					{1, 0, 0, 0},	//rotation
+					{0, 0, 0},		//trivial
+			};
+			set_joint_transform(h_driver, &delta_l_tm);
+			update_fk(h_driver);
 			resetted = clone_body_fbx(h_driver, &h_driveeProxy); // reset = false
 		}
 
@@ -576,7 +599,7 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 			if (pre_reset_header)
 			{
 				CArtiBodyNode* drivee_root = CAST_2PBODY(h_drivee);
-				auto bvh_reset = new CArtiBody2File(drivee_root, n_frames);
+				CArtiBodyRef2File bvh_reset(drivee_root, n_frames);
 				for (int i_frame = 0
 					; i_frame < n_frames
 					; i_frame++)
@@ -584,10 +607,9 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 					PROFILE_FRAME(i_frame);
 					pose_nonrecur(h_driver, bvh_src, i_frame);
 					motion_sync(h_motion_driver);
-					bvh_reset->UpdateMotion(i_frame);
+					bvh_reset.UpdateMotion(i_frame);
 				}
-				bvh_reset->WriteBvhFile(path_dst);
-				delete bvh_reset;
+				bvh_reset.WriteBvhFile(path_dst);
 			}
 
 			HMOTIONNODE h_motions[] = {h_motion_driver, h_motion_driveeProxy, h_motion_drivee};
@@ -654,17 +676,21 @@ bool convert(const char* src, const char* dst, bool htr2bvh)
 		CFile2ArtiBody bvh_src(src);
 		if (htr2bvh)
 		{
-		 	bodies[0] = bvh_src.CreateBody(htr);
-		 	ret = CArtiBodyTree::Clone(bodies[0], &bodies[1], CArtiBodyTree::CloneNode_bvh);
+			bodies[0] = bvh_src.GetBody();
+			ret = CArtiBodyTree::Clone(bodies[0], &bodies[1], CArtiBodyTree::CloneNode_bvh);
+			IKAssert(BODY_TYPE::htr == bodies[0]->c_type
+					&& BODY_TYPE::bvh == bodies[1]->c_type);
 		}
 		else
 		{
-		 	bodies[0] = bvh_src.CreateBody(bvh);
+			bodies[0] = bvh_src.GetBody();
 			auto CloneNode = [](const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt) -> bool
 				{
 					return CArtiBodyTree::CloneNode_htr(src, dst, Eigen::Matrix3r::Identity(), name_dst_opt);
 				};
-		 	ret = CArtiBodyTree::Clone(bodies[0], &bodies[1], CloneNode);
+			ret = CArtiBodyTree::Clone(bodies[0], &bodies[1], CloneNode);
+			IKAssert(BODY_TYPE::bvh == bodies[0]->c_type
+					&& BODY_TYPE::htr == bodies[1]->c_type);
 		}
 
 		if (ret)
@@ -672,17 +698,17 @@ bool convert(const char* src, const char* dst, bool htr2bvh)
 			CMoNode mo_node_src(bodies[0]);
 			CMoNode mo_node_dst(bodies[1]);
 			Real id[3][3] = {
-			 	(Real)1, (Real)0, (Real)0,
-			 	(Real)0, (Real)1, (Real)0,
-			 	(Real)0, (Real)0, (Real)1
+				(Real)1, (Real)0, (Real)0,
+				(Real)0, (Real)1, (Real)0,
+				(Real)0, (Real)0, (Real)1
 			};
 			CMoTree::Connect_cross(&mo_node_src, &mo_node_dst, CNN::FIRSTCHD, id);
 			int n_frames = bvh_src.frames();
-			CArtiBody2File bvh_reset(bodies[1], n_frames);
+			CArtiBodyRef2File bvh_reset(bodies[1], n_frames);
 			for (int i_frame = 0; i_frame < n_frames; i_frame ++)
 			{
 				PROFILE_FRAME(i_frame);
-				bvh_src.UpdateMotion(i_frame, bodies[0]);
+				bvh_src.PoseBody<false>(i_frame);
 				CMoTree::Motion_sync(&mo_node_src);
 				bvh_reset.UpdateMotion(i_frame);
 			}
@@ -696,8 +722,7 @@ bool convert(const char* src, const char* dst, bool htr2bvh)
 		ret = false;
 	}
 
-	for (auto body : bodies)
-		delete body;
+	CArtiBodyTree::Destroy(bodies[1]); // bodies[0] is owned by bvh_src
 	return ret;
 
 }

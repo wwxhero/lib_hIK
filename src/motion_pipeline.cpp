@@ -511,7 +511,10 @@ bool motion_sync_cnn_cross_c(HMOTIONNODE from
 	//todo: connection to motion nodes as a cross-space map
 	CMoNode* mo_from = CAST_2PMONODE(from);
 	CMoNode* mo_to = CAST_2PMONODE(to);
-	return CMoTree::Connect_cross(mo_from, mo_to, type, pairs, n_pairs, p2c_w);
+	if (n_pairs > 0)
+		return CMoTree::Connect_cross(mo_from, mo_to, type, pairs, n_pairs, p2c_w);
+	else
+		return CMoTree::Connect_cross(mo_from, mo_to, type, p2c_w);
 }
 
 bool motion_sync_cnn_cross_w(HMOTIONNODE from
@@ -524,7 +527,10 @@ bool motion_sync_cnn_cross_w(HMOTIONNODE from
 	//todo: connection to motion nodes as a cross-space map
 	CMoNode* mo_from = CAST_2PMONODE(from);
 	CMoNode* mo_to = CAST_2PMONODE(to);
-	return CMoTree::Connect_cross(mo_from, mo_to, type, pairs, n_pairs, p2c_w);
+	if (n_pairs > 0)
+		return CMoTree::Connect_cross(mo_from, mo_to, type, pairs, n_pairs, p2c_w);
+	else
+		return CMoTree::Connect_cross(mo_from, mo_to, type, p2c_w);
 }
 
 void motion_sync(HMOTIONNODE root)

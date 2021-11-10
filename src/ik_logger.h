@@ -21,8 +21,8 @@ void LogInfoInt(const char *file, unsigned int line, const char *token, int v);
 void LogInfoBool(const char *file, unsigned int line, const char *token, bool v);
 void LogInfoReal(const char *file, unsigned int line, const char *token, Real v);
 void LogInfoReal3x3_m(const char *file, unsigned int line, const char *token, const Real m[3][3]);
-// void LogInfoDouble3x3(const char *file, unsigned int line, const char *token, const double *m);
-// void LogInfoDouble1x3(const char *file, unsigned int line, const char *token, const double *v);
+void LogInfoReal3x3(const char *file, unsigned int line, const char *token, const Real *m);
+void LogInfoReal1x3(const char *file, unsigned int line, const char *token, const Real *v);
 void LogInfoTM(const char *file, unsigned int line, const char *token, const _TRANSFORM *v);
 void LOGIKFlush();
 
@@ -94,7 +94,8 @@ void AssertionFail(const char *file, unsigned int line);
 			CArtiBodyNode* ___root_body = CAST_2PBODY(mopipe->bodies[0]); \
 			CArtiBodyTree::Serialize<true>(___root_body, ___tm_data); \
 			START_PROFILER_AUTOFRAME("ik", rounds); \
-			CArtiBodyTree::Serialize<false>(___root_body, ___tm_data);
+			CArtiBodyTree::Serialize<false>(___root_body, ___tm_data); \
+			CArtiBodyTree::FK_Update<false>(___root_body);
 
 #		define STOP_PROFILER_IK \
 			} \

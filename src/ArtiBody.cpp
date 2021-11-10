@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include <sstream>
+#include <math.h>
 #include "articulated_body.h"
 #include "ArtiBody.hpp"
 #include "ik_logger.h"
@@ -38,10 +39,6 @@ bool CArtiBodyTree::CloneNode_fbx(const CArtiBodyNode* src, CArtiBodyNode** dst,
 	_TRANSFORM l2p_0_tm;
 	l2p_tm->CopyTo(l2p_0_tm);
 
-	CArtiBodyNode* src_parent = src->GetParent();
-	bool is_root = (NULL == src_parent);
-	if (is_root)
-		l2p_0_tm.tt.x = l2p_0_tm.tt.y = l2p_0_tm.tt.z = 0;
 
 	const wchar_t* name_dst = (NULL == name_dst_opt ? src->GetName_w() : name_dst_opt);
 
@@ -53,29 +50,39 @@ bool CArtiBodyTree::CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst,
 {
 	*dst = NULL;
 	CArtiBodyNode* src_parent = src->GetParent();
+	bool jtm_copy = (src->c_type&sim);
 	const wchar_t* name_dst = (NULL == name_dst_opt ? src->GetName_w() : name_dst_opt);
+	TM_TYPE jtm = TM_TYPE::t_none;
 	bool is_root = (NULL == src_parent);
+	if (jtm_copy)
+		jtm = src->c_jtmflag;
+	else
+	{
+		if (is_root)
+			jtm = t_tr;
+		else
+			jtm = t_r;
+	}
+
+	const Transform* l2w_this = src->GetTransformLocal2World();
+	Eigen::Vector3r offset;
 	if (is_root)
 	{
-		_TRANSFORM l2p_0_tm = {
-			{1, 1, 1},
-			{1, 0, 0, 0},
-			{0, 0, 0}
-		};
-		*dst = CreateSimNode(name_dst, &l2p_0_tm, bvh, t_tr, true);
+		offset = l2w_this->getTranslation();
 	}
 	else
 	{
 		const Transform* l2w_parent = src_parent->GetTransformLocal2World();
 		const Transform* l2w_this = src->GetTransformLocal2World();
-		auto offset = l2w_this->getTranslation() - l2w_parent->getTranslation();
-		_TRANSFORM l2p_0_tm = {
-			{1, 1, 1},
-			{1, 0, 0, 0},
-			{offset.x(), offset.y(), offset.z()}
-		};
-		*dst = CreateSimNode(name_dst, &l2p_0_tm, bvh, t_r, true);
+		offset = l2w_this->getTranslation() - l2w_parent->getTranslation();
 	}
+
+	_TRANSFORM l2p_0_tm = {
+		{1, 1, 1},
+		{1, 0, 0, 0},
+		{offset.x(), offset.y(), offset.z()}
+	};
+	*dst = CreateSimNode(name_dst, &l2p_0_tm, bvh, jtm, true);
 	return NULL != *dst;
 }
 
@@ -140,7 +147,7 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 		if (valid_nor)
 		{
 			Eigen::Matrix3r rot_m;
-			vec_roll_to_mat3_normalized(nor, 0, rot_m);
+			vec_to_mat3_normalized_sim(nor, rot_m);
 			rot_q = rot_m;
 #ifdef _DEBUG
 			Eigen::Vector3r nor_prime = rot_m * Eigen::Vector3r::UnitY();
@@ -154,8 +161,12 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 				msg << src->GetName_c() << ":" << std::endl
 										 << "\tnor = \n" << nor << std::endl
 										 << "\trot_m = \n"<< rot_m << std::endl;
-				LOGIK(msg.str().c_str());
+				LOGIKVarErr(LogInfoCharPtr, msg.str().c_str());
 			}
+			LOGIKVar(LogInfoWCharPtr, src->GetName_w());
+			LOGIKVar(LogInfoWCharPtr, name_dst_opt);
+			LOGIKVar(LogInfoReal1x3, nor.data());
+			LOGIKVar(LogInfoReal3x3, rot_m.data());
 #endif
 		}
 		else
@@ -166,8 +177,12 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 			{rot_q.w(), rot_q.x(), rot_q.y(), rot_q.z()},
 			{tt_this.x(), tt_this.y(), tt_this.z()}
 		};
-		// entity node and hip node are tr nodes: translation + rotation
-		TM_TYPE tm_type = ((is_root || NULL == parent_src->GetParent()) ? t_tr : t_r);
+		bool jtm_copy = (src->c_type&sim);
+		TM_TYPE tm_type = t_none;
+		if (jtm_copy)
+			tm_type = src->c_jtmflag;
+		else
+			tm_type = ((is_root || NULL == parent_src->GetParent()) ? t_tr : t_r); 		// entity node and hip node are tr nodes: translation + rotation
 		const wchar_t* name_dst = (NULL == name_dst_opt ? src->GetName_w() : name_dst_opt);
 		*dst = CreateSimNode(name_dst, &tm, htr, tm_type, false);
 
@@ -253,83 +268,7 @@ void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 	Tree<CArtiBodyNode>::TraverseDFS(root, onEnterBody, onLeaveBody);
 }
 
-int CArtiBodyTree::BodyCMP(const char* const pts_interest[], int n_interests, const CArtiBodyNode* root_s, const CArtiBodyNode* root_d, HBODY* err_nodes, Real* err_oris)
-{
-	std::set<std::string> pts;
-	for (int i_interest = 0; i_interest < n_interests; i_interest ++)
-		pts.insert(pts_interest[i_interest]);
-
-
-	int n_err_nodes_cap = n_interests;
-	int n_err_nodes = 0;
-	auto NodeEQ = [&n_err_nodes, n_err_nodes_cap, &pts, err_nodes, err_oris](const CArtiBodyNode* node_s, const CArtiBodyNode* node_d) -> bool
-				{
-					auto tmEQ = [&]() -> bool
-						{
-							const Transform* tm_s = node_s->GetTransformLocal2Parent();
-							const Transform* tm_d = node_d->GetTransformLocal2Parent();
-							Eigen::Quaternionr ori_s = Transform::getRotation_q(tm_s);
-							Eigen::Quaternionr ori_d = Transform::getRotation_q(tm_d);
-							Eigen::Vector3r tt_s = tm_s->getTranslation();
-							Eigen::Vector3r tt_d = tm_d->getTranslation();
-
-							Real norm_tt_s = tt_s.norm();
-							Real norm_tt_d = tt_d.norm();
-							const Real cos_epsilon = (Real)cos(M_PI*(Real)7/(Real)180);
-							bool zero_tt_s = (norm_tt_s < c_epsilon);
-							bool zero_tt_d = (norm_tt_d < c_epsilon);
-							LOGIKVar(LogInfoCharPtr, node_s->GetName_c());
-							bool ori_eq = ori_s.isApprox(ori_d);
-							Real err_tt = tt_s.dot(tt_d);
-							Real cos_err = (Real)1;
-							bool tt_eq = (zero_tt_s == zero_tt_d)
-								&& (zero_tt_s || cos_epsilon < (cos_err = err_tt / (norm_tt_d*norm_tt_s))); // cos_epsilon < cos_err -> epsilon > err
-							bool eq = ori_eq && tt_eq;
-							if (!tt_eq)
-							{
-								err_oris[n_err_nodes] = rad2deg(wrap_pi(acos(cos_err)));
-							}
-							// LOGIKVar(LogInfoBool, ori_eq);
-							// LOGIKVar(LogInfoBool, tt_eq);
-							// LOGIKVar(LogInfoReal, err_tt);
-							// LOGIKVar(LogInfoReal, cos_err);
-							// LOGIKVar(LogInfoReal, norm_tt_d);
-							// LOGIKVar(LogInfoReal, norm_tt_s);
-							// std::stringstream tt_s_str;
-							// tt_s_str << tt_s;
-							// LOGIKVar(LogInfoCharPtr, tt_s_str.str().c_str());
-							// std::stringstream tt_d_str;
-							// tt_d_str << tt_d;
-							// LOGIKVar(LogInfoCharPtr, tt_d_str.str().c_str());
-							// LOGIKFlush();
-							return eq;
-						};
-					auto nameEQ = [&]() -> bool
-						{
-							return 0 == strcmp(node_s->GetName_c(), node_d->GetName_c());
-						};
-					auto is_an_interest = [&]() -> bool
-						{
-							return pts.end() != pts.find(node_s->GetName_c())
-								|| pts.end() != pts.find(node_d->GetName_c());
-						};
-					bool eq_node = !is_an_interest() || (nameEQ() && tmEQ());
-					if (!eq_node)
-					{
-						if (n_err_nodes < n_err_nodes_cap)
-							err_nodes[n_err_nodes ++] = CAST_2HBODY(const_cast<CArtiBodyNode*>(node_d));
-					}
-					return true;
-				};
-	auto NodeCMP = [](const CArtiBodyNode* root_s, const CArtiBodyNode* root_d) -> bool
-				{
-					return strcmp(root_s->GetName_c(), root_d->GetName_c()) < 0;
-				};
-	Super::TraverseBFS_Bound(root_s, root_d, NodeCMP, NodeEQ);
-	return n_err_nodes;
-}
-
-void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r& dir_up
+void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r& dir_up, const Eigen::Vector3r& dir_forward
 					, const std::vector<std::string>& names_interest
 					, int part_body_idx_range[parts_total][2]
 					, Real err[])
@@ -350,20 +289,24 @@ void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r
 	auto Error = [](const Eigen::Vector3r& vec_seg, const Eigen::Vector3r& dir_standard) -> Real //[0 180]
 				{
 					Real vec_seg_norm = vec_seg.norm();
-			 		Real cos_alpha = vec_seg_norm > c_100epsilon
-	 						? abs(vec_seg.dot(dir_standard))/vec_seg_norm
-	 						: (Real)1;
-		 			return rad2deg(acos(cos_alpha));
+					Real cos_alpha = (vec_seg_norm > c_epsilonsqrt)
+							? vec_seg.dot(dir_standard)/vec_seg_norm
+							: (Real)1;
+					cos_alpha = std::min<Real>(1, std::max<Real>(-1, cos_alpha));
+					return rad2deg(acos(cos_alpha));
 				};
+	const Real Error_max = (Real)180;
 
 	int idx_right_arm_base = part_body_idx_range[right_arm][0];
 	int idx_left_arm_base = part_body_idx_range[left_arm][0];
 
-	Eigen::Vector3r dir_right =	(name2body[names_interest[idx_right_arm_base]]->GetTransformLocal2World()->getTranslation()
-								- name2body[names_interest[idx_left_arm_base]]->GetTransformLocal2World()->getTranslation())
-								.normalized();
-	Eigen::Vector3r dir_front = dir_up.cross(dir_right);
-	dir_right = dir_front.cross(dir_up);
+	// Eigen::Vector3r dir_right =	(name2body[names_interest[idx_right_arm_base]]->GetTransformLocal2World()->getTranslation()
+	// 							- name2body[names_interest[idx_left_arm_base]]->GetTransformLocal2World()->getTranslation())
+	// 							.normalized();
+	// Eigen::Vector3r dir_front = dir_up.cross(dir_right);
+	// dir_right = dir_front.cross(dir_up);
+
+	Eigen::Vector3r dir_right = dir_forward.cross(dir_up);
 
 	PART parts[] = {spine, left_leg, right_leg, left_arm, right_arm};
 	Eigen::Vector3r dirs[] = {dir_up, -dir_up, -dir_up, -dir_right, dir_right};
@@ -372,10 +315,86 @@ void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r
 		for (int i_body = part_body_idx_range[part][0]; i_body < part_body_idx_range[part][1]; i_body ++)
 		{
 			const CArtiBodyNode* body = name2body[names_interest[i_body]];
+			Eigen::Vector3r vec_seg = body->GetTransformLocal2World()->getTranslation();
 			const CArtiBodyNode* body_p = body->GetParent();
-			Eigen::Vector3r vec_seg = body->GetTransformLocal2World()->getTranslation()
-										- body_p->GetTransformLocal2World()->getTranslation();
+			if (NULL != body_p)
+				vec_seg -= body_p->GetTransformLocal2World()->getTranslation();
 			err[i_body] = Error(vec_seg, dirs[part]);
+		}
+	}
+
+	int i_body_hip = part_body_idx_range[spine][0];
+	const CArtiBodyNode* body_root = name2body[names_interest[i_body_hip]];
+	const Transform* l2w = body_root->GetTransformLocal2World();
+	bool bvh_root = (l2w->getTranslation().norm() < c_epsilon);
+	if (!bvh_root)
+		err[i_body_hip] = Error_max;
+}
+
+void CArtiBodyTree::Body_EQ_Test(const CArtiBodyNode* body_s
+								, const CArtiBodyNode* body_d
+								, const std::vector<std::string>& pts_interest
+								, Real err[])
+{
+	const Real Error_max = (Real)180;
+
+	typedef std::pair<const CArtiBodyNode*, const CArtiBodyNode*> Bound;
+	std::map<std::string, Bound> name2Bound;
+
+	std::set<std::string> pts;
+	for (auto name : pts_interest)
+		pts.insert(name);
+
+
+	auto OnBound = [&pts, &name2Bound](const CArtiBodyNode* node_s, const CArtiBodyNode* node_d) -> bool
+				{
+					std::string name_s = node_s->GetName_c();
+					std::string name_d = node_d->GetName_c();
+					bool is_an_interest = ((name_d == name_s)
+										&& (pts.end() != pts.find(name_s)));
+					if (is_an_interest)
+					{
+						name2Bound[name_s] = std::make_pair(node_s, node_d);
+					}
+					return true;
+				};
+	auto NodeCMP = [](const CArtiBodyNode* root_s, const CArtiBodyNode* root_d) -> bool
+				{
+					return strcmp(root_s->GetName_c(), root_d->GetName_c()) < 0;
+				};
+	Super::TraverseBFS_Bound(body_s, body_d, NodeCMP, OnBound);
+
+	auto Bone_Axis = [](const CArtiBodyNode* body) -> Eigen::Vector3r
+				{
+					Eigen::Vector3r axis = body->GetTransformLocal2World()->getTranslation();
+					const CArtiBodyNode* body_p = body->GetParent();
+					if (NULL != body_p)
+						axis -= body_p->GetTransformLocal2World()->getTranslation();
+					return axis;
+				};
+
+	auto Axis_Err = [](const Eigen::Vector3r& vec_s, const Eigen::Vector3r& vec_d) -> Real
+				{
+					Real vec_norm_s = vec_s.norm();
+					Real vec_norm_d = vec_d.norm();
+					Real cos_alpha = (vec_norm_s > c_epsilonsqrt && vec_norm_d > c_epsilonsqrt)
+									? vec_s.dot(vec_d)/(vec_norm_s*vec_norm_d)
+									: (Real)1;
+					cos_alpha = std::min<Real>(1, std::max<Real>(-1, cos_alpha));
+					return rad2deg(acos(cos_alpha));
+				};
+
+	int n_errs = (int)pts_interest.size();
+	for (int i_err = 0; i_err < n_errs; i_err ++)
+	{
+		auto it_bnd = name2Bound.find(pts_interest[i_err]);
+		if (name2Bound.end() == it_bnd)
+			err[i_err] = Error_max;
+		else
+		{
+			Eigen::Vector3r axis_s = Bone_Axis(it_bnd->second.first);
+			Eigen::Vector3r axis_d = Bone_Axis(it_bnd->second.second);
+			err[i_err] = Axis_Err(axis_s, axis_d);
 		}
 	}
 }

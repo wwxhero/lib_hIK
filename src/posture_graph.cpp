@@ -125,16 +125,15 @@ bool err_vis(const char* interests_conf_path, const char* path_htr, const char* 
 
 
 
-bool dissect(const char* confXML, const char* path_htr, const char* dir_out)
+bool dissect(const char* confXML, const char* path, const char* dir_out)
 {
 	CONF::CBodyConf* body_conf = NULL;
-	CArtiBodyNode* body_root = NULL;
 	CIKGroupNode* ik_group = NULL;
 	bool ok = true;
 	struct Bound
 	{
 		CArtiBodyNode* group_root;
-		CArtiBody2File* group_file;
+		CArtiBodyRef2File* group_file;
 	};
 	std::vector<Bound> section;
 	try
@@ -149,8 +148,8 @@ bool dissect(const char* confXML, const char* path_htr, const char* dir_out)
 			goto EXIT;
 		}
 
-		CFile2ArtiBody htr(path_htr);
-		body_root = htr.CreateBody(BODY_TYPE::htr);
+		CFile2ArtiBody file(path);
+		const CArtiBodyNode* body_root = file.GetBody();
 		IKAssert(NULL != body_root);
 		ik_group = CIKGroupTree::Generate(body_root, *body_conf);
 		if (NULL == ik_group)
@@ -161,13 +160,13 @@ bool dissect(const char* confXML, const char* path_htr, const char* dir_out)
 			goto EXIT;
 		}
 
-		int n_frames = htr.frames();
+		int n_frames = file.frames();
 		auto OnGroupNode = [&section, n_frames](CIKGroupNode* g_node)
 			{
 				if (!g_node->Empty())
 				{
 					CArtiBodyNode* group_root = g_node->RootBody();
-					CArtiBody2File* group_file = new CArtiBody2File(group_root, n_frames);
+					CArtiBodyRef2File* group_file = new CArtiBodyRef2File(group_root, n_frames);
 					section.push_back({group_root, group_file});
 				}
 			};
@@ -180,7 +179,7 @@ bool dissect(const char* confXML, const char* path_htr, const char* dir_out)
 
 		for (int i_frame = 0; i_frame < n_frames; i_frame++)
 		{
-			htr.UpdateMotion(i_frame, body_root);
+			file.PoseBody<false>(i_frame);
 			for (auto sec : section)
 			{
 				CArtiBodyTree::FK_Update<true>(sec.group_root);
@@ -192,10 +191,13 @@ bool dissect(const char* confXML, const char* path_htr, const char* dir_out)
 		for (auto sec : section)
 		{
 			fs::path out_path(out_path_dir);
-			std::string file_htr(sec.group_root->GetName_c()); file_htr += ".htr";
-			out_path.append(file_htr);
+			std::string file_name(sec.group_root->GetName_c());
+			if (htr == file.GetBody()->c_type)
+				file_name += ".htr";
+			else
+				file_name += ".bvh";
+			out_path.append(file_name);
 			sec.group_file->WriteBvhFile(out_path.u8string().c_str());
-
 		}
 	}
 	catch(const std::string& exp)
@@ -211,8 +213,6 @@ EXIT:
 
 	if (NULL != ik_group)
 		CIKGroupTree::Destroy(ik_group);
-	if (NULL != body_root)
-		CArtiBodyTree::Destroy(body_root);
 	if (NULL != body_conf)
 		CONF::CBodyConf::UnLoad(body_conf);
 	return ok;

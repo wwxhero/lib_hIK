@@ -15,6 +15,7 @@ const Real c_2epsilon = 2e-5f;
 const Real c_5epsilon = 5e-5f;
 const Real c_10epsilon = 1e-4f;
 const Real c_100epsilon = 1e-3f;
+const Real c_epsilonsqrt = 3e-3f;
 const Real c_rotm_epsilon = (Real)0.005;
 const Real c_tt_epsilon = (Real)1.5; 				//in centimeter
 const Real c_tt_epsilon_sqr = (Real)2.25;
@@ -69,6 +70,7 @@ typedef AngleAxis<Real> AngleAxisr;
 #pragma pop_macro("new")
 
 void vec_roll_to_mat3_normalized(const Eigen::Vector3r& nor, const Real roll, Eigen::Matrix3r& rotm);
+void vec_to_mat3_normalized_sim(const Eigen::Vector3r& nor, Eigen::Matrix3r& rotm);
 
 inline bool UnitVec(const Eigen::Vector3r& v)
 {

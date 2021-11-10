@@ -48,6 +48,7 @@ enum TM_TYPE {
 	t_tr = t_tt|t_r,
 	t_s	 = 0x00000010,
 	t_trs = t_tt|t_r|t_s,
+	t_none = 0
 };
 
 enum PART {
@@ -85,9 +86,11 @@ HIKLIB(void,			get_body_transform_l2w)(HBODY body, _TRANSFORM* tm_l2w);
 HIKLIB(void,			get_body_transform_l2p)(HBODY body, _TRANSFORM* tm_l2w);
 
 HIKLIB(void,			log_body_node)(HBODY body);
-HIKLIB(void,			body_T_test)(HBODY body, const Real up[3]
+HIKLIB(void,			body_T_test)(HBODY body, const Real up[3], const Real forward[3]
 								, const char* const pts_interest[], int n_interests
 								, int part_idx_range[parts_total][2]
+								, Real err[]);
+HIKLIB(void,			body_EQ_test)(HBODY body_s, HBODY body_d, const char* const pts_interest[], int n_interests
 								, Real err[]);
 HIKLIB(HBODY*,			alloc_bodies)(HBODY root, int *n_bodies);
 HIKLIB(void,			free_bodies)(HBODY* bodies);

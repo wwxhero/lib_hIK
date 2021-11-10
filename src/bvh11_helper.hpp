@@ -71,7 +71,7 @@ namespace bvh11
 
 		BvhObject(const BvhObject& src) throw(...);
 
-		~BvhObject()
+		virtual ~BvhObject()
 		{
 
 		}
