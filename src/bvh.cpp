@@ -676,17 +676,21 @@ bool convert(const char* src, const char* dst, bool htr2bvh)
 		CFile2ArtiBody bvh_src(src);
 		if (htr2bvh)
 		{
-		 	bodies[0] = bvh_src.GetBody();
-		 	ret = CArtiBodyTree::Clone(bodies[0], &bodies[1], CArtiBodyTree::CloneNode_bvh);
+			bodies[0] = bvh_src.GetBody();
+			ret = CArtiBodyTree::Clone(bodies[0], &bodies[1], CArtiBodyTree::CloneNode_bvh);
+			IKAssert(BODY_TYPE::htr == bodies[0]->c_type
+					&& BODY_TYPE::bvh == bodies[1]->c_type);
 		}
 		else
 		{
-		 	bodies[0] = bvh_src.GetBody();
+			bodies[0] = bvh_src.GetBody();
 			auto CloneNode = [](const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt) -> bool
 				{
 					return CArtiBodyTree::CloneNode_htr(src, dst, Eigen::Matrix3r::Identity(), name_dst_opt);
 				};
-		 	ret = CArtiBodyTree::Clone(bodies[0], &bodies[1], CloneNode);
+			ret = CArtiBodyTree::Clone(bodies[0], &bodies[1], CloneNode);
+			IKAssert(BODY_TYPE::bvh == bodies[0]->c_type
+					&& BODY_TYPE::htr == bodies[1]->c_type);
 		}
 
 		if (ret)
@@ -694,9 +698,9 @@ bool convert(const char* src, const char* dst, bool htr2bvh)
 			CMoNode mo_node_src(bodies[0]);
 			CMoNode mo_node_dst(bodies[1]);
 			Real id[3][3] = {
-			 	(Real)1, (Real)0, (Real)0,
-			 	(Real)0, (Real)1, (Real)0,
-			 	(Real)0, (Real)0, (Real)1
+				(Real)1, (Real)0, (Real)0,
+				(Real)0, (Real)1, (Real)0,
+				(Real)0, (Real)0, (Real)1
 			};
 			CMoTree::Connect_cross(&mo_node_src, &mo_node_dst, CNN::FIRSTCHD, id);
 			int n_frames = bvh_src.frames();
@@ -718,7 +722,7 @@ bool convert(const char* src, const char* dst, bool htr2bvh)
 		ret = false;
 	}
 
-	CArtiBodyTree::Destroy(bodies[1]);
+	CArtiBodyTree::Destroy(bodies[1]); // bodies[0] is owned by bvh_src
 	return ret;
 
 }

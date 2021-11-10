@@ -173,7 +173,7 @@ protected:
 public:
 	virtual ~CPostureGraphClose2File();
 
-	void Save(const char* dir, PG_FileType type = F_PG) const;
+	void Save(const char* dir) const;
 
 private:
 	const CFile2ArtiBody* c_thetaSrc_ref;
@@ -309,7 +309,7 @@ public:
 	}
 
 private:
-	bool LoadThetas(const char* filePath, CArtiBodyNode* convension);
+	bool LoadThetas(const char* filePath, CArtiBodyNode* body_ref);
 
 	CFile2ArtiBodyRef* m_thetas;
 	vertex_descriptor m_theta_star;

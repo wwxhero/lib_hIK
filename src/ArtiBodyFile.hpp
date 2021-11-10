@@ -100,6 +100,7 @@ protected:
 	std::vector<TransformArchive> m_motions;
 };
 
+
 class CFile2ArtiBody : public CArtiBodyFile
 {
 public:

@@ -67,9 +67,10 @@ void CPostureGraphClose2File::Initialize(CPostureGraphClose2File& graph, const R
 	{
 		boost::add_edge(reg_e.v_0, reg_e.v_1, graph);
 	}
-//#if defined _DEBUG
+
+#if defined _DEBUG
 	Dump(graph, __FILE__, __LINE__);
-//#endif
+#endif
 
 	lstV_ERR0.sort(V_ERRCompare()); // by err_0
 
@@ -86,21 +87,20 @@ void CPostureGraphClose2File::Initialize(CPostureGraphClose2File& graph, const R
 		  && n_cnn_T < deg_average
 		; it_v_err ++, n_cnn_T ++)
 		boost::add_edge(0, it_v_err->v_dst, graph);
-//#if defined _DEBUG
+#if defined _DEBUG
 	Dump(graph, __FILE__, __LINE__);
-//#endif
+#endif
 
 }
 
-void CPostureGraphClose2File::Save(const char* dir, PG_FileType type) const
+void CPostureGraphClose2File::Save(const char* dir) const
 {
 	std::string file_name(c_thetaSrc_ref->GetBody()->GetName_c());
 
-	std::string exts[] = { ".pg", ".dot" };
 	fs::path path_t(dir);
-	std::string file_name_t(file_name); file_name_t += exts[type];
+	std::string file_name_t(file_name); file_name_t += ".pg";
 	path_t.append(file_name_t);
-	SaveTransitions(path_t.u8string().c_str(), type);
+	SaveTransitions(path_t.u8string().c_str(), F_PG);
 
 	fs::path htr_path(dir);
 	std::string htr_file_name(file_name); htr_file_name += ".htr";
@@ -130,9 +130,9 @@ void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::M
 	for (int i_frame = i_frame_start; i_frame < i_frame_end; i_frame++)
 		boost::add_edge(i_frame, i_frame + 1, graph);
 
-// #if defined _DEBUG
+#if defined _DEBUG
 	Dump(graph, __FILE__, __LINE__);
-// #endif
+#endif
 
 	// err_epsilon = (1-cos(theta_eps_deg*deg2rad/2))*65535;
 	Real err_epsilon = (1 - cos(deg2rad(epsErr_deg) / (Real)2));

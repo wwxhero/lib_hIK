@@ -182,6 +182,7 @@ BODY_TYPE CArtiBodyFile::toType(const std::string& path)
 	IKAssert(undef != type);
 	return type;
 }
+
 CArtiBodyFile::CArtiBodyFile(const char* path)
 	: bvh11::BvhObject(path)
 {
@@ -308,57 +309,6 @@ CArtiBodyNode* CArtiBodyFile::CreateBodyHTR() const
 	}
 }
 
-
-void CFile2ArtiBody::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints)
-{
-	unsigned int n_frames = frames();
-	err_out.resize(n_frames, n_frames);
-	// err_out.create(n_frames, n_frames, CV_16U);
-	CArtiBodyNode* body_i = CreateBody(BODY_TYPE::htr);
-	std::list<const CArtiBodyNode*> interest_bodies_i;
-	int n_bodies_i = CArtiBodyTree::GetBodies(body_i, joints, interest_bodies_i);
-	TransformArchive tm_data_i(n_bodies_i);
-
-	CArtiBodyNode* body_j = CreateBody(BODY_TYPE::htr);
-	std::list<const CArtiBodyNode*> interest_bodies_j;
-	int n_bodies_j = CArtiBodyTree::GetBodies(body_j, joints, interest_bodies_j);
-	TransformArchive tm_data_j(n_bodies_j);
-
-	bool ok = (n_bodies_i == n_bodies_j);
-	IKAssert(ok);
-
-	auto UpdateTransforms = [] (std::list<const CArtiBodyNode*>& interest_bodies, TransformArchive& tm_data)
-		{
-			int i_tm = 0;
-			for (auto body : interest_bodies)
-			{
-				_TRANSFORM& tm_i = tm_data[i_tm ++];
-				body->GetJoint()->GetTransform()->CopyTo(tm_i);
-			}
-		};
-
-
-	for (unsigned int i_frame = 0; i_frame < n_frames; i_frame++)
-	{
-		PoseBody<false>(i_frame, body_i);
-		// CArtiBodyTree::Serialize<true>(body_i, tm_data_i);
-		UpdateTransforms(interest_bodies_i, tm_data_i);
-		for (unsigned int j_frame = 0; j_frame < n_frames; j_frame++)
-		{
-			PoseBody<false>(j_frame, body_j);
-			// CArtiBodyTree::Serialize<true>(body_j, tm_data_j);
-			UpdateTransforms(interest_bodies_j, tm_data_j);
-			// auto& vis_scale_ij = err_out.at<unsigned short>(i_frame, j_frame);
-			auto& vis_scale_ij = err_out(i_frame, j_frame);
-			auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
-			// vis_scale_ij = (unsigned short)(err_ij * USHRT_MAX);
-			vis_scale_ij = err_ij;
-		}
-	}
-	CArtiBodyTree::Destroy(body_i);
-	CArtiBodyTree::Destroy(body_j);
-}
-
 CFile2ArtiBody::CFile2ArtiBody(const char* path)
 	: CArtiBodyFile(std::string(path))
 	, m_rootBody(NULL)
@@ -409,6 +359,56 @@ void CFile2ArtiBody::Initialize()
 		TransformArchive& tms_i = m_motions[i_frame];
 		CArtiBodyTree::Serialize<true>(m_rootBody, tms_i);
 	}
+}
+
+void CFile2ArtiBody::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints)
+{
+	unsigned int n_frames = frames();
+	err_out.resize(n_frames, n_frames);
+	// err_out.create(n_frames, n_frames, CV_16U);
+	CArtiBodyNode* body_i = CreateBody(BODY_TYPE::htr);
+	std::list<const CArtiBodyNode*> interest_bodies_i;
+	int n_bodies_i = CArtiBodyTree::GetBodies(body_i, joints, interest_bodies_i);
+	TransformArchive tm_data_i(n_bodies_i);
+
+	CArtiBodyNode* body_j = CreateBody(BODY_TYPE::htr);
+	std::list<const CArtiBodyNode*> interest_bodies_j;
+	int n_bodies_j = CArtiBodyTree::GetBodies(body_j, joints, interest_bodies_j);
+	TransformArchive tm_data_j(n_bodies_j);
+
+	bool ok = (n_bodies_i == n_bodies_j);
+	IKAssert(ok);
+
+	auto UpdateTransforms = [] (std::list<const CArtiBodyNode*>& interest_bodies, TransformArchive& tm_data)
+		{
+			int i_tm = 0;
+			for (auto body : interest_bodies)
+			{
+				_TRANSFORM& tm_i = tm_data[i_tm ++];
+				body->GetJoint()->GetTransform()->CopyTo(tm_i);
+			}
+		};
+
+
+	for (unsigned int i_frame = 0; i_frame < n_frames; i_frame++)
+	{
+		PoseBody<false>(i_frame, body_i);
+		// CArtiBodyTree::Serialize<true>(body_i, tm_data_i);
+		UpdateTransforms(interest_bodies_i, tm_data_i);
+		for (unsigned int j_frame = 0; j_frame < n_frames; j_frame++)
+		{
+			PoseBody<false>(j_frame, body_j);
+			// CArtiBodyTree::Serialize<true>(body_j, tm_data_j);
+			UpdateTransforms(interest_bodies_j, tm_data_j);
+			// auto& vis_scale_ij = err_out.at<unsigned short>(i_frame, j_frame);
+			auto& vis_scale_ij = err_out(i_frame, j_frame);
+			auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
+			// vis_scale_ij = (unsigned short)(err_ij * USHRT_MAX);
+			vis_scale_ij = err_ij;
+		}
+	}
+	CArtiBodyTree::Destroy(body_i);
+	CArtiBodyTree::Destroy(body_j);
 }
 
 CFile2ArtiBodyRef::CFile2ArtiBodyRef(const char* path, CArtiBodyNode* body_ref)

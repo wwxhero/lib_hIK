@@ -191,12 +191,12 @@ bool dissect(const char* confXML, const char* path, const char* dir_out)
 		for (auto sec : section)
 		{
 			fs::path out_path(out_path_dir);
-			std::string file_htr(sec.group_root->GetName_c());
+			std::string file_name(sec.group_root->GetName_c());
 			if (htr == file.GetBody()->c_type)
-				file_htr += ".htr";
+				file_name += ".htr";
 			else
-				file_htr += ".bvh";
-			out_path.append(file_htr);
+				file_name += ".bvh";
+			out_path.append(file_name);
 			sec.group_file->WriteBvhFile(out_path.u8string().c_str());
 		}
 	}
