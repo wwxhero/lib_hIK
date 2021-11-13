@@ -365,7 +365,6 @@ void CFile2ArtiBody::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::st
 {
 	unsigned int n_frames = frames();
 	err_out.resize(n_frames, n_frames);
-	// err_out.create(n_frames, n_frames, CV_16U);
 	CArtiBodyNode* body_i = CreateBody(BODY_TYPE::htr);
 	std::list<const CArtiBodyNode*> interest_bodies_i;
 	int n_bodies_i = CArtiBodyTree::GetBodies(body_i, joints, interest_bodies_i);
@@ -389,23 +388,21 @@ void CFile2ArtiBody::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::st
 			}
 		};
 
-
 	for (unsigned int i_frame = 0; i_frame < n_frames; i_frame++)
 	{
 		PoseBody<false>(i_frame, body_i);
-		// CArtiBodyTree::Serialize<true>(body_i, tm_data_i);
 		UpdateTransforms(interest_bodies_i, tm_data_i);
-		for (unsigned int j_frame = 0; j_frame < n_frames; j_frame++)
+		for (unsigned int j_frame = 0; j_frame < i_frame; j_frame++)
 		{
 			PoseBody<false>(j_frame, body_j);
-			// CArtiBodyTree::Serialize<true>(body_j, tm_data_j);
 			UpdateTransforms(interest_bodies_j, tm_data_j);
-			// auto& vis_scale_ij = err_out.at<unsigned short>(i_frame, j_frame);
 			auto& vis_scale_ij = err_out(i_frame, j_frame);
+			auto& vis_scale_ji = err_out(j_frame, i_frame);
 			auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
-			// vis_scale_ij = (unsigned short)(err_ij * USHRT_MAX);
 			vis_scale_ij = err_ij;
+			vis_scale_ji = err_ij;
 		}
+		err_out(i_frame, i_frame) = (Real)0;
 	}
 	CArtiBodyTree::Destroy(body_i);
 	CArtiBodyTree::Destroy(body_j);
