@@ -444,12 +444,13 @@ HBVH load_bvh_c(const char* path_src)
 	}
 	catch (const std::string& info)
 	{
-		LOGIK(info.c_str());
+		LOGIKVarErr(LogInfoCharPtr, info.c_str());
 		return H_INVALID;
 	}
 	catch (...)
 	{
-		LOGIK("Unknown expection");
+		const char* err = "Unknown expection";
+		LOGIKVarErr(LogInfoCharPtr, err);
 		return H_INVALID;
 	}
 	return CAST_2HBVH( bvh);
@@ -472,12 +473,13 @@ HBVH copy_bvh(HBVH src)
 	}
 	catch (const std::string& info)
 	{
-		LOGIK(info.c_str());
+		LOGIKVarErr(LogInfoCharPtr, info.c_str());
 		return H_INVALID;
 	}
 	catch (...)
 	{
-		LOGIK("Unknown expection");
+		const char* err = "Unknown expection";
+		LOGIKVarErr(LogInfoCharPtr, err);
 		return H_INVALID;
 	}
 	return CAST_2HBVH(bvh_dup);
@@ -629,8 +631,7 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 	}
 	catch (std::string& exp)
 	{
-		LOGIK(exp.c_str());
-		LOGIKFlush();
+		LOGIKVarErr(LogInfoCharPtr, exp.c_str());
 		return false;
 	}
 }

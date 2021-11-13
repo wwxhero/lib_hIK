@@ -35,11 +35,15 @@ void AssertionFail(const char *file, unsigned int line);
 #	define DECLARE_FLAGLOG(LogInfoFlag_x) \
 		void LogInfoFlag_x(const char *file, unsigned int line, const char *token, short flag);
 
-#	if defined _DEBUG || defined SMOOTH_LOGGING
+#	if defined _DEBUG
 
 #		define LOGIKVar(func, var) func(__FILE__, __LINE__, #    var, var);
-#		define LOGIKVarErr(func, var) func(__FILE__, __LINE__, "ERROR: "#var, var);
-#		define LOGIKVarWarning(func, var) func(__FILE__, __LINE__, "WARNING: "#var, var);
+#		define LOGIKVarErr(func, var)\
+			func(__FILE__, __LINE__, "ERROR: "#var, var);\
+			LOGIKFlush();
+#		define LOGIKVarWarning(func, var)\
+			func(__FILE__, __LINE__, "WARNING: "#var, var);\
+			LOGIKFlush();
 #		define LOGIK(msg) LogInfo(__FILE__, __LINE__, msg);
 #		if defined HARDASSERTION
 #			define IKAssert assert
@@ -55,8 +59,12 @@ void AssertionFail(const char *file, unsigned int line);
 #    	endif
 
 #		define LOGIKVar(func, var)
-#		define LOGIKVarErr(func, var) func(__FILE__, __LINE__, "ERROR: "#var, var);
-#		define LOGIKVarWarning(func, var) func(__FILE__, __LINE__, "WARNING: "#var, var);
+#		define LOGIKVarErr(func, var)\
+			func(__FILE__, __LINE__, "ERROR: "#var, var);\
+			LOGIKFlush();
+#		define LOGIKVarWarning(func, var)\
+			func(__FILE__, __LINE__, "WARNING: "#var, var);\
+			LOGIKFlush();
 #		define LOGIK(msg)
 #		define IKAssert(v)\
 				if(!(v))\

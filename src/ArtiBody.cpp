@@ -276,6 +276,7 @@ void CArtiBodyTree::Destroy(CArtiBodyNode* node)
 		; NULL != root_p
 		; root = root_p, root_p = root_p->GetParent());
 	bool is_sub_root = (node != root);
+	
 	Tree<CArtiBodyNode>::Destroy(node);
 
 	if (is_sub_root)
