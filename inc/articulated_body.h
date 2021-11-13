@@ -65,7 +65,6 @@ enum PART {
 extern "C" {
 #endif
 
-HIKLIB(float,			ik_test)(float theta);
 HIKLIB(HBODY,			create_fbx_body_node_w)(const wchar_t* name, const _TRANSFORM* tm_l2p);
 HIKLIB(HBODY,			create_fbx_body_node_c)(const char* name, const _TRANSFORM* tm_l2p);
 HIKLIB(HBODY,			create_bvh_body_node_w)(const wchar_t* name, const _TRANSFORM* tm_l2p, TM_TYPE jtm);

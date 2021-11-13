@@ -401,6 +401,29 @@ public:
 
 	}
 
+	static bool Clone(const CArtiBodyNode* src, CArtiBodyNode** dst)
+	{
+		switch(src->c_type)
+		{
+			case BODY_TYPE::fbx:
+				return Clone(src, dst, CloneNode_fbx);
+			case BODY_TYPE::bvh:
+				return Clone(src, dst, CloneNode_bvh);
+			case BODY_TYPE::htr:
+			{
+				auto CloneNode = [](const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt) -> bool
+				{
+					return CArtiBodyTree::CloneNode_htr(src, dst, Eigen::Matrix3r::Identity(), name_dst_opt);
+				};
+				return Clone(src, dst, CloneNode);
+			}
+			default:
+				IKAssert(0);
+				*dst = NULL;
+				return false;
+		}
+	}
+
 	static void KINA_Initialize(CArtiBodyNode* root);
 
 	template<bool G_SPACE>

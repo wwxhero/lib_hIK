@@ -8,14 +8,6 @@
 #include "ik_logger.h"
 #include "matrix3.h"
 
-float ik_test(float theta)
-{
-	//std::stringstream info;
-	//info << theta;
-	//MessageBoxA(NULL, info.str().c_str(), NULL, MB_OK);
-	return ++ theta;
-}
-
 HBODY create_fbx_body_node_w(const wchar_t* name
 						, const _TRANSFORM* t_rest_local)
 {
