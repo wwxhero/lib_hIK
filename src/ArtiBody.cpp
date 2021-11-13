@@ -271,12 +271,13 @@ void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 
 void CArtiBodyTree::Destroy(CArtiBodyNode* node)
 {
-	Tree<CArtiBodyNode>::Destroy(node);
 	CArtiBodyNode* root = node;
 	for (CArtiBodyNode* root_p = root->GetParent()
 		; NULL != root_p
-		; root = root_p);
+		; root = root_p, root_p = root_p->GetParent());
 	bool is_sub_root = (node != root);
+	Tree<CArtiBodyNode>::Destroy(node);
+
 	if (is_sub_root)
 		KINA_Initialize(root);
 }
