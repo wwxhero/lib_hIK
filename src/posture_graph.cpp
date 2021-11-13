@@ -233,7 +233,7 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 		if (NULL == err_png.data)
 		{
 			CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
-			if (!interests_conf_path)
+			if (NULL == interests_conf)
 			{
 				std::stringstream err;
 				err << "loading " << interests_conf_path << " failed";
