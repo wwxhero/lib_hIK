@@ -268,6 +268,26 @@ void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 	Tree<CArtiBodyNode>::TraverseDFS(root, onEnterBody, onLeaveBody);
 }
 
+
+void CArtiBodyTree::DestroySubTree(CArtiBodyNode* root, CArtiBodyNode* subroot)
+{
+	// for (CArtiBodyNode* parent = subroot->GetParent()
+	// 	; NULL != parent
+	// 	; parent = parent->GetParent())
+	// {
+	// 	parent->m_kinalst.remove_if(
+	// 		[subroot](CArtiBodyNode* subroot_ref)-> bool
+	// 		{
+	// 			return subroot_ref == subroot;
+	// 		}
+	// 	);
+	// }
+	Tree<CArtiBodyNode>::Destroy(subroot);
+	KINA_Initialize(root);
+}
+
+
+
 void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r& dir_up, const Eigen::Vector3r& dir_forward
 					, const std::vector<std::string>& names_interest
 					, int part_body_idx_range[parts_total][2]

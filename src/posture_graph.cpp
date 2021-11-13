@@ -270,3 +270,54 @@ bool convert_pg2dot(const char* path_src, const char* path_dst)
 	filePG.SaveTransitions(path_dst, F_DOT);
 	return true;
 }
+
+bool trim(const char* src, const char* dst, const char* const names_rm[], int n_names)
+{
+	bool ret = false;
+	try
+	{
+		CFile2ArtiBody file2body(src);
+		CArtiBodyNode* rootTrim = NULL;
+		ret = CArtiBodyTree::Clone(file2body.GetBody(), &rootTrim);
+		if (ret)
+		{
+			std::set<std::string> rms;
+			for (int i_name = 0; i_name < n_names; i_name ++)
+				rms.insert(names_rm[i_name]);
+
+			auto OnEnterBodyTrim = [](CArtiBodyNode* node)
+				{
+				};
+
+			auto OnLeaveBodyTrim = [&rms = std::as_const(rms), rootTrim](CArtiBodyNode* node)
+				{
+					bool rm_node = (rms.end() != rms.find(node->GetName_c()));
+					if (rm_node)
+					{
+						CArtiBodyTree::DestroySubTree(rootTrim, node);
+					}
+				};
+
+			CArtiBodyTree::TraverseDFS(rootTrim, OnEnterBodyTrim, OnLeaveBodyTrim);
+
+			CFile2ArtiBodyRef file_src(src, rootTrim);
+			int n_frames = file_src.frames();
+			CArtiBodyRef2File file_dst(rootTrim, n_frames);
+
+			for (int i_frame = 0; i_frame < n_frames; i_frame ++)
+			{
+				file_src.PoseBody<false>(i_frame);
+				file_dst.UpdateMotion(i_frame);
+			}
+
+			file_dst.WriteBvhFile(dst);
+		}
+	}
+	catch(const std::string &exp)
+	{
+		LOGIKVarErr(LogInfoCharPtr, exp.c_str());
+		ret = false;
+	}
+
+	return ret;
+}
