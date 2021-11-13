@@ -1,6 +1,5 @@
 #pragma once
 #include <queue>
-#include <opencv2/opencv.hpp>
 #include "bvh11_helper.hpp"
 #include "loggerfast.h"
 #include "ik_logger.h"

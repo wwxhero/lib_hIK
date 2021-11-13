@@ -243,14 +243,14 @@
       <PreprocessorDefinitions>_DEBUG;LIB_HIK_EXPORTS;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;WIN32;TIXML_USE_TICPP;TIXML_USE_STL;HARDASSERTION;SMOOTH_LOGGING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC);$(LIB_OPENCV_INC)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>$(LIB_TICPP_BIN);$(LIB_OPENCV_BIN)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ticppd.lib;opencv_world453d.lib</AdditionalDependencies>
+      <AdditionalDependencies>ticppd.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Shipping|Win32'">
@@ -324,7 +324,7 @@
       <PreprocessorDefinitions>NDEBUG;LIB_HIK_EXPORTS;_CRT_SECURE_NO_WARNINGS;_WINDOWS;_USRDLL;_USE_MATH_DEFINES;WIN32;TIXML_USE_TICPP;TIXML_USE_STL;SMOOTH_LOGGING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC);$(LIB_OPENCV_INC)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -334,7 +334,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>$(LIB_TICPP_BIN);$(LIB_OPENCV_BIN)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ticpp.lib;opencv_world453.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ticpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">

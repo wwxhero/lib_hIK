@@ -1,5 +1,4 @@
 #include "pch.h"
-#include <opencv2/opencv.hpp>
 #include <fstream>
 #include "Math.hpp"
 #include "posture_graph.h"
@@ -55,44 +54,13 @@ namespace CONF
 	};
 };
 
-void ETB_Convert(const Eigen::MatrixXr& src, cv::Mat& dst)
-{
-	int n_rows = (int)src.rows();
-	int n_cols = (int)src.cols();
-	IKAssert(n_rows == n_cols);
-	dst.create(n_rows, n_cols, CV_16U);
-	for (int i_row = 0; i_row < n_rows; i_row++)
-	{
-		for (int i_col = 0; i_col < n_cols; i_col++)
-		{
-			Real err_ij = src(i_row, i_col);
-			const Real err_max = (Real)1;
-			const Real err_min = (Real)0;
-			err_ij = std::min(err_max, std::max(err_min, err_ij));
-			dst.at<unsigned short>(i_row, i_col) = (unsigned short)(err_ij*(Real)USHRT_MAX);
-		}
-	}
-}
-
-void ETB_Convert(const cv::Mat& a_src, Eigen::MatrixXr& dst)
-{
-	cv::Mat src;
-	a_src.convertTo(src, CV_16U);
-	const Real USHRT_MAX_INV = (Real)1 / (Real)USHRT_MAX;
-	int n_rows = src.rows;
-	int n_cols = src.cols;
-	IKAssert(n_rows == n_cols);
-	dst.resize(n_rows, n_cols);
-	for (int i_row = 0; i_row < n_rows; i_row++)
-		for (int i_col = 0; i_col < n_cols; i_col++)
-			dst(i_row, i_col) = (Real)(src.at<unsigned short>(i_row, i_col))*USHRT_MAX_INV;
-}
-
-
-bool err_vis(const char* interests_conf_path, const char* path_htr, const char* path_png)
+bool init_err_tb(const char* interests_conf_path, const char* path_htr, _ERROR_TB* err_tb)
 {
 	try
 	{
+		err_tb->data = NULL;
+		err_tb->n_rows = 0;
+		err_tb->n_cols = 0;
 		CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
 		if (!interests_conf_path)
 		{
@@ -109,10 +77,11 @@ bool err_vis(const char* interests_conf_path, const char* path_htr, const char* 
 		CFile2ArtiBody htr2body(path_htr);
 		Eigen::MatrixXr err_out;
 		htr2body.ETB_Setup(err_out, interests_conf->Joints);
-		cv::Mat err_png;
-		ETB_Convert(err_out, err_png);
-		CONF::CInterestsConf::UnLoad(interests_conf);
-		imwrite(path_png, err_png);
+		err_tb->n_rows = (int)err_out.rows();
+		err_tb->n_cols = (int)err_out.cols();
+		auto data_size = err_out.rows() * err_out.cols() * sizeof(Real);
+		err_tb->data = (Real*)malloc(data_size);
+		memcpy(err_tb->data, err_out.data(), data_size); //err_out is a column major matrix
 	}
 	catch(const std::string& err)
 	{
@@ -122,8 +91,19 @@ bool err_vis(const char* interests_conf_path, const char* path_htr, const char* 
 	return true;
 }
 
+void uninit_err_tb(_ERROR_TB* err_tb)
+{
+	free(err_tb->data);
+	err_tb->data = NULL;
+	err_tb->n_rows = 0;
+	err_tb->n_cols = 0;
+}
 
-
+Real err_entry(const _ERROR_TB* err_tb, int i_row, int i_col)
+{
+	IKAssert(i_row < err_tb->n_rows && i_col < err_tb->n_cols);
+	return err_tb->data[i_col*err_tb->n_rows + i_row];
+}
 
 bool dissect(const char* confXML, const char* path, const char* dir_out)
 {
@@ -219,33 +199,34 @@ EXIT:
 }
 
 
-bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, const char* dir_out, Real epsErr)
+bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, const char* dir_out, Real epsErr, const _ERROR_TB* err_tb_exter)
 {
 	bool ok = false;
 	try
 	{
 		CFile2ArtiBody htr2body(path_htr);
-		fs::path path_err_tb(path_htr);
-		path_err_tb.replace_extension(".png");
-		unsigned int n_frames = htr2body.frames();
-		cv::Mat err_png = cv::imread(path_err_tb.u8string(), cv::IMREAD_UNCHANGED);
-		Eigen::MatrixXr err_tb;
-		if (NULL == err_png.data)
-		{
-			CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
-			if (NULL == interests_conf)
-			{
-				std::stringstream err;
-				err << "loading " << interests_conf_path << " failed";
-				LOGIKVarErr(LogInfoCharPtr, err.str().c_str());
-				return false;
-			}
 
-			htr2body.ETB_Setup(err_tb, interests_conf->Joints);
-			CONF::CInterestsConf::UnLoad(interests_conf);
+		CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
+		if (NULL == interests_conf)
+		{
+			std::stringstream err;
+			err << "loading " << interests_conf_path << " failed";
+			LOGIKVarErr(LogInfoCharPtr, err.str().c_str());
+			return false;
 		}
+
+		Eigen::MatrixXr err_tb;
+
+		if (NULL == err_tb_exter)
+			htr2body.ETB_Setup(err_tb, interests_conf->Joints);
 		else
-			ETB_Convert(err_png, err_tb);
+		{
+			err_tb = Eigen::Map<Eigen::MatrixXr>(err_tb_exter->data
+												, err_tb_exter->n_rows
+												, err_tb_exter->n_cols);
+		}
+
+		CONF::CInterestsConf::UnLoad(interests_conf);
 
 		CPostureGraphOpen e_epsilon(&htr2body);
 		CPostureGraphOpen::InitTransitions(e_epsilon, err_tb, epsErr);
