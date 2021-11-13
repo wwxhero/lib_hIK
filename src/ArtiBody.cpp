@@ -269,21 +269,16 @@ void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 }
 
 
-void CArtiBodyTree::DestroySubTree(CArtiBodyNode* root, CArtiBodyNode* subroot)
+void CArtiBodyTree::Destroy(CArtiBodyNode* node)
 {
-	// for (CArtiBodyNode* parent = subroot->GetParent()
-	// 	; NULL != parent
-	// 	; parent = parent->GetParent())
-	// {
-	// 	parent->m_kinalst.remove_if(
-	// 		[subroot](CArtiBodyNode* subroot_ref)-> bool
-	// 		{
-	// 			return subroot_ref == subroot;
-	// 		}
-	// 	);
-	// }
-	Tree<CArtiBodyNode>::Destroy(subroot);
-	KINA_Initialize(root);
+	Tree<CArtiBodyNode>::Destroy(node);
+	CArtiBodyNode* root = node;
+	for (CArtiBodyNode* root_p = root->GetParent()
+		; NULL != root_p
+		; root = root_p);
+	bool is_sub_root = (node != root);
+	if (is_sub_root)
+		KINA_Initialize(root);
 }
 
 

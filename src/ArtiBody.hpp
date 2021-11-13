@@ -504,7 +504,7 @@ STOP_PROFILER
 		CArtiBodyTree::TraverseDFS(root, onEnterBody, onLeaveBody);
 	}
 
-	static void DestroySubTree(CArtiBodyNode* root, CArtiBodyNode* subroot);
+	static void Destroy(CArtiBodyNode* node);
 
 //the following code for building posture graph, not for real-time usage
 	static void Body_T_Test(const CArtiBodyNode* body

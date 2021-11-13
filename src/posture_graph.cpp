@@ -289,12 +289,12 @@ bool trim(const char* src, const char* dst, const char* const names_rm[], int n_
 				{
 				};
 
-			auto OnLeaveBodyTrim = [&rms = std::as_const(rms), rootTrim](CArtiBodyNode* node)
+			auto OnLeaveBodyTrim = [&rms = std::as_const(rms)](CArtiBodyNode* node)
 				{
 					bool rm_node = (rms.end() != rms.find(node->GetName_c()));
 					if (rm_node)
 					{
-						CArtiBodyTree::DestroySubTree(rootTrim, node);
+						CArtiBodyTree::Destroy(node);
 					}
 				};
 
