@@ -101,6 +101,11 @@ public:
 	{
 		std::ofstream file(filePath, std::ofstream::binary);
 		IKAssert(std::ios_base::failbit != file.rdstate());
+		if (std::ios_base::failbit == file.rdstate())
+		{
+			LOGIKVarErr(LogInfoCharPtr, filePath);
+			return;
+		}
 		if (F_DOT == type)
 			write_graphviz(file, *this);
 		else
