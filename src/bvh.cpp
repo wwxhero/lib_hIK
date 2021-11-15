@@ -420,27 +420,18 @@ HBODY create_tree_body_bvh_file(const wchar_t* path_src)
 
 HBODY create_tree_body_bvh(HBVH hBvh)
 {
-	CFile2ArtiBody* bvh = CAST_2PBVH(hBvh);
-	const CArtiBodyNode* body_bvh = bvh->GetBody();
-	if (BODY_TYPE::bvh == body_bvh->c_type)
-	{
-		CArtiBodyNode* body_ret = NULL;
-		CArtiBodyTree::Clone(body_bvh, &body_ret, CArtiBodyTree::CloneNode_bvh);
-		return CAST_2HBODY(body_ret);
-	}
-	else
-		return H_INVALID;
-
+	CArtiBodyFile* bvh = CAST_2PBVH(hBvh);
+	return CAST_2HBODY(bvh->CreateBodyBVH());
 }
 
 
 
 HBVH load_bvh_c(const char* path_src)
 {
-	CFile2ArtiBody* bvh = NULL;
+	CArtiBodyFile* bvh = NULL;
 	try
 	{
-		bvh = new CFile2ArtiBody(path_src);
+		bvh = new CArtiBodyFile(path_src);
 	}
 	catch (const std::string& info)
 	{
@@ -453,7 +444,7 @@ HBVH load_bvh_c(const char* path_src)
 		LOGIKVarErr(LogInfoCharPtr, err);
 		return H_INVALID;
 	}
-	return CAST_2HBVH( bvh);
+	return CAST_2HBVH(bvh);
 }
 
 HBVH load_bvh_w(const wchar_t* path_src)
@@ -465,11 +456,11 @@ HBVH load_bvh_w(const wchar_t* path_src)
 
 HBVH copy_bvh(HBVH src)
 {
-	CFile2ArtiBody* bvh_src = CAST_2PBVH(src);
-	CFile2ArtiBody* bvh_dup = NULL;
+	CArtiBodyFile* bvh_src = CAST_2PBVH(src);
+	CArtiBodyFile* bvh_dup = NULL;
 	try
 	{
-		bvh_dup = new CFile2ArtiBody(*bvh_src);
+		bvh_dup = new CArtiBodyFile(*bvh_src);
 	}
 	catch (const std::string& info)
 	{

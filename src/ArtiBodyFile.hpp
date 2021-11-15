@@ -53,11 +53,12 @@ private:
 
 class CArtiBodyFile : public bvh11::BvhObject
 {
-protected:
-	CArtiBodyFile(const char* path);
-	CArtiBodyFile(const std::string& path);
+public:
+	CArtiBodyFile(const char* path); //throw ...
+	CArtiBodyFile(const std::string& path); //throw ...
+	CArtiBodyFile(const CArtiBodyFile& src); //throw ...
 
-protected:
+public:
 	static BODY_TYPE toType(const std::string& path);
 	CArtiBodyNode* CreateBody(BODY_TYPE type) const;
 	CArtiBodyNode* CreateBodyBVH() const;
@@ -100,7 +101,7 @@ protected:
 };
 
 
-class CFile2ArtiBody : public CArtiBodyFile
+class CFile2ArtiBody
 {
 public:
 	CFile2ArtiBody(const char* path);
@@ -115,6 +116,7 @@ public:
 
 	void ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints);
 
+	int frames() const {return (int)m_motions.size();}
 
 	const CArtiBodyNode* GetBody() const { return m_rootBody; }
 	CArtiBodyNode* GetBody() { return m_rootBody;  }
@@ -129,9 +131,10 @@ protected:
 	}
 
 private:
-	void Initialize();
+	void Initialize(const std::string& path);
 private:
 	CArtiBodyNode* m_rootBody;
+	std::vector<TransformArchive> m_motions;
 };
 
 // it should be optimized to get rid of derivation to avoid unnecessary memory consumption from BvhObject from runtime.

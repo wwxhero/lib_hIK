@@ -21,10 +21,10 @@ T CAST_2H(F* p)
 }
 
 #define CAST_2PBVH(hBVH)\
-	CAST_2P<HBVH, CFile2ArtiBody>(hBVH)
+	CAST_2P<HBVH, CArtiBodyFile>(hBVH)
 
 #define CAST_2HBVH(pBVH)\
-	CAST_2H<CFile2ArtiBody, HBVH>(pBVH)
+	CAST_2H<CArtiBodyFile, HBVH>(pBVH)
 
 #define CAST_2PBODY(hBody)\
 	CAST_2P<HBODY, CArtiBodyNode>(hBody)

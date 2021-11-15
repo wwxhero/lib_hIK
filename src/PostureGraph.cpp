@@ -370,7 +370,7 @@ bool CFile2PostureGraphClose::LoadThetas(const char* filePath, CArtiBodyNode* bo
 void CPostureGraphOpen::Save(const char* dir, PG_FileType type) const
 {
 	fs::path file_path(dir);
-	std::string file_name(m_theta->root_joint()->name()); file_name += ".dot";
+	std::string file_name(m_theta->GetBody()->GetName_c()); file_name += ".dot";
 	file_path.append(file_name);
 	std::ofstream file(file_path);
 	IKAssert(std::ios_base::failbit != file.rdstate());

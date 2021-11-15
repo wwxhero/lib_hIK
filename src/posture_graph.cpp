@@ -91,6 +91,53 @@ bool init_err_tb(const char* interests_conf_path, const char* path_htr, _ERROR_T
 	return true;
 }
 
+bool init_err_tb_merged(const char* interests_conf_path, const char* dir_src_0, const char* dir_src_1, const char* pg_name, _ERROR_TB* err_tb)
+{
+	try
+	{
+		err_tb->data = NULL;
+		err_tb->n_rows = 0;
+		err_tb->n_cols = 0;
+		CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
+		if (!interests_conf_path)
+		{
+			std::stringstream err;
+			err << "loading " << interests_conf_path << " failed";
+			LOGIKVarErr(LogInfoCharPtr, err.str().c_str());
+			return false;
+		}
+		/*else
+		{
+			interests_conf->Dump();
+		}*/
+		std::string htr_name(pg_name); htr_name += ".htr";
+		fs::path src_0(dir_src_0); src_0.append(htr_name);
+		fs::path src_1(dir_src_1); src_1.append(htr_name);
+
+		CFile2ArtiBody htr2body_0(src_0.u8string());
+		CFile2ArtiBody htr2body_1(src_1.u8string());
+
+		bool merged = true; // (htr2body_0.merge(htr2body_1));
+		if (merged)
+		{
+			Eigen::MatrixXr err_out;
+			htr2body_0.ETB_Setup(err_out, interests_conf->Joints);
+			err_tb->n_rows = (int)err_out.rows();
+			err_tb->n_cols = (int)err_out.cols();
+			auto data_size = err_out.rows() * err_out.cols() * sizeof(Real);
+			err_tb->data = (Real*)malloc(data_size);
+			memcpy(err_tb->data, err_out.data(), data_size); //err_out is a column major matrix
+		}
+		return merged;
+	}
+	catch(const std::string& err)
+	{
+		LOGIKVarErr(LogInfoCharPtr, err.c_str());
+		return false;
+	}
+	return true;
+}
+
 void uninit_err_tb(_ERROR_TB* err_tb)
 {
 	free(err_tb->data);
