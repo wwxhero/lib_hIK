@@ -146,9 +146,9 @@ void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::M
 		}
 	}
 
-// #if defined _DEBUG
+#if defined _DEBUG
 	Dump(graph, __FILE__, __LINE__);
-// #endif
+#endif
 
 	//tag rm for each vertex
 	auto v_range = boost::vertices(graph);
@@ -281,9 +281,9 @@ void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::M
 		}
 	}
 
-// #if defined _DEBUG
+#if defined _DEBUG
 	Dump(graph, __FILE__, __LINE__);
-// #endif
+#endif
 
 
 }
