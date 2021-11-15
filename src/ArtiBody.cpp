@@ -283,7 +283,15 @@ void CArtiBodyTree::Destroy(CArtiBodyNode* node)
 		KINA_Initialize(root);
 }
 
-
+bool CArtiBodyTree::Similar(const CArtiBodyNode* root_0, const CArtiBodyNode* root_1)
+{
+	auto OnBound = [](const CArtiBodyNode* body_0, const CArtiBodyNode* body_1) -> bool
+		{
+			return std::string(body_0->GetName_c())
+				== std::string(body_1->GetName_c());
+		};
+	return Super::TraverseBFS_Bound(root_0, root_1, OnBound);
+}
 
 void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r& dir_up, const Eigen::Vector3r& dir_forward
 					, const std::vector<std::string>& names_interest

@@ -506,6 +506,8 @@ STOP_PROFILER
 
 	static void Destroy(CArtiBodyNode* node);
 
+	static bool Similar(const CArtiBodyNode* root_0, const CArtiBodyNode* root_1);
+
 //the following code for building posture graph, not for real-time usage
 	static void Body_T_Test(const CArtiBodyNode* body
 					, const Eigen::Vector3r& dir_up

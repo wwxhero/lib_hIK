@@ -120,6 +120,8 @@ public:
 
 	const CArtiBodyNode* GetBody() const { return m_rootBody; }
 	CArtiBodyNode* GetBody() { return m_rootBody;  }
+
+	bool Merge(const CFile2ArtiBody& f2b);
 protected:
 	template<bool G_SPACE>
 	void PoseBody(int i_frame, CArtiBodyNode* body) const

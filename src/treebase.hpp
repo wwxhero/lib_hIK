@@ -321,4 +321,41 @@ public:
 		}
 		return traversing;
 	}
+
+	template<typename LAMBDA_onBound>
+	static bool TraverseBFS_Bound(const NodeType* root_s, const NodeType* root_d, LAMBDA_onBound onBound)
+	{
+		std::queue<const NodeType*> que_s;
+		std::queue<const NodeType*> que_d;
+		que_s.push(root_s);
+		que_d.push(root_d);
+		bool traversing = true;
+		while ((traversing = (traversing && (que_s.empty() == que_d.empty())))
+			&& !que_s.empty())
+		{
+			auto node_s = que_s.front();
+			auto node_d = que_d.front();
+			traversing = onBound(node_s, node_d);
+			std::list<const NodeType*> children_s;
+			std::list<const NodeType*> children_d;
+			const NodeType *child_s, *child_d;
+			for (child_s = node_s->GetFirstChild(), child_d = node_d->GetFirstChild()
+				; (traversing = (traversing && ((NULL == child_s) == (NULL == child_d))))
+					&& NULL != child_s
+				; child_s = child_s->GetNextSibling(), child_d = child_d->GetNextSibling())
+			{
+				children_s.push_back(child_s);
+				children_d.push_back(child_d);
+			}
+			// children_s.sort(nodeCmp);
+			// children_d.sort(nodeCmp);
+			for (auto child_s : children_s)
+				que_s.push(child_s);
+			for (auto child_d : children_d)
+				que_d.push(child_d);
+			que_s.pop();
+			que_d.pop();
+		}
+		return traversing;
+	}
 };

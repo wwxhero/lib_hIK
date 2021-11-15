@@ -117,7 +117,7 @@ bool init_err_tb_merged(const char* interests_conf_path, const char* dir_src_0, 
 		CFile2ArtiBody htr2body_0(src_0.u8string());
 		CFile2ArtiBody htr2body_1(src_1.u8string());
 
-		bool merged = true; // (htr2body_0.merge(htr2body_1));
+		bool merged = htr2body_0.Merge(htr2body_1);
 		if (merged)
 		{
 			Eigen::MatrixXr err_out;

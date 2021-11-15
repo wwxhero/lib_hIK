@@ -365,6 +365,18 @@ void CFile2ArtiBody::Initialize(const std::string& path)
 	}
 }
 
+bool CFile2ArtiBody::Merge(const CFile2ArtiBody& f2b_other)
+{
+	bool body_eq = CArtiBodyTree::Similar(m_rootBody, f2b_other.m_rootBody);
+	if (body_eq)
+	{
+		m_motions.insert(m_motions.end()
+					, f2b_other.m_motions.begin()
+					, f2b_other.m_motions.end());
+	}
+	return body_eq;
+}
+
 void CFile2ArtiBody::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints)
 {
 	unsigned int n_frames = frames();
