@@ -285,12 +285,38 @@ void CArtiBodyTree::Destroy(CArtiBodyNode* node)
 
 bool CArtiBodyTree::Similar(const CArtiBodyNode* root_0, const CArtiBodyNode* root_1)
 {
-	auto OnBound = [](const CArtiBodyNode* body_0, const CArtiBodyNode* body_1) -> bool
+	std::list<const CArtiBodyNode*> bodies_0;
+	auto OnEnterNode_0 = [&bodies_0](const CArtiBodyNode* node) -> bool
 		{
-			return std::string(body_0->GetName_c())
-				== std::string(body_1->GetName_c());
+			bodies_0.push_back(node);
+			return true;
 		};
-	return Super::TraverseBFS_Bound(root_0, root_1, OnBound);
+	auto OnLeaveBody = [](const CArtiBodyNode* node) -> bool
+		{
+			return true;
+		};
+	Super::TraverseDFS(root_0, OnEnterNode_0, OnLeaveBody);
+
+	std::list<const CArtiBodyNode*> bodies_1;
+	auto OnEnterNode_1 = [&bodies_1](const CArtiBodyNode* node) -> bool
+		{
+			bodies_1.push_back(node);
+			return true;
+		};
+	Super::TraverseDFS(root_1, OnEnterNode_1, OnLeaveBody);
+
+	bool match = true;
+
+	auto it_0 = bodies_0.begin(); auto it_1 = bodies_1.begin();
+	for (
+		; bodies_0.end() != it_0 && bodies_1.end() != it_1 && match
+		; it_0++, it_1++)
+		match = (std::string((*it_0)->GetName_c())
+				== std::string((*it_1)->GetName_c()));
+
+	return match 
+		&& (bodies_0.end() == it_0) 
+		&& (bodies_1.end() == it_1);
 }
 
 void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r& dir_up, const Eigen::Vector3r& dir_forward
