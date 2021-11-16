@@ -12,7 +12,7 @@ struct _ERROR_TB
 };
 
 HIKLIB(bool, init_err_tb)(const char* interests_conf, const char* path_htr, _ERROR_TB* err_tb);
-HIKLIB(bool, init_err_tb_merged)(const char* interests_conf, const char* dir_src_0, const char* dir_src_1, const char* pg_name, _ERROR_TB* err_tb);
+HIKLIB(bool, init_err_tb_merged)(const char* interests_conf, const char* pg_theta_0, const char* pg_theta_1, _ERROR_TB* err_tb);
 HIKLIB(void, uninit_err_tb)(_ERROR_TB* err_tb);
 HIKLIB(Real, err_entry)(const _ERROR_TB* err_tb, int i_row, int i_col);
 HIKLIB(bool, dissect)(const char* confXML, const char* path_htr, const char* dir_out);

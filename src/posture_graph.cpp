@@ -91,7 +91,7 @@ bool init_err_tb(const char* interests_conf_path, const char* path_htr, _ERROR_T
 	return true;
 }
 
-bool init_err_tb_merged(const char* interests_conf_path, const char* dir_src_0, const char* dir_src_1, const char* pg_name, _ERROR_TB* err_tb)
+bool init_err_tb_merged(const char* interests_conf_path, const char* pg_theta_0, const char* pg_theta_1, _ERROR_TB* err_tb)
 {
 	try
 	{
@@ -110,12 +110,9 @@ bool init_err_tb_merged(const char* interests_conf_path, const char* dir_src_0, 
 		{
 			interests_conf->Dump();
 		}*/
-		std::string htr_name(pg_name); htr_name += ".htr";
-		fs::path src_0(dir_src_0); src_0.append(htr_name);
-		fs::path src_1(dir_src_1); src_1.append(htr_name);
 
-		CFile2ArtiBody htr2body_0(src_0.u8string());
-		CFile2ArtiBody htr2body_1(src_1.u8string());
+		CFile2ArtiBody htr2body_0(pg_theta_0);
+		CFile2ArtiBody htr2body_1(pg_theta_1);
 
 		bool merged = htr2body_0.Merge(htr2body_1);
 		if (merged)
