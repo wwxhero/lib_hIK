@@ -340,7 +340,7 @@ public:
 
 	virtual ~CPostureGraphOpen();
 
-	static void InitTransitions(CPostureGraphOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg);
+	static void InitTransitions(CPostureGraphOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore);
 
 	static CPostureGraphClose2File* GenerateClosePG(const CPostureGraphOpen& graph_src, const Eigen::MatrixXr& errTB);
 

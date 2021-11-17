@@ -123,12 +123,20 @@ CPostureGraphOpen::~CPostureGraphOpen()
 {
 }
 
-void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg)
+void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore)
 {
-	const int i_frame_start = 1; //to skip the 'T' posture
-	const int i_frame_end = graph.m_theta->frames() - 1;
-	for (int i_frame = i_frame_start; i_frame < i_frame_end; i_frame++)
-		boost::add_edge(i_frame, i_frame + 1, graph);
+	std::set<int> pids_ignore(postureids_ignore.begin(), postureids_ignore.end());
+
+	int n_frames = graph.m_theta->frames();
+	int i_frame = 0;
+	bool i_frame_ignored = (pids_ignore.end() != pids_ignore.find(i_frame));
+	for (int i_frame_p = i_frame + 1; i_frame_p < n_frames; i_frame ++, i_frame_p ++)
+	{
+		bool i_frame_p_ignored = (pids_ignore.end() != pids_ignore.find(i_frame_p));
+		if (!i_frame_ignored && !i_frame_p_ignored)
+			boost::add_edge(i_frame, i_frame + 1, graph);
+		i_frame_ignored = i_frame_p_ignored;
+	}
 
 #if defined _DEBUG
 	Dump(graph, __FILE__, __LINE__);
@@ -136,11 +144,17 @@ void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::M
 
 	// err_epsilon = (1-cos(theta_eps_deg*deg2rad/2))*65535;
 	Real err_epsilon = (1 - cos(deg2rad(epsErr_deg) / (Real)2));
-	std::size_t n_thetas = errTB.rows();
-	for (std::size_t i_theta = 1; i_theta < n_thetas; i_theta++) //to skip the 'T' posture
+	IKAssert(errTB.rows() == n_frames);
+	for (int i_theta = 0; i_theta < n_frames; i_theta++) //to skip the 'T' posture
 	{
-		for (std::size_t j_theta = i_theta + 1; j_theta < n_thetas; j_theta++)
+		bool i_ignored = (pids_ignore.end() != pids_ignore.find(i_theta));
+		if (i_ignored)
+			continue;
+		for (int j_theta = i_theta + 1; j_theta < n_frames; j_theta++)
 		{
+			bool j_ignored = (pids_ignore.end() != pids_ignore.find(j_theta));
+			if (j_ignored)
+				continue;
 			if (errTB(i_theta, j_theta) < err_epsilon)
 				boost::add_edge(i_theta, j_theta, graph);
 		}
