@@ -273,10 +273,10 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 		CONF::CInterestsConf::UnLoad(interests_conf);
 
 		CPostureGraphOpen pg_epsilon(&htr2body);
-		std::vector<int> postures_T = {0};
+		const int T_PID = 0;
+		std::vector<int> postures_T = {T_PID};
 		CPostureGraphOpen::InitTransitions(pg_epsilon, err_tb, epsErr, postures_T);
-		//CPostureGraphClose2File* pg_gen = CPostureGraphOpen::GenerateClosePG(pg_epsilon, err_tb, 0);
-		CPostureGraphClose2File* pg_gen = CPostureGraphOpen::GenerateClosePG(pg_epsilon, err_tb);
+		CPostureGraphClose2File* pg_gen = CPostureGraphOpen::GenerateClosePG(pg_epsilon, err_tb, T_PID);
 		pg_gen->Save(dir_out);
 		delete pg_gen;
 		ok = true;
