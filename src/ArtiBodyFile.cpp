@@ -336,6 +336,9 @@ void CFile2ArtiBody::Initialize(const std::string& path)
 	CArtiBodyFile artiFile(path);
 	m_rootBody = artiFile.CreateBody(CArtiBodyFile::toType(path));
 
+	TransformArchive tm_bk;
+	CArtiBodyTree::Serialize<true>(m_rootBody, tm_bk);
+
 	int n_frames = artiFile.frames();
 	m_motions.resize(n_frames);
 
@@ -363,6 +366,9 @@ void CFile2ArtiBody::Initialize(const std::string& path)
 		TransformArchive& tms_i = m_motions[i_frame];
 		CArtiBodyTree::Serialize<true>(m_rootBody, tms_i);
 	}
+
+	CArtiBodyTree::Serialize<false>(m_rootBody, tm_bk);
+	CArtiBodyTree::FK_Update<false>(m_rootBody);
 }
 
 bool CFile2ArtiBody::Merge(const CFile2ArtiBody& f2b_other)
@@ -418,6 +424,7 @@ void CFile2ArtiBody::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::st
 	}
 
 	CArtiBodyTree::Serialize<false>(m_rootBody, tm_bk); // restore the original configuration
+	CArtiBodyTree::FK_Update<false>(m_rootBody);
 }
 
 CFile2ArtiBodyRef::CFile2ArtiBodyRef(const char* path, CArtiBodyNode* body_ref)
