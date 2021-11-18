@@ -189,17 +189,17 @@ private:
 
 
 
-class CFile2PostureGraphClose : public CPostureGraphClose
+class CPGRuntime : public CPostureGraphClose
 {
 public:
-	CFile2PostureGraphClose()
+	CPGRuntime()
 		: CPostureGraphClose(0)
 		, m_thetas(NULL)
 		, m_theta_star(0)
 	{
 	}
 
-	~CFile2PostureGraphClose()
+	~CPGRuntime()
 	{
 		if (NULL != m_thetas)
 			delete m_thetas;
@@ -219,7 +219,7 @@ public:
 	}
 
 	template<typename LAMBDA_Err>
-	static int LocalMin(CFile2PostureGraphClose& graph, LAMBDA_Err err)
+	static int LocalMin(CPGRuntime& graph, LAMBDA_Err err)
 	{
 		auto ErrTheta = [&graph, err](vertex_descriptor theta) -> Real
 			{
@@ -230,7 +230,7 @@ public:
 		class GreatorThetaErr
 		{
 		public:
-			explicit GreatorThetaErr(const CFile2PostureGraphClose& a_graph)
+			explicit GreatorThetaErr(const CPGRuntime& a_graph)
 				: m_graph_ref(a_graph)
 			{
 			}
@@ -239,7 +239,7 @@ public:
 				return m_graph_ref[left].err > m_graph_ref[right].err;
 			}
 		private:
-			const CFile2PostureGraphClose& m_graph_ref;
+			const CPGRuntime& m_graph_ref;
 		} greator_thetaErr(graph);
 
 		vertex_descriptor theta_star_k = graph.m_theta_star;

@@ -41,7 +41,7 @@ void CIKGroupNode::LoadPostureGraph(const char* pgDir)
 {
 	if (m_kChains.size() > 0)
 	{
-		m_pg = new CFile2PostureGraphClose();
+		m_pg = new CPGRuntime();
 		if (!m_pg->Load(pgDir, m_rootBody))
 		{
 			delete m_pg;
@@ -89,7 +89,7 @@ void CIKGroupNode::IKUpdate()
 			return err;
 		};
 
-		int theta_min = CFile2PostureGraphClose::LocalMin(*m_pg, Err);
+		int theta_min = CPGRuntime::LocalMin(*m_pg, Err);
 		m_pg->SetActivePosture<true>(theta_min, true);
 	}
 

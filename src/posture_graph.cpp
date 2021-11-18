@@ -297,7 +297,7 @@ bool posture_graph_merge(const char* interests_conf_path, const char* pg_dir_0, 
 	// bool ok = false;
 	// try
 	// {
-	// 	CFile2PostureGraphClose pg_0, pg_1;
+	// 	CPGRuntime pg_0, pg_1;
 	// 	pg_0.Load(pg_dir_0, pg_name);
 	// 	pg_1.Load(pg_dir_1, pg_name);
 	// 	CFile2ArtiBody theta_0(pg_0.Theta());
@@ -345,7 +345,7 @@ bool posture_graph_merge(const char* interests_conf_path, const char* pg_dir_0, 
 
 bool convert_pg2dot(const char* path_src, const char* path_dst)
 {
-	CFile2PostureGraphClose filePG;
+	CPGRuntime filePG;
 	filePG.LoadTransitions(path_src);
 	filePG.SaveTransitions(path_dst, F_DOT);
 	return true;

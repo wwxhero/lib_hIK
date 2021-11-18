@@ -324,7 +324,7 @@ CPostureGraphClose2File* CPostureGraphOpen::GenerateClosePG(const CPostureGraphO
 	return graph_dst;
 }
 
-bool CFile2PostureGraphClose::Load(const char* dir, CArtiBodyNode* root)
+bool CPGRuntime::Load(const char* dir, CArtiBodyNode* root)
 {
 	const char* pg_name = root->GetName_c();
 	fs::path dir_path(dir);
@@ -362,7 +362,7 @@ bool CFile2PostureGraphClose::Load(const char* dir, CArtiBodyNode* root)
 
 
 
-bool CFile2PostureGraphClose::LoadThetas(const char* filePath, CArtiBodyNode* body_ref)
+bool CPGRuntime::LoadThetas(const char* filePath, CArtiBodyNode* body_ref)
 {
 	if (NULL != m_thetas)
 		delete m_thetas;
