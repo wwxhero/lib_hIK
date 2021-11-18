@@ -1,6 +1,155 @@
 #include "pch.h"
 #include "PostureGraph.hpp"
 
+CThetaArtiBodyRef::CThetaArtiBodyRef(const char* path, CArtiBodyNode* body_ref)
+	: CArtiBodyFile(path)
+{
+	m_rootRef = body_ref;
+	Initialize(body_ref);
+}
+
+CThetaArtiBodyRef::CThetaArtiBodyRef(const std::string& path, CArtiBodyNode* body_ref)
+	: CArtiBodyFile(path)
+{
+	m_rootRef = body_ref;
+	Initialize(body_ref);
+}
+
+// the standard body might not be compatible with the file,
+// the name of the body/joint is used for creating the map between standard and the file
+// the motions is created for the standard body
+void CThetaArtiBodyRef::Initialize(CArtiBodyNode* root_ref)
+{
+	std::string exp("the standard body is not compatible with the bvh/htr file");
+	int n_frames = frames();
+	m_motions.resize(n_frames);
+	m_jointsRef.clear();
+
+	struct CHANNEL
+	{
+		const char* name;
+		const CArtiBodyNode* body_file;
+		CArtiBodyNode* body_ref;
+	};
+
+	CArtiBodyNode* root_file = CreateBodyHTR(); //the body type is trivial, since only the body joint is used which is indepedant of the body type
+
+	std::unique_ptr<CArtiBodyNode, void(*)(CArtiBodyNode*)> root_file_gc(
+																root_file
+																, [](CArtiBodyNode* ptr)
+        															{
+        															    CArtiBodyTree::Destroy(ptr);
+        															});
+
+	std::vector<CHANNEL> channels;
+
+	auto OnEnterBody_file = [&channels](CArtiBodyNode* body)
+		{
+			CHANNEL c = {body->GetName_c(), body, NULL};
+			channels.push_back(c);
+		};
+
+	auto OnLeaveBody_file = [](CArtiBodyNode* body)
+		{
+
+		};
+
+	CArtiBodyTree::TraverseDFS(root_file, OnEnterBody_file, OnLeaveBody_file);
+
+	std::map<std::string, std::size_t> name2channel_i;
+	for (std::size_t i_channel = 0; i_channel < channels.size(); i_channel++)
+	{
+		name2channel_i[channels[i_channel].name] = i_channel;
+	}
+
+
+	auto OnEnterBody_ref = [&channels, &name2channel_i = std::as_const(name2channel_i), exp](CArtiBodyNode* body)
+		{
+			auto it_c = name2channel_i.find(body->GetName_c());
+			if (name2channel_i.end() != it_c)
+			{
+				channels[it_c->second].body_ref = body;
+			}
+		};
+
+	auto OnLeaveBody_ref = [](CArtiBodyNode* body)
+		{
+		};
+
+	CArtiBodyTree::TraverseDFS(root_ref, OnEnterBody_ref, OnLeaveBody_ref);
+
+	for (auto channel : channels)
+	{
+		bool valid_ch_i = (NULL != channel.body_ref
+						&& NULL != channel.body_file);
+		if (valid_ch_i)
+		{
+			m_jointsRef.push_back(channel.body_ref->GetJoint());
+			IKAssert(std::string(channel.body_ref->GetName_c())
+					== std::string(channel.body_file->GetName_c()));
+		}
+	}
+
+	int i_frame = 0;
+
+	auto onEnterBound_pose = [&src = *this, &i_frame](Bound b_this)
+	{
+		IKAssert(b_this.first->name() == b_this.second->GetName_c());
+		const Joint_bvh_ptr joint_bvh = b_this.first;
+		CArtiBodyNode* body_hik = b_this.second;
+		Eigen::Affine3d delta_l = src.GetLocalDeltaTM(joint_bvh, i_frame);
+		Eigen::Quaterniond r(delta_l.linear());
+		Eigen::Vector3d tt(delta_l.translation());
+		IJoint* body_joint = body_hik->GetJoint();
+		body_joint->SetRotation(Eigen::Quaternionr((Real)r.w(), (Real)r.x(), (Real)r.y(), (Real)r.z()));
+		body_joint->SetTranslation(Eigen::Vector3r((Real)tt.x(), (Real)tt.y(), (Real)tt.z()));
+	};
+	auto onLeaveBound_pose = [](Bound b_this) {};
+
+	Bound root_file_bnd = std::make_pair(root_joint(), root_file);
+
+	int n_tms = (int)m_jointsRef.size();
+	TransformArchive tms_bk(n_tms);
+	for (int i_tm = 0; i_tm < n_tms; i_tm++)
+	{
+		_TRANSFORM& tm_i = tms_bk[i_tm];
+		m_jointsRef[i_tm]->GetTransform()->CopyTo(tm_i);
+	}
+
+
+	for (i_frame = 0; i_frame < n_frames; i_frame ++)
+	{
+		TraverseBFS_boundtree_norecur(root_file_bnd, onEnterBound_pose, onLeaveBound_pose); //to pose body
+		for (auto channel : channels)
+		{
+			bool through = (NULL != channel.body_ref
+							&& NULL != channel.body_file);
+			if (!through)
+				continue;
+			IJoint* joint_ref_i = channel.body_ref->GetJoint();
+			const IJoint* joint_file_i = channel.body_file->GetJoint();
+			const Transform* tm_file_i = joint_file_i->GetTransform();
+			joint_ref_i->SetRotation(Transform::getRotation_q(tm_file_i));
+			joint_ref_i->SetTranslation(tm_file_i->getTranslation());
+		}
+
+		TransformArchive& motion_i = m_motions[i_frame];
+		motion_i.Resize(n_tms);
+		for (int j_tm = 0; j_tm < n_tms; j_tm ++)
+		{
+			_TRANSFORM& tm_ij = motion_i[j_tm];
+			IJoint* joint_j = m_jointsRef[j_tm];
+			joint_j->GetTransform()->CopyTo(tm_ij);
+		}
+	}
+
+	for (int i_tm = 0; i_tm < n_tms; i_tm ++)
+	{
+		const _TRANSFORM& tm_i = tms_bk[i_tm];
+		m_jointsRef[i_tm]->GetTransform()->CopyFrom(tm_i);
+	}
+}
+
 template<typename G>
 void Dump(G& g, const char* fileName, int lineNo)
 {
@@ -369,7 +518,7 @@ bool CPGRuntime::LoadThetas(const char* filePath, CArtiBodyNode* body_ref)
 	bool loaded = false;
 	try
 	{
-		m_thetas = new CFile2ArtiBodyRef(filePath, body_ref);
+		m_thetas = new CThetaArtiBodyRef(filePath, body_ref);
 		m_theta_star = 0;
 		loaded = true;
 	}

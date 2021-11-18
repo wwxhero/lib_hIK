@@ -24,6 +24,33 @@
 
 enum PG_FileType {F_PG = 0, F_DOT};
 
+// it should be optimized to get rid of derivation to avoid unnecessary memory consumption from BvhObject from runtime.
+class CThetaArtiBodyRef : public CArtiBodyFile
+{
+public:
+	CThetaArtiBodyRef(const char* path, CArtiBodyNode* body_ref);
+	CThetaArtiBodyRef(const std::string& path, CArtiBodyNode* body_ref);
+	template<bool G_SPACE>
+	void PoseBody(int i_frame) const
+	{
+		const TransformArchive& motion_i = m_motions[i_frame];
+		std::size_t n_tms = m_jointsRef.size();
+		for (std::size_t j_tm = 0; j_tm < n_tms; j_tm ++)
+		{
+			const _TRANSFORM& tm_ij = motion_i[j_tm];
+			IJoint* joint_j = m_jointsRef[j_tm];
+			joint_j->GetTransform()->CopyFrom(tm_ij);
+		}
+		CArtiBodyTree::FK_Update<G_SPACE>(m_rootRef);
+	}
+private:
+	void Initialize(CArtiBodyNode* body_std);
+
+private:
+	std::vector<IJoint*> m_jointsRef;
+	CArtiBodyNode* m_rootRef;
+};
+
 template<typename VertexData, typename EdgeData>
 class PostureGraphList
 	: public boost::adjacency_list< boost::vecS
@@ -317,7 +344,7 @@ public:
 private:
 	bool LoadThetas(const char* filePath, CArtiBodyNode* body_ref);
 
-	CFile2ArtiBodyRef* m_thetas;
+	CThetaArtiBodyRef* m_thetas;
 	vertex_descriptor m_theta_star;
 
 };

@@ -380,7 +380,7 @@ bool trim(const char* src, const char* dst, const char* const names_rm[], int n_
 
 			CArtiBodyTree::TraverseDFS(rootTrim, OnEnterBodyTrim, OnLeaveBodyTrim);
 
-			CFile2ArtiBodyRef file_src(src, rootTrim);
+			CThetaArtiBodyRef file_src(src, rootTrim);
 			int n_frames = file_src.frames();
 			CArtiBodyRef2File file_dst(rootTrim, n_frames);
 
