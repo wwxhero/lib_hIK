@@ -277,9 +277,12 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 		std::vector<int> postures_T = {T_PID};
 		CPostureGraphOpen::InitTransitions(pg_epsilon, err_tb, epsErr, postures_T);
 		CPostureGraphClose2File* pg_gen = CPostureGraphOpen::GenerateClosePG(pg_epsilon, err_tb, T_PID);
-		pg_gen->Save(dir_out);
-		delete pg_gen;
-		ok = true;
+		ok = (NULL != pg_gen);
+		if (ok)
+		{
+			pg_gen->Save(dir_out);
+			delete pg_gen;
+		}
 	}
 	catch (std::string& err)
 	{
@@ -289,6 +292,56 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 	return ok;
 }
 
+bool posture_graph_merge(const char* interests_conf_path, const char* pg_dir_0, const char* pg_dir_1, const char* pg_name, Real eps_err)
+{
+	// bool ok = false;
+	// try
+	// {
+	// 	CFile2PostureGraphClose pg_0, pg_1;
+	// 	pg_0.Load(pg_dir_0, pg_name);
+	// 	pg_1.Load(pg_dir_1, pg_name);
+	// 	CFile2ArtiBody theta_0(pg_0.Theta());
+	// 	CFile2ArtiBody theta_1(pg_1.Theta());
+	// 	CFile2ArtiBody& theta = theta_0;
+	// 	ok = theta.Merge(theta_1);
+	// 	if (ok)
+	// 	{
+	// 		CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
+	// 		if (NULL == interests_conf)
+	// 		{
+	// 			std::stringstream err;
+	// 			err << "loading " << interests_conf_path << " failed";
+	// 			LOGIKVarErr(LogInfoCharPtr, err.str().c_str());
+	// 			return false;
+	// 		}
+
+	// 		Eigen::MatrixXr err_tb;
+	// 		htr2body.ETB_Setup(err_tb, interests_conf->Joints);
+
+	// 		CONF::CInterestsConf::UnLoad(interests_conf);
+
+	// 		CPostureGraphOpen pg_open(theta);
+	// 		const int T_PID0 = 0;
+	// 		const int T_PID1 = pg_0.N_theta();
+	// 		std::vector<int> postures_T = {T_PID0, T_PID1};
+	// 		CPostureGraphOpen::MergeTransitions(pg_open, pg_0, pg_1, err_tb, epsErr, postures_T);
+	// 		CPostureGraphClose2File* pg_gen = CPostureGraphOpen::GenerateClosePG(pg_open, err_tb, T_PID0);
+	// 		ok = (NULL != pg_gen);
+	// 		if (ok)
+	// 		{
+	// 			pg_gen->Save(dir_out);
+	// 			delete pg_gen;
+	// 		}
+	// 	}
+	// }
+	// catch (std::string& err)
+	// {
+	// 	LOGIKVarErr(LogInfoCharPtr, err.c_str());
+	// 	ok = false;
+	// }
+	// return ok;
+	return false;
+}
 
 bool convert_pg2dot(const char* path_src, const char* path_dst)
 {
