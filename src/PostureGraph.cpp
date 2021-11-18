@@ -29,14 +29,14 @@ void Dump(G& g, const char* fileName, int lineNo)
 	write_graphviz(dot_file, g);
 }
 
-CPostureGraphClose2File::CPostureGraphClose2File(std::size_t n_vs, const CFile2ArtiBody* theta_src)
+CPGClose::CPGClose(std::size_t n_vs, const CFile2ArtiBody* theta_src)
 	: CPGTransition(n_vs)
 	, c_thetaSrc_ref(theta_src)
 	, m_thetaFile(theta_src->GetBody(), (int)n_vs)
 {
 }
 
-void CPostureGraphClose2File::Initialize(CPostureGraphClose2File& graph, const Registry& reg, const Eigen::MatrixXr& errTB_src, int pid_T_src)
+void CPGClose::Initialize(CPGClose& graph, const Registry& reg, const Eigen::MatrixXr& errTB_src, int pid_T_src)
 {
 	struct V_ERR
 	{
@@ -95,7 +95,7 @@ void CPostureGraphClose2File::Initialize(CPostureGraphClose2File& graph, const R
 
 }
 
-void CPostureGraphClose2File::Save(const char* dir) const
+void CPGClose::Save(const char* dir) const
 {
 	std::string file_name(c_thetaSrc_ref->GetBody()->GetName_c());
 
@@ -110,7 +110,7 @@ void CPostureGraphClose2File::Save(const char* dir) const
 	m_thetaFile.WriteBvhFile(htr_path.u8string().c_str());
 }
 
-CPostureGraphClose2File::~CPostureGraphClose2File()
+CPGClose::~CPGClose()
 {
 }
 
@@ -304,9 +304,9 @@ void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::M
 
 }
 
-CPostureGraphClose2File* CPostureGraphOpen::GenerateClosePG(const CPostureGraphOpen& graph_src, const Eigen::MatrixXr& errTB, int pid_T_src)
+CPGClose* CPostureGraphOpen::GenerateClosePG(const CPostureGraphOpen& graph_src, const Eigen::MatrixXr& errTB, int pid_T_src)
 {
-	CPostureGraphClose2File::Registry regG;
+	CPGClose::Registry regG;
 	regG.Register_v(pid_T_src); // 'T' posture is the first posture registered which has no edges
 	auto e_range_src = boost::edges(graph_src);
 	const edge_iterator it_e_end_src = e_range_src.second;
@@ -316,11 +316,11 @@ CPostureGraphClose2File* CPostureGraphOpen::GenerateClosePG(const CPostureGraphO
 	{
 		auto e_src = *it_e_src;
 		vertex_descriptor v_src[] = { boost::source(e_src, graph_src), boost::target(e_src, graph_src) };
-		CPostureGraphClose2File::vertex_descriptor v_dst[] = { regG.Register_v(v_src[0]), regG.Register_v(v_src[1]) };
+		CPGClose::vertex_descriptor v_dst[] = { regG.Register_v(v_src[0]), regG.Register_v(v_src[1]) };
 		regG.Register_e(v_dst[0], v_dst[1]);
 	}
-	CPostureGraphClose2File* graph_dst = new CPostureGraphClose2File(regG.V.size(), graph_src.Theta());
-	CPostureGraphClose2File::Initialize(*graph_dst, regG, errTB, pid_T_src);
+	CPGClose* graph_dst = new CPGClose(regG.V.size(), graph_src.Theta());
+	CPGClose::Initialize(*graph_dst, regG, errTB, pid_T_src);
 	return graph_dst;
 }
 

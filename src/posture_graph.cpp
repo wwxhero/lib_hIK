@@ -276,7 +276,7 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 		const int T_PID = 0;
 		std::vector<int> postures_T = {T_PID};
 		CPostureGraphOpen::InitTransitions(pg_epsilon, err_tb, epsErr, postures_T);
-		CPostureGraphClose2File* pg_gen = CPostureGraphOpen::GenerateClosePG(pg_epsilon, err_tb, T_PID);
+		CPGClose* pg_gen = CPostureGraphOpen::GenerateClosePG(pg_epsilon, err_tb, T_PID);
 		ok = (NULL != pg_gen);
 		if (ok)
 		{
@@ -325,7 +325,7 @@ bool posture_graph_merge(const char* interests_conf_path, const char* pg_dir_0, 
 	// 		const int T_PID1 = pg_0.N_theta();
 	// 		std::vector<int> postures_T = {T_PID0, T_PID1};
 	// 		CPostureGraphOpen::MergeTransitions(pg_open, pg_0, pg_1, err_tb, epsErr, postures_T);
-	// 		CPostureGraphClose2File* pg_gen = CPostureGraphOpen::GenerateClosePG(pg_open, err_tb, T_PID0);
+	// 		CPGClose* pg_gen = CPostureGraphOpen::GenerateClosePG(pg_open, err_tb, T_PID0);
 	// 		ok = (NULL != pg_gen);
 	// 		if (ok)
 	// 		{
