@@ -30,7 +30,7 @@ void Dump(G& g, const char* fileName, int lineNo)
 }
 
 CPostureGraphClose2File::CPostureGraphClose2File(std::size_t n_vs, const CFile2ArtiBody* theta_src)
-	: CPostureGraphClose(n_vs)
+	: CPGTransition(n_vs)
 	, c_thetaSrc_ref(theta_src)
 	, m_thetaFile(theta_src->GetBody(), (int)n_vs)
 {

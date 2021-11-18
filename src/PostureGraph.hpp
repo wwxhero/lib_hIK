@@ -89,10 +89,10 @@ inline void EraseTag(VertexSearch& v_prop)
 	v_prop.err = CIKChain::ERROR_MIN;
 }
 
-class CPostureGraphClose : public PostureGraphList<VertexSearch, boost::no_property>
+class CPGTransition : public PostureGraphList<VertexSearch, boost::no_property>
 {
 public:
-	CPostureGraphClose(std::size_t n_vs)
+	CPGTransition(std::size_t n_vs)
 		: PostureGraphList<VertexSearch, boost::no_property>(n_vs)
 	{
 	}
@@ -129,7 +129,7 @@ public:
 };
 
 
-class CPostureGraphClose2File : public CPostureGraphClose
+class CPostureGraphClose2File : public CPGTransition
 {
 	friend class CPostureGraphOpen;
 public:
@@ -189,11 +189,11 @@ private:
 
 
 
-class CPGRuntime : public CPostureGraphClose
+class CPGRuntime : public CPGTransition
 {
 public:
 	CPGRuntime()
-		: CPostureGraphClose(0)
+		: CPGTransition(0)
 		, m_thetas(NULL)
 		, m_theta_star(0)
 	{
