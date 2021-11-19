@@ -8,7 +8,8 @@
 using namespace bvh11;
 
 CArtiBodyRef2File::CArtiBodyRef2File(const CArtiBodyNode* root_src, int n_frames) // throw(...)
-	: m_bodyRoot(root_src)
+	: CArtiBodyFile()
+	, m_bodyRoot(root_src)
 {
 	frames_ = n_frames;
 	frame_time_ = _FRAME_TIME_;
@@ -132,7 +133,7 @@ void CArtiBodyRef2File::UpdateMotion(int i_frame)
 	};
 	auto onLeaveBound_pose = [](Bound b_this) {};
 
-	Bound root_b = std::make_pair(root_joint_, m_bodyRoot);
+	Bound root_b = std::make_pair(root_joint_, const_cast<CArtiBodyNode*>(m_bodyRoot));
 	TraverseBFS_boundtree_norecur(root_b, onEnterBound_pose, onLeaveBound_pose);
 }
 
@@ -198,6 +199,11 @@ CArtiBodyFile::CArtiBodyFile(const CArtiBodyFile& src)
 {
 }
 
+CArtiBodyFile::CArtiBodyFile()
+	: bvh11::BvhObject()
+{
+
+}
 
 CArtiBodyNode* CArtiBodyFile::CreateBody(BODY_TYPE type) const
 {
