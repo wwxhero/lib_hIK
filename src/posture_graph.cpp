@@ -184,13 +184,13 @@ bool dissect(const char* confXML, const char* path, const char* dir_out)
 			goto EXIT;
 		}
 
-		int n_frames = theta.frames();
-		auto OnGroupNode = [&section, n_frames](CIKGroupNode* g_node)
+		int n_theta = theta.N_Theta();
+		auto OnGroupNode = [&section, n_theta](CIKGroupNode* g_node)
 			{
 				if (!g_node->Empty())
 				{
 					CArtiBodyNode* group_root = g_node->RootBody();
-					CArtiBodyRef2File* group_file = new CArtiBodyRef2File(group_root, n_frames);
+					CArtiBodyRef2File* group_file = new CArtiBodyRef2File(group_root, n_theta);
 					section.push_back({group_root, group_file});
 				}
 			};
@@ -201,13 +201,13 @@ bool dissect(const char* confXML, const char* path, const char* dir_out)
 
 		CIKGroupTree::TraverseDFS(ik_group, OnGroupNode, OffGroupNode);
 
-		for (int i_frame = 0; i_frame < n_frames; i_frame++)
+		for (int i_theta = 0; i_theta < n_theta; i_theta++)
 		{
-			theta.PoseBody<false>(i_frame);
+			theta.PoseBody<false>(i_theta);
 			for (auto sec : section)
 			{
 				CArtiBodyTree::FK_Update<true>(sec.group_root);
-				sec.group_file->UpdateMotion(i_frame);
+				sec.group_file->UpdateMotion(i_theta);
 			}
 		}
 
@@ -381,15 +381,16 @@ bool trim(const char* src, const char* dst, const char* const names_rm[], int n_
 			CArtiBodyTree::TraverseDFS(rootTrim, OnEnterBodyTrim, OnLeaveBodyTrim);
 
 			CPGThetaRuntime file_src(src, rootTrim);
-			int n_frames = file_src.frames();
-			CArtiBodyRef2File file_dst(rootTrim, n_frames);
+			int n_theta = file_src.N_Theta();
+			CArtiBodyRef2File file_dst(rootTrim, n_theta);
 
-			for (int i_frame = 0; i_frame < n_frames; i_frame ++)
+			for (int i_theta = 0; i_theta < n_theta; i_theta ++)
 			{
-				file_src.PoseBody<false>(i_frame);
-				file_dst.UpdateMotion(i_frame);
+				file_src.PoseBody<false>(i_theta);
+				file_dst.UpdateMotion(i_theta);
 			}
 
+			CArtiBodyTree::Destroy(rootTrim);
 			file_dst.WriteBvhFile(dst);
 
 		}

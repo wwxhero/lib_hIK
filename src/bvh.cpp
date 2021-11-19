@@ -689,7 +689,7 @@ bool convert(const char* src, const char* dst, bool htr2bvh)
 				(Real)0, (Real)0, (Real)1
 			};
 			CMoTree::Connect_cross(&mo_node_src, &mo_node_dst, CNN::FIRSTCHD, id);
-			int n_frames = bvh_src.frames();
+			int n_frames = bvh_src.N_Theta();
 			CArtiBodyRef2File bvh_reset(bodies[1], n_frames);
 			for (int i_frame = 0; i_frame < n_frames; i_frame ++)
 			{

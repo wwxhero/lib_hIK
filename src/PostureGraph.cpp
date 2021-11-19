@@ -219,8 +219,8 @@ bool CPGThetaClose::Merge(const CPGThetaClose& f2b_other)
 
 void CPGThetaClose::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints)
 {
-	unsigned int n_frames = frames();
-	err_out.resize(n_frames, n_frames);
+	unsigned int n_theta = N_Theta();
+	err_out.resize(n_theta, n_theta);
 
 	TransformArchive tm_bk;
 	CArtiBodyTree::Serialize<true>(m_rootBody, tm_bk); // backup the original configuration
@@ -240,21 +240,21 @@ void CPGThetaClose::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::str
 			}
 		};
 
-	for (unsigned int i_frame = 0; i_frame < n_frames; i_frame++)
+	for (unsigned int i_theta = 0; i_theta < n_theta; i_theta++)
 	{
-		PoseBody<false>(i_frame, m_rootBody);
+		PoseBody<false>(i_theta, m_rootBody);
 		UpdateTransforms(interest_bodies, tm_data_i);
-		for (unsigned int j_frame = 0; j_frame < i_frame; j_frame++)
+		for (unsigned int j_theta = 0; j_theta < i_theta; j_theta++)
 		{
-			PoseBody<false>(j_frame, m_rootBody);
+			PoseBody<false>(j_theta, m_rootBody);
 			UpdateTransforms(interest_bodies, tm_data_j);
-			auto& vis_scale_ij = err_out(i_frame, j_frame);
-			auto& vis_scale_ji = err_out(j_frame, i_frame);
+			auto& vis_scale_ij = err_out(i_theta, j_theta);
+			auto& vis_scale_ji = err_out(j_theta, i_theta);
 			auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
 			vis_scale_ij = err_ij;
 			vis_scale_ji = err_ij;
 		}
-		err_out(i_frame, i_frame) = (Real)0;
+		err_out(i_theta, i_theta) = (Real)0;
 	}
 
 	CArtiBodyTree::Serialize<false>(m_rootBody, tm_bk); // restore the original configuration
@@ -376,7 +376,7 @@ CPGClose::~CPGClose()
 
 
 CPostureGraphOpen::CPostureGraphOpen(const CPGThetaClose* theta)
-	: PostureGraphMatrix< VertexGen, EdgeGen>((std::size_t)(theta->frames()))
+	: PostureGraphMatrix< VertexGen, EdgeGen>((std::size_t)(theta->N_Theta()))
 	, m_theta(theta)
 {
 }
@@ -389,15 +389,15 @@ void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::M
 {
 	std::set<int> pids_ignore(postureids_ignore.begin(), postureids_ignore.end());
 
-	int n_frames = graph.m_theta->frames();
-	int i_frame = 0;
-	bool i_frame_ignored = (pids_ignore.end() != pids_ignore.find(i_frame));
-	for (int i_frame_p = i_frame + 1; i_frame_p < n_frames; i_frame ++, i_frame_p ++)
+	int n_theta = graph.m_theta->N_Theta();
+	int i_theta = 0;
+	bool i_theta_ignored = (pids_ignore.end() != pids_ignore.find(i_theta));
+	for (int i_theta_p = i_theta + 1; i_theta_p < n_theta; i_theta ++, i_theta_p ++)
 	{
-		bool i_frame_p_ignored = (pids_ignore.end() != pids_ignore.find(i_frame_p));
-		if (!i_frame_ignored && !i_frame_p_ignored)
-			boost::add_edge(i_frame, i_frame + 1, graph);
-		i_frame_ignored = i_frame_p_ignored;
+		bool i_theta_p_ignored = (pids_ignore.end() != pids_ignore.find(i_theta_p));
+		if (!i_theta_ignored && !i_theta_p_ignored)
+			boost::add_edge(i_theta, i_theta + 1, graph);
+		i_theta_ignored = i_theta_p_ignored;
 	}
 
 #if defined _DEBUG
@@ -406,13 +406,13 @@ void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::M
 
 	// err_epsilon = (1-cos(theta_eps_deg*deg2rad/2))*65535;
 	Real err_epsilon = (1 - cos(deg2rad(epsErr_deg) / (Real)2));
-	IKAssert(errTB.rows() == n_frames);
-	for (int i_theta = 0; i_theta < n_frames; i_theta++) //to skip the 'T' posture
+	IKAssert(errTB.rows() == n_theta);
+	for (int i_theta = 0; i_theta < n_theta; i_theta++) //to skip the 'T' posture
 	{
 		bool i_ignored = (pids_ignore.end() != pids_ignore.find(i_theta));
 		if (i_ignored)
 			continue;
-		for (int j_theta = i_theta + 1; j_theta < n_frames; j_theta++)
+		for (int j_theta = i_theta + 1; j_theta < n_theta; j_theta++)
 		{
 			bool j_ignored = (pids_ignore.end() != pids_ignore.find(j_theta));
 			if (j_ignored)
@@ -602,7 +602,7 @@ bool CPGRuntime::Load(const char* dir, CArtiBodyNode* root)
 	bool loaded =  (loaded_t && loaded_theta);
 
 #if defined _DEBUG
-	IKAssert(!loaded || m_thetas->frames() == num_vertices(*this));
+	IKAssert(!loaded || m_thetas->N_Theta() == num_vertices(*this));
 	if (loaded)
 	{
 		bool all_vertices_error_untagged = true;

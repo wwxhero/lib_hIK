@@ -43,7 +43,7 @@ public:
 		}
 		CArtiBodyTree::FK_Update<G_SPACE>(m_rootRef);
 	}
-	int frames() const
+	int N_Theta() const
 	{
 		return (int)m_motions.size();
 	}
@@ -71,7 +71,7 @@ public:
 
 	void ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints);
 
-	int frames() const {return (int)m_motions.size();}
+	int N_Theta() const {return (int)m_motions.size();}
 
 	const CArtiBodyNode* GetBody() const { return m_rootBody; }
 	CArtiBodyNode* GetBody() { return m_rootBody;  }
@@ -379,7 +379,7 @@ public:
 		for (auto theta_tagged : tagged)
 			EraseTag(graph[theta_tagged]);
 		IKAssert(-1 < (int)theta_err_kp.theta
-			&& (int)theta_err_kp.theta < graph.m_thetas->frames());
+			&& (int)theta_err_kp.theta < graph.m_thetas->N_Theta());
 
 		return (int)theta_err_kp.theta;
 	}
