@@ -406,16 +406,9 @@ HBODY create_tree_body_bvh_file(const wchar_t* path_src)
 {
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 	auto path_src_c = converter.to_bytes(path_src);
-	CFile2ArtiBody bvh(path_src_c);
-	const CArtiBodyNode* body_bvh = bvh.GetBody();
-	if (BODY_TYPE::bvh == body_bvh->c_type)
-	{
-		CArtiBodyNode* body_ret = NULL;
-		CArtiBodyTree::Clone(body_bvh, &body_ret, CArtiBodyTree::CloneNode_bvh);
-		return CAST_2HBODY(body_ret);
-	}
-	else
-		return H_INVALID;
+	CArtiBodyFile bvh(path_src_c);
+	CArtiBodyNode* body_bvh = bvh.CreateBodyBVH();
+	return CAST_2HBODY(body_bvh);
 }
 
 HBODY create_tree_body_bvh(HBVH hBvh)
@@ -665,7 +658,7 @@ bool convert(const char* src, const char* dst, bool htr2bvh)
 	CArtiBodyNode* bodies[2] = {nullptr};
 	try
 	{
-		CFile2ArtiBody bvh_src(src);
+		CThetaArtiBody bvh_src(src);
 		if (htr2bvh)
 		{
 			bodies[0] = bvh_src.GetBody();

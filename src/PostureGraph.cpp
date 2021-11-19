@@ -176,7 +176,7 @@ void Dump(G& g, const char* fileName, int lineNo)
 	write_graphviz(dot_file, g);
 }
 
-CPGClose::CPGClose(std::size_t n_vs, const CFile2ArtiBody* theta_src)
+CPGClose::CPGClose(std::size_t n_vs, const CThetaArtiBody* theta_src)
 	: CPGTransition(n_vs)
 	, c_thetaSrc_ref(theta_src)
 	, m_thetaFile(theta_src->GetBody(), (int)n_vs)
@@ -262,7 +262,7 @@ CPGClose::~CPGClose()
 }
 
 
-CPostureGraphOpen::CPostureGraphOpen(const CFile2ArtiBody* theta)
+CPostureGraphOpen::CPostureGraphOpen(const CThetaArtiBody* theta)
 	: PostureGraphMatrix< VertexGen, EdgeGen>((std::size_t)(theta->frames()))
 	, m_theta(theta)
 {

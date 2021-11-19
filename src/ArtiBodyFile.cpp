@@ -314,24 +314,24 @@ CArtiBodyNode* CArtiBodyFile::CreateBodyHTR() const
 	}
 }
 
-CFile2ArtiBody::CFile2ArtiBody(const char* path)
+CThetaArtiBody::CThetaArtiBody(const char* path)
 	: m_rootBody(NULL)
 {
 	Initialize(path);
 }
 
-CFile2ArtiBody::CFile2ArtiBody(const std::string& path)
+CThetaArtiBody::CThetaArtiBody(const std::string& path)
 	: m_rootBody(NULL)
 {
 	Initialize(path);
 }
 
-CFile2ArtiBody::~CFile2ArtiBody()
+CThetaArtiBody::~CThetaArtiBody()
 {
 	CArtiBodyTree::Destroy(m_rootBody);
 }
 
-void CFile2ArtiBody::Initialize(const std::string& path)
+void CThetaArtiBody::Initialize(const std::string& path)
 {
 	CArtiBodyFile artiFile(path);
 	m_rootBody = artiFile.CreateBody(CArtiBodyFile::toType(path));
@@ -371,7 +371,7 @@ void CFile2ArtiBody::Initialize(const std::string& path)
 	CArtiBodyTree::FK_Update<false>(m_rootBody);
 }
 
-bool CFile2ArtiBody::Merge(const CFile2ArtiBody& f2b_other)
+bool CThetaArtiBody::Merge(const CThetaArtiBody& f2b_other)
 {
 	bool body_eq = CArtiBodyTree::Similar(m_rootBody, f2b_other.m_rootBody);
 	if (body_eq)
@@ -383,7 +383,7 @@ bool CFile2ArtiBody::Merge(const CFile2ArtiBody& f2b_other)
 	return body_eq;
 }
 
-void CFile2ArtiBody::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints)
+void CThetaArtiBody::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints)
 {
 	unsigned int n_frames = frames();
 	err_out.resize(n_frames, n_frames);

@@ -101,12 +101,12 @@ protected:
 };
 
 
-class CFile2ArtiBody
+class CThetaArtiBody
 {
 public:
-	CFile2ArtiBody(const char* path);
-	CFile2ArtiBody(const std::string& path);
-	virtual ~CFile2ArtiBody();
+	CThetaArtiBody(const char* path);
+	CThetaArtiBody(const std::string& path);
+	virtual ~CThetaArtiBody();
 public:
 	template<bool G_SPACE>
 	void PoseBody(int i_frame) const
@@ -121,7 +121,7 @@ public:
 	const CArtiBodyNode* GetBody() const { return m_rootBody; }
 	CArtiBodyNode* GetBody() { return m_rootBody;  }
 
-	bool Merge(const CFile2ArtiBody& f2b);
+	bool Merge(const CThetaArtiBody& f2b);
 protected:
 	template<bool G_SPACE>
 	void PoseBody(int i_frame, CArtiBodyNode* body) const

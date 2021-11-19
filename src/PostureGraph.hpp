@@ -206,7 +206,7 @@ public:
 		std::list<REGISTER_e> E;
 	};
 protected:
-	CPGClose(std::size_t n_vs, const CFile2ArtiBody* theta_src);
+	CPGClose(std::size_t n_vs, const CThetaArtiBody* theta_src);
 	static void Initialize(CPGClose& graph_src, const Registry& reg, const Eigen::MatrixXr& errTB_src, int pid_T_src);
 public:
 	virtual ~CPGClose();
@@ -214,7 +214,7 @@ public:
 	void Save(const char* dir) const;
 
 private:
-	const CFile2ArtiBody* c_thetaSrc_ref;
+	const CThetaArtiBody* c_thetaSrc_ref;
 	CArtiBodyRef2File m_thetaFile;
 };
 
@@ -369,7 +369,7 @@ class CPostureGraphOpen : public PostureGraphMatrix<VertexGen, EdgeGen>
 
 {
 public:
-	CPostureGraphOpen(const CFile2ArtiBody* theta);
+	CPostureGraphOpen(const CThetaArtiBody* theta);
 
 	virtual ~CPostureGraphOpen();
 
@@ -379,9 +379,9 @@ public:
 
 	void Save(const char* dir, PG_FileType type = F_PG) const;
 
-	const CFile2ArtiBody* Theta() const { return m_theta; }
+	const CThetaArtiBody* Theta() const { return m_theta; }
 private:
-	const CFile2ArtiBody* m_theta;
+	const CThetaArtiBody* m_theta;
 };
 
 

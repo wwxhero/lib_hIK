@@ -74,7 +74,7 @@ bool init_err_tb(const char* interests_conf_path, const char* path_htr, _ERROR_T
 			interests_conf->Dump();
 		}*/
 
-		CFile2ArtiBody htr2body(path_htr);
+		CThetaArtiBody htr2body(path_htr);
 		Eigen::MatrixXr err_out;
 		htr2body.ETB_Setup(err_out, interests_conf->Joints);
 		err_tb->n_rows = (int)err_out.rows();
@@ -111,8 +111,8 @@ bool init_err_tb_merged(const char* interests_conf_path, const char* pg_theta_0,
 			interests_conf->Dump();
 		}*/
 
-		CFile2ArtiBody htr2body_0(pg_theta_0);
-		CFile2ArtiBody htr2body_1(pg_theta_1);
+		CThetaArtiBody htr2body_0(pg_theta_0);
+		CThetaArtiBody htr2body_1(pg_theta_1);
 
 		bool merged = htr2body_0.Merge(htr2body_1);
 		if (merged)
@@ -172,7 +172,7 @@ bool dissect(const char* confXML, const char* path, const char* dir_out)
 			goto EXIT;
 		}
 
-		CFile2ArtiBody file(path);
+		CThetaArtiBody file(path);
 		const CArtiBodyNode* body_root = file.GetBody();
 		IKAssert(NULL != body_root);
 		ik_group = CIKGroupTree::Generate(body_root, *body_conf);
@@ -248,7 +248,7 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 	bool ok = false;
 	try
 	{
-		CFile2ArtiBody htr2body(path_htr);
+		CThetaArtiBody htr2body(path_htr);
 
 		CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
 		if (NULL == interests_conf)
@@ -300,9 +300,9 @@ bool posture_graph_merge(const char* interests_conf_path, const char* pg_dir_0, 
 	// 	CPGRuntime pg_0, pg_1;
 	// 	pg_0.Load(pg_dir_0, pg_name);
 	// 	pg_1.Load(pg_dir_1, pg_name);
-	// 	CFile2ArtiBody theta_0(pg_0.Theta());
-	// 	CFile2ArtiBody theta_1(pg_1.Theta());
-	// 	CFile2ArtiBody& theta = theta_0;
+	// 	CThetaArtiBody theta_0(pg_0.Theta());
+	// 	CThetaArtiBody theta_1(pg_1.Theta());
+	// 	CThetaArtiBody& theta = theta_0;
 	// 	ok = theta.Merge(theta_1);
 	// 	if (ok)
 	// 	{
@@ -356,7 +356,7 @@ bool trim(const char* src, const char* dst, const char* const names_rm[], int n_
 	bool ret = false;
 	try
 	{
-		CFile2ArtiBody file2body(src);
+		CThetaArtiBody file2body(src);
 		CArtiBodyNode* rootTrim = NULL;
 		ret = CArtiBodyTree::Clone(file2body.GetBody(), &rootTrim);
 		if (ret)
