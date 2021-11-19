@@ -2,26 +2,25 @@
 #include "PostureGraph.hpp"
 
 CThetaArtiBodyRef::CThetaArtiBodyRef(const char* path, CArtiBodyNode* body_ref)
-	: CArtiBodyFile(path)
 {
 	m_rootRef = body_ref;
-	Initialize(body_ref);
+	Initialize(path, body_ref);
 }
 
 CThetaArtiBodyRef::CThetaArtiBodyRef(const std::string& path, CArtiBodyNode* body_ref)
-	: CArtiBodyFile(path)
 {
 	m_rootRef = body_ref;
-	Initialize(body_ref);
+	Initialize(path, body_ref);
 }
 
 // the standard body might not be compatible with the file,
 // the name of the body/joint is used for creating the map between standard and the file
 // the motions is created for the standard body
-void CThetaArtiBodyRef::Initialize(CArtiBodyNode* root_ref)
+void CThetaArtiBodyRef::Initialize(const std::string& path, CArtiBodyNode* root_ref)
 {
 	std::string exp("the standard body is not compatible with the bvh/htr file");
-	int n_frames = frames();
+	CArtiBodyFile abfile(path);
+	int n_frames = abfile.frames();
 	m_motions.resize(n_frames);
 	m_jointsRef.clear();
 
@@ -32,7 +31,7 @@ void CThetaArtiBodyRef::Initialize(CArtiBodyNode* root_ref)
 		CArtiBodyNode* body_ref;
 	};
 
-	CArtiBodyNode* root_file = CreateBodyHTR(); //the body type is trivial, since only the body joint is used which is indepedant of the body type
+	CArtiBodyNode* root_file = abfile.CreateBodyHTR(); //the body type is trivial, since only the body joint is used which is indepedant of the body type
 
 	std::unique_ptr<CArtiBodyNode, void(*)(CArtiBodyNode*)> root_file_gc(
 																root_file
@@ -61,7 +60,6 @@ void CThetaArtiBodyRef::Initialize(CArtiBodyNode* root_ref)
 	{
 		name2channel_i[channels[i_channel].name] = i_channel;
 	}
-
 
 	auto OnEnterBody_ref = [&channels, &name2channel_i = std::as_const(name2channel_i), exp](CArtiBodyNode* body)
 		{
@@ -92,10 +90,10 @@ void CThetaArtiBodyRef::Initialize(CArtiBodyNode* root_ref)
 
 	int i_frame = 0;
 
-	auto onEnterBound_pose = [&src = *this, &i_frame](Bound b_this)
+	auto onEnterBound_pose = [&src = abfile, &i_frame](CArtiBodyFile::Bound b_this)
 	{
 		IKAssert(b_this.first->name() == b_this.second->GetName_c());
-		const Joint_bvh_ptr joint_bvh = b_this.first;
+		const CArtiBodyFile::Joint_bvh_ptr joint_bvh = b_this.first;
 		CArtiBodyNode* body_hik = b_this.second;
 		Eigen::Affine3d delta_l = src.GetLocalDeltaTM(joint_bvh, i_frame);
 		Eigen::Quaterniond r(delta_l.linear());
@@ -104,9 +102,9 @@ void CThetaArtiBodyRef::Initialize(CArtiBodyNode* root_ref)
 		body_joint->SetRotation(Eigen::Quaternionr((Real)r.w(), (Real)r.x(), (Real)r.y(), (Real)r.z()));
 		body_joint->SetTranslation(Eigen::Vector3r((Real)tt.x(), (Real)tt.y(), (Real)tt.z()));
 	};
-	auto onLeaveBound_pose = [](Bound b_this) {};
+	auto onLeaveBound_pose = [](CArtiBodyFile::Bound b_this) {};
 
-	Bound root_file_bnd = std::make_pair(root_joint(), root_file);
+	CArtiBodyFile::Bound root_file_bnd = std::make_pair(abfile.root_joint(), root_file);
 
 	int n_tms = (int)m_jointsRef.size();
 	TransformArchive tms_bk(n_tms);
@@ -119,7 +117,7 @@ void CThetaArtiBodyRef::Initialize(CArtiBodyNode* root_ref)
 
 	for (i_frame = 0; i_frame < n_frames; i_frame ++)
 	{
-		TraverseBFS_boundtree_norecur(root_file_bnd, onEnterBound_pose, onLeaveBound_pose); //to pose body
+		abfile.TraverseBFS_boundtree_norecur(root_file_bnd, onEnterBound_pose, onLeaveBound_pose); //to pose body
 		for (auto channel : channels)
 		{
 			bool through = (NULL != channel.body_ref

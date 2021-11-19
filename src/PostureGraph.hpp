@@ -25,7 +25,7 @@
 enum PG_FileType {F_PG = 0, F_DOT};
 
 // it should be optimized to get rid of derivation to avoid unnecessary memory consumption from BvhObject from runtime.
-class CThetaArtiBodyRef : public CArtiBodyFile
+class CThetaArtiBodyRef
 {
 public:
 	CThetaArtiBodyRef(const char* path, CArtiBodyNode* body_ref);
@@ -43,12 +43,17 @@ public:
 		}
 		CArtiBodyTree::FK_Update<G_SPACE>(m_rootRef);
 	}
+	int frames() const
+	{
+		return (int)m_motions.size();
+	}
 private:
-	void Initialize(CArtiBodyNode* body_std);
+	void Initialize(const std::string& path, CArtiBodyNode* body_std);
 
 private:
 	std::vector<IJoint*> m_jointsRef;
 	CArtiBodyNode* m_rootRef;
+	std::vector<TransformArchive> m_motions;
 };
 
 template<typename VertexData, typename EdgeData>
