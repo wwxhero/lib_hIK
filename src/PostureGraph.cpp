@@ -148,6 +148,119 @@ void CThetaArtiBodyRef::Initialize(const std::string& path, CArtiBodyNode* root_
 	}
 }
 
+CThetaArtiBody::CThetaArtiBody(const char* path)
+	: m_rootBody(NULL)
+{
+	Initialize(path);
+}
+
+CThetaArtiBody::CThetaArtiBody(const std::string& path)
+	: m_rootBody(NULL)
+{
+	Initialize(path);
+}
+
+CThetaArtiBody::~CThetaArtiBody()
+{
+	CArtiBodyTree::Destroy(m_rootBody);
+}
+
+void CThetaArtiBody::Initialize(const std::string& path)
+{
+	CArtiBodyFile artiFile(path);
+	m_rootBody = artiFile.CreateBody(CArtiBodyFile::toType(path));
+
+	TransformArchive tm_bk;
+	CArtiBodyTree::Serialize<true>(m_rootBody, tm_bk);
+
+	int n_frames = artiFile.frames();
+	m_motions.resize(n_frames);
+
+	int i_frame = 0;
+
+	auto onEnterBound_pose = [&src = artiFile, &i_frame](CArtiBodyFile::Bound b_this)
+	{
+		IKAssert(b_this.first->name() == b_this.second->GetName_c());
+		const CArtiBodyFile::Joint_bvh_ptr joint_bvh = b_this.first;
+		CArtiBodyNode* body_hik = b_this.second;
+		Eigen::Affine3d delta_l = src.GetLocalDeltaTM(joint_bvh, i_frame);
+		Eigen::Quaterniond r(delta_l.linear());
+		Eigen::Vector3d tt(delta_l.translation());
+		IJoint* body_joint = body_hik->GetJoint();
+		body_joint->SetRotation(Eigen::Quaternionr((Real)r.w(), (Real)r.x(), (Real)r.y(), (Real)r.z()));
+		body_joint->SetTranslation(Eigen::Vector3r((Real)tt.x(), (Real)tt.y(), (Real)tt.z()));
+	};
+	auto onLeaveBound_pose = [](CArtiBodyFile::Bound b_this) {};
+
+	CArtiBodyFile::Bound root = std::make_pair(artiFile.root_joint(), m_rootBody);
+
+	for (i_frame = 0; i_frame < n_frames; i_frame ++)
+	{
+		artiFile.TraverseBFS_boundtree_norecur(root, onEnterBound_pose, onLeaveBound_pose); //to pose body
+		TransformArchive& tms_i = m_motions[i_frame];
+		CArtiBodyTree::Serialize<true>(m_rootBody, tms_i);
+	}
+
+	CArtiBodyTree::Serialize<false>(m_rootBody, tm_bk);
+	CArtiBodyTree::FK_Update<false>(m_rootBody);
+}
+
+bool CThetaArtiBody::Merge(const CThetaArtiBody& f2b_other)
+{
+	bool body_eq = CArtiBodyTree::Similar(m_rootBody, f2b_other.m_rootBody);
+	if (body_eq)
+	{
+		m_motions.insert(m_motions.end()
+					, f2b_other.m_motions.begin()
+					, f2b_other.m_motions.end());
+	}
+	return body_eq;
+}
+
+void CThetaArtiBody::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints)
+{
+	unsigned int n_frames = frames();
+	err_out.resize(n_frames, n_frames);
+
+	TransformArchive tm_bk;
+	CArtiBodyTree::Serialize<true>(m_rootBody, tm_bk); // backup the original configuration
+
+	std::list<const CArtiBodyNode*> interest_bodies;
+	int n_bodies = CArtiBodyTree::GetBodies(m_rootBody, joints, interest_bodies);
+	TransformArchive tm_data_i(n_bodies);
+	TransformArchive tm_data_j(n_bodies);
+
+	auto UpdateTransforms = [] (std::list<const CArtiBodyNode*>& interest_bodies, TransformArchive& tm_data)
+		{
+			int i_tm = 0;
+			for (auto body : interest_bodies)
+			{
+				_TRANSFORM& tm_i = tm_data[i_tm ++];
+				body->GetJoint()->GetTransform()->CopyTo(tm_i);
+			}
+		};
+
+	for (unsigned int i_frame = 0; i_frame < n_frames; i_frame++)
+	{
+		PoseBody<false>(i_frame, m_rootBody);
+		UpdateTransforms(interest_bodies, tm_data_i);
+		for (unsigned int j_frame = 0; j_frame < i_frame; j_frame++)
+		{
+			PoseBody<false>(j_frame, m_rootBody);
+			UpdateTransforms(interest_bodies, tm_data_j);
+			auto& vis_scale_ij = err_out(i_frame, j_frame);
+			auto& vis_scale_ji = err_out(j_frame, i_frame);
+			auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
+			vis_scale_ij = err_ij;
+			vis_scale_ji = err_ij;
+		}
+		err_out(i_frame, i_frame) = (Real)0;
+	}
+
+	CArtiBodyTree::Serialize<false>(m_rootBody, tm_bk); // restore the original configuration
+	CArtiBodyTree::FK_Update<false>(m_rootBody);
+}
+
 template<typename G>
 void Dump(G& g, const char* fileName, int lineNo)
 {

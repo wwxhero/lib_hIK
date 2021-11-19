@@ -14,6 +14,7 @@
 #include "Math.hpp"
 #include "loggerfast.h"
 #include "MoNode.hpp"
+#include "PostureGraph.hpp"
 
 
 #define ZERO_ENTITY_TT_HOMO
