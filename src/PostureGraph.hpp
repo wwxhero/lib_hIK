@@ -25,11 +25,11 @@
 enum PG_FileType {F_PG = 0, F_DOT};
 
 // it should be optimized to get rid of derivation to avoid unnecessary memory consumption from BvhObject from runtime.
-class CThetaArtiBodyRef
+class CPGThetaRuntime
 {
 public:
-	CThetaArtiBodyRef(const char* path, CArtiBodyNode* body_ref);
-	CThetaArtiBodyRef(const std::string& path, CArtiBodyNode* body_ref);
+	CPGThetaRuntime(const char* path, CArtiBodyNode* body_ref);
+	CPGThetaRuntime(const std::string& path, CArtiBodyNode* body_ref);
 	template<bool G_SPACE>
 	void PoseBody(int i_frame) const
 	{
@@ -387,7 +387,7 @@ public:
 private:
 	bool LoadThetas(const char* filePath, CArtiBodyNode* body_ref);
 
-	CThetaArtiBodyRef* m_thetas;
+	CPGThetaRuntime* m_thetas;
 	vertex_descriptor m_theta_star;
 
 };

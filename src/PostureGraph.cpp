@@ -1,13 +1,13 @@
 #include "pch.h"
 #include "PostureGraph.hpp"
 
-CThetaArtiBodyRef::CThetaArtiBodyRef(const char* path, CArtiBodyNode* body_ref)
+CPGThetaRuntime::CPGThetaRuntime(const char* path, CArtiBodyNode* body_ref)
 {
 	m_rootRef = body_ref;
 	Initialize(path, body_ref);
 }
 
-CThetaArtiBodyRef::CThetaArtiBodyRef(const std::string& path, CArtiBodyNode* body_ref)
+CPGThetaRuntime::CPGThetaRuntime(const std::string& path, CArtiBodyNode* body_ref)
 {
 	m_rootRef = body_ref;
 	Initialize(path, body_ref);
@@ -16,7 +16,7 @@ CThetaArtiBodyRef::CThetaArtiBodyRef(const std::string& path, CArtiBodyNode* bod
 // the standard body might not be compatible with the file,
 // the name of the body/joint is used for creating the map between standard and the file
 // the motions is created for the standard body
-void CThetaArtiBodyRef::Initialize(const std::string& path, CArtiBodyNode* root_ref)
+void CPGThetaRuntime::Initialize(const std::string& path, CArtiBodyNode* root_ref)
 {
 	std::string exp("the standard body is not compatible with the bvh/htr file");
 	CArtiBodyFile abfile(path);
@@ -629,7 +629,7 @@ bool CPGRuntime::LoadThetas(const char* filePath, CArtiBodyNode* body_ref)
 	bool loaded = false;
 	try
 	{
-		m_thetas = new CThetaArtiBodyRef(filePath, body_ref);
+		m_thetas = new CPGThetaRuntime(filePath, body_ref);
 		m_theta_star = 0;
 		loaded = true;
 	}
