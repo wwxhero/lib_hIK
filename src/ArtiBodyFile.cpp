@@ -8,7 +8,7 @@
 using namespace bvh11;
 
 CArtiBodyRef2File::CArtiBodyRef2File(const CArtiBodyNode* root_src, int n_frames) // throw(...)
-	: CArtiBodyFile()
+	: CArtiBodyFile(root_src->c_type)
 	, m_bodyRoot(root_src)
 {
 	frames_ = n_frames;
@@ -186,28 +186,31 @@ BODY_TYPE CArtiBodyFile::toType(const std::string& path)
 
 CArtiBodyFile::CArtiBodyFile(const char* path)
 	: bvh11::BvhObject(path)
+	, c_type(toType(path))
 {
 }
 
 CArtiBodyFile::CArtiBodyFile(const std::string& path)
 	: bvh11::BvhObject(path)
+	, c_type(toType(path))
 {
 }
 
 CArtiBodyFile::CArtiBodyFile(const CArtiBodyFile& src)
 	: bvh11::BvhObject(src)
+	, c_type(src.c_type)
 {
 }
 
-CArtiBodyFile::CArtiBodyFile()
+CArtiBodyFile::CArtiBodyFile(BODY_TYPE type)
 	: bvh11::BvhObject()
+	, c_type(type)
 {
-
 }
 
-CArtiBodyNode* CArtiBodyFile::CreateBody(BODY_TYPE type) const
+CArtiBodyNode* CArtiBodyFile::CreateBody() const
 {
-	switch(type)
+	switch(c_type)
 	{
 		case bvh:
 			return CreateBodyBVH();

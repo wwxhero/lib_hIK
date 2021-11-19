@@ -12,10 +12,10 @@ public:
 	CArtiBodyFile(const std::string& path); //throw ...
 	CArtiBodyFile(const CArtiBodyFile& src); //throw ...
 protected:
-	CArtiBodyFile();
+	CArtiBodyFile(BODY_TYPE type);
 public:
 	static BODY_TYPE toType(const std::string& path);
-	CArtiBodyNode* CreateBody(BODY_TYPE type) const;
+	CArtiBodyNode* CreateBody() const;
 	CArtiBodyNode* CreateBodyBVH() const;
 	CArtiBodyNode* CreateBodyHTR() const;
 	typedef std::shared_ptr<const bvh11::Joint> Joint_bvh_ptr;
@@ -53,6 +53,8 @@ public:
 	}
 protected:
 	std::vector<TransformArchive> m_motions;
+public:
+	BODY_TYPE c_type;
 };
 
 class CArtiBodyRef2File : public CArtiBodyFile

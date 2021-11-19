@@ -61,12 +61,29 @@ class CPGThetaClose
 public:
 	CPGThetaClose(const char* path);
 	CPGThetaClose(const std::string& path);
+	CPGThetaClose();
 	virtual ~CPGThetaClose();
 public:
 	template<bool G_SPACE>
 	void PoseBody(int i_frame) const
 	{
 		PoseBody<G_SPACE>(i_frame, m_rootBody);
+	}
+
+	template<bool G_SPACE>
+	void ResetPose() const
+	{
+		auto onEnterBodyReset = [](CArtiBodyNode* body)
+			{
+				IJoint* joint = body->GetJoint();
+				joint->SetRotation(Eigen::Quaternionr::Identity());
+				joint->SetTranslation(Eigen::Vector3r::Zero());
+			};
+		auto onLeaveBodyReset = [](CArtiBodyNode* body)
+			{
+			};
+		CArtiBodyTree::TraverseDFS(m_rootBody, onEnterBodyReset, onLeaveBodyReset);
+		CArtiBodyTree::FK_Update<G_SPACE>(m_rootBody);
 	}
 
 	void ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints);
@@ -87,8 +104,8 @@ protected:
 		CArtiBodyTree::FK_Update<G_SPACE>(body);
 	}
 
-private:
-	void Initialize(const std::string& path);
+public:
+	void Initialize(const CArtiBodyFile& abFile);
 private:
 	CArtiBodyNode* m_rootBody;
 	std::vector<TransformArchive> m_motions;
@@ -244,16 +261,14 @@ public:
 		std::list<REGISTER_e> E;
 	};
 protected:
-	CPGClose(std::size_t n_vs, const CPGThetaClose* theta_src);
-	static void Initialize(CPGClose& graph_src, const Registry& reg, const Eigen::MatrixXr& errTB_src, int pid_T_src);
+	CPGClose(std::size_t n_vs);
+	static void Initialize(CPGClose& graph_src, const Registry& reg, const Eigen::MatrixXr& errTB_src, int pid_T_src, const CPGThetaClose& theta_src);
 public:
 	virtual ~CPGClose();
-
 	void Save(const char* dir) const;
 
 private:
-	const CPGThetaClose* c_thetaSrc_ref;
-	CArtiBodyRef2File m_thetaFile;
+	CPGThetaClose m_theta;
 };
 
 

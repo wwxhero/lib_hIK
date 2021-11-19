@@ -20,6 +20,7 @@ void CPGThetaRuntime::Initialize(const std::string& path, CArtiBodyNode* root_re
 {
 	std::string exp("the standard body is not compatible with the bvh/htr file");
 	CArtiBodyFile abfile(path);
+	IKAssert(abfile.c_type == m_rootRef->c_type);
 	int n_frames = abfile.frames();
 	m_motions.resize(n_frames);
 	m_jointsRef.clear();
@@ -151,24 +152,31 @@ void CPGThetaRuntime::Initialize(const std::string& path, CArtiBodyNode* root_re
 CPGThetaClose::CPGThetaClose(const char* path)
 	: m_rootBody(NULL)
 {
-	Initialize(path);
+	CArtiBodyFile artiFile(path);
+	Initialize(artiFile);
 }
 
 CPGThetaClose::CPGThetaClose(const std::string& path)
 	: m_rootBody(NULL)
 {
-	Initialize(path);
+	CArtiBodyFile artiFile(path);
+	Initialize(artiFile);
+}
+
+CPGThetaClose::CPGThetaClose()
+	: m_rootBody(NULL)
+{
 }
 
 CPGThetaClose::~CPGThetaClose()
 {
-	CArtiBodyTree::Destroy(m_rootBody);
+	if (NULL != m_rootBody)
+		CArtiBodyTree::Destroy(m_rootBody);
 }
 
-void CPGThetaClose::Initialize(const std::string& path)
+void CPGThetaClose::Initialize(const CArtiBodyFile& artiFile)
 {
-	CArtiBodyFile artiFile(path);
-	m_rootBody = artiFile.CreateBody(CArtiBodyFile::toType(path));
+	m_rootBody = artiFile.CreateBody();
 
 	TransformArchive tm_bk;
 	CArtiBodyTree::Serialize<true>(m_rootBody, tm_bk);
@@ -289,21 +297,21 @@ void Dump(G& g, const char* fileName, int lineNo)
 	write_graphviz(dot_file, g);
 }
 
-CPGClose::CPGClose(std::size_t n_vs, const CPGThetaClose* theta_src)
+CPGClose::CPGClose(std::size_t n_vs)
 	: CPGTransition(n_vs)
-	, c_thetaSrc_ref(theta_src)
-	, m_thetaFile(theta_src->GetBody(), (int)n_vs)
 {
 }
 
-void CPGClose::Initialize(CPGClose& graph, const Registry& reg, const Eigen::MatrixXr& errTB_src, int pid_T_src)
+void CPGClose::Initialize(CPGClose& graph, const Registry& reg, const Eigen::MatrixXr& errTB_src, int pid_T_src, const CPGThetaClose& theta_src)
 {
 	struct V_ERR
 	{
 		vertex_descriptor v_dst;
 		Real err_T;
 	};
-	class V_ERRCompare {
+
+	class V_ERRCompare
+	{
 	public:
 		bool operator()(const V_ERR& v_err_1, const V_ERR& v_err_2)
 		{
@@ -315,15 +323,20 @@ void CPGClose::Initialize(CPGClose& graph, const Registry& reg, const Eigen::Mat
 	auto it_reg_v = reg.V.begin();
 	IKAssert(pid_T_src == it_reg_v->v_src
 			&& 0 == it_reg_v->v_dst); 	// the 'T' posture is supposed to be the first one to be registered
-	graph.c_thetaSrc_ref->PoseBody<false>(pid_T_src);
-	graph.m_thetaFile.UpdateMotion(0);
+
+	CArtiBodyRef2File abfile(theta_src.GetBody(), (int)graph.m_vertices.size());
+
+	theta_src.PoseBody<false>(pid_T_src);
+	abfile.UpdateMotion(0);
 	for (it_reg_v ++; it_reg_v != reg.V.end(); it_reg_v ++) // skip the 'T' posture to avoid a self-pointing edge
 	{
 		const auto& reg_v = *it_reg_v;
-		graph.c_thetaSrc_ref->PoseBody<false>((int)reg_v.v_src);
-		graph.m_thetaFile.UpdateMotion((int)reg_v.v_dst);
+		theta_src.PoseBody<false>((int)reg_v.v_src);
+		abfile.UpdateMotion((int)reg_v.v_dst);
 		lstV_ERR_T.push_back({reg_v.v_dst, errTB_src(pid_T_src, reg_v.v_src)});
 	}
+	theta_src.ResetPose<false>();
+	graph.m_theta.Initialize(abfile);
 
 	for (Registry::REGISTER_e reg_e : reg.E)
 	{
@@ -357,7 +370,7 @@ void CPGClose::Initialize(CPGClose& graph, const Registry& reg, const Eigen::Mat
 
 void CPGClose::Save(const char* dir) const
 {
-	std::string file_name(c_thetaSrc_ref->GetBody()->GetName_c());
+	std::string file_name(m_theta.GetBody()->GetName_c());
 
 	fs::path path_t(dir);
 	std::string file_name_t(file_name); file_name_t += ".pg";
@@ -367,7 +380,15 @@ void CPGClose::Save(const char* dir) const
 	fs::path htr_path(dir);
 	std::string htr_file_name(file_name); htr_file_name += ".htr";
 	htr_path.append(htr_file_name);
-	m_thetaFile.WriteBvhFile(htr_path.u8string().c_str());
+	int n_theta = m_theta.N_Theta();
+	CArtiBodyRef2File abfile(m_theta.GetBody(), n_theta);
+	for (int i_theta = 0; i_theta < n_theta; i_theta ++)
+	{
+		m_theta.PoseBody<false>(i_theta);
+		abfile.UpdateMotion(i_theta);
+	}
+	m_theta.ResetPose<false>();
+	abfile.WriteBvhFile(htr_path.u8string().c_str());
 }
 
 CPGClose::~CPGClose()
@@ -579,8 +600,8 @@ CPGClose* CPostureGraphOpen::GenerateClosePG(const CPostureGraphOpen& graph_src,
 		CPGClose::vertex_descriptor v_dst[] = { regG.Register_v(v_src[0]), regG.Register_v(v_src[1]) };
 		regG.Register_e(v_dst[0], v_dst[1]);
 	}
-	CPGClose* graph_dst = new CPGClose(regG.V.size(), graph_src.Theta());
-	CPGClose::Initialize(*graph_dst, regG, errTB, pid_T_src);
+	CPGClose* graph_dst = new CPGClose(regG.V.size());
+	CPGClose::Initialize(*graph_dst, regG, errTB, pid_T_src, *graph_src.Theta());
 	return graph_dst;
 }
 
