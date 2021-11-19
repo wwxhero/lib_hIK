@@ -56,12 +56,12 @@ private:
 	std::vector<TransformArchive> m_motions;
 };
 
-class CThetaArtiBody
+class CPGThetaClose
 {
 public:
-	CThetaArtiBody(const char* path);
-	CThetaArtiBody(const std::string& path);
-	virtual ~CThetaArtiBody();
+	CPGThetaClose(const char* path);
+	CPGThetaClose(const std::string& path);
+	virtual ~CPGThetaClose();
 public:
 	template<bool G_SPACE>
 	void PoseBody(int i_frame) const
@@ -76,7 +76,7 @@ public:
 	const CArtiBodyNode* GetBody() const { return m_rootBody; }
 	CArtiBodyNode* GetBody() { return m_rootBody;  }
 
-	bool Merge(const CThetaArtiBody& f2b);
+	bool Merge(const CPGThetaClose& f2b);
 protected:
 	template<bool G_SPACE>
 	void PoseBody(int i_frame, CArtiBodyNode* body) const
@@ -244,7 +244,7 @@ public:
 		std::list<REGISTER_e> E;
 	};
 protected:
-	CPGClose(std::size_t n_vs, const CThetaArtiBody* theta_src);
+	CPGClose(std::size_t n_vs, const CPGThetaClose* theta_src);
 	static void Initialize(CPGClose& graph_src, const Registry& reg, const Eigen::MatrixXr& errTB_src, int pid_T_src);
 public:
 	virtual ~CPGClose();
@@ -252,7 +252,7 @@ public:
 	void Save(const char* dir) const;
 
 private:
-	const CThetaArtiBody* c_thetaSrc_ref;
+	const CPGThetaClose* c_thetaSrc_ref;
 	CArtiBodyRef2File m_thetaFile;
 };
 
@@ -407,7 +407,7 @@ class CPostureGraphOpen : public PostureGraphMatrix<VertexGen, EdgeGen>
 
 {
 public:
-	CPostureGraphOpen(const CThetaArtiBody* theta);
+	CPostureGraphOpen(const CPGThetaClose* theta);
 
 	virtual ~CPostureGraphOpen();
 
@@ -417,9 +417,9 @@ public:
 
 	void Save(const char* dir, PG_FileType type = F_PG) const;
 
-	const CThetaArtiBody* Theta() const { return m_theta; }
+	const CPGThetaClose* Theta() const { return m_theta; }
 private:
-	const CThetaArtiBody* m_theta;
+	const CPGThetaClose* m_theta;
 };
 
 

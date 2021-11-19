@@ -74,9 +74,9 @@ bool init_err_tb(const char* interests_conf_path, const char* path_htr, _ERROR_T
 			interests_conf->Dump();
 		}*/
 
-		CThetaArtiBody htr2body(path_htr);
+		CPGThetaClose theta(path_htr);
 		Eigen::MatrixXr err_out;
-		htr2body.ETB_Setup(err_out, interests_conf->Joints);
+		theta.ETB_Setup(err_out, interests_conf->Joints);
 		err_tb->n_rows = (int)err_out.rows();
 		err_tb->n_cols = (int)err_out.cols();
 		auto data_size = err_out.rows() * err_out.cols() * sizeof(Real);
@@ -111,14 +111,14 @@ bool init_err_tb_merged(const char* interests_conf_path, const char* pg_theta_0,
 			interests_conf->Dump();
 		}*/
 
-		CThetaArtiBody htr2body_0(pg_theta_0);
-		CThetaArtiBody htr2body_1(pg_theta_1);
+		CPGThetaClose theta_0(pg_theta_0);
+		CPGThetaClose theta_1(pg_theta_1);
 
-		bool merged = htr2body_0.Merge(htr2body_1);
+		bool merged = theta_0.Merge(theta_1);
 		if (merged)
 		{
 			Eigen::MatrixXr err_out;
-			htr2body_0.ETB_Setup(err_out, interests_conf->Joints);
+			theta_0.ETB_Setup(err_out, interests_conf->Joints);
 			err_tb->n_rows = (int)err_out.rows();
 			err_tb->n_cols = (int)err_out.cols();
 			auto data_size = err_out.rows() * err_out.cols() * sizeof(Real);
@@ -172,8 +172,8 @@ bool dissect(const char* confXML, const char* path, const char* dir_out)
 			goto EXIT;
 		}
 
-		CThetaArtiBody file(path);
-		const CArtiBodyNode* body_root = file.GetBody();
+		CPGThetaClose theta(path);
+		const CArtiBodyNode* body_root = theta.GetBody();
 		IKAssert(NULL != body_root);
 		ik_group = CIKGroupTree::Generate(body_root, *body_conf);
 		if (NULL == ik_group)
@@ -184,7 +184,7 @@ bool dissect(const char* confXML, const char* path, const char* dir_out)
 			goto EXIT;
 		}
 
-		int n_frames = file.frames();
+		int n_frames = theta.frames();
 		auto OnGroupNode = [&section, n_frames](CIKGroupNode* g_node)
 			{
 				if (!g_node->Empty())
@@ -203,7 +203,7 @@ bool dissect(const char* confXML, const char* path, const char* dir_out)
 
 		for (int i_frame = 0; i_frame < n_frames; i_frame++)
 		{
-			file.PoseBody<false>(i_frame);
+			theta.PoseBody<false>(i_frame);
 			for (auto sec : section)
 			{
 				CArtiBodyTree::FK_Update<true>(sec.group_root);
@@ -216,7 +216,7 @@ bool dissect(const char* confXML, const char* path, const char* dir_out)
 		{
 			fs::path out_path(out_path_dir);
 			std::string file_name(sec.group_root->GetName_c());
-			if (htr == file.GetBody()->c_type)
+			if (htr == theta.GetBody()->c_type)
 				file_name += ".htr";
 			else
 				file_name += ".bvh";
@@ -248,7 +248,7 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 	bool ok = false;
 	try
 	{
-		CThetaArtiBody htr2body(path_htr);
+		CPGThetaClose theta(path_htr);
 
 		CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
 		if (NULL == interests_conf)
@@ -262,7 +262,7 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 		Eigen::MatrixXr err_tb;
 
 		if (NULL == err_tb_exter)
-			htr2body.ETB_Setup(err_tb, interests_conf->Joints);
+			theta.ETB_Setup(err_tb, interests_conf->Joints);
 		else
 		{
 			err_tb = Eigen::Map<Eigen::MatrixXr>(err_tb_exter->data
@@ -272,7 +272,7 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 
 		CONF::CInterestsConf::UnLoad(interests_conf);
 
-		CPostureGraphOpen pg_epsilon(&htr2body);
+		CPostureGraphOpen pg_epsilon(&theta);
 		const int T_PID = 0;
 		std::vector<int> postures_T = {T_PID};
 		CPostureGraphOpen::InitTransitions(pg_epsilon, err_tb, epsErr, postures_T);
@@ -300,9 +300,9 @@ bool posture_graph_merge(const char* interests_conf_path, const char* pg_dir_0, 
 	// 	CPGRuntime pg_0, pg_1;
 	// 	pg_0.Load(pg_dir_0, pg_name);
 	// 	pg_1.Load(pg_dir_1, pg_name);
-	// 	CThetaArtiBody theta_0(pg_0.Theta());
-	// 	CThetaArtiBody theta_1(pg_1.Theta());
-	// 	CThetaArtiBody& theta = theta_0;
+	// 	CPGThetaClose theta_0(pg_0.Theta());
+	// 	CPGThetaClose theta_1(pg_1.Theta());
+	// 	CPGThetaClose& theta = theta_0;
 	// 	ok = theta.Merge(theta_1);
 	// 	if (ok)
 	// 	{
@@ -356,9 +356,9 @@ bool trim(const char* src, const char* dst, const char* const names_rm[], int n_
 	bool ret = false;
 	try
 	{
-		CThetaArtiBody file2body(src);
+		CPGThetaClose theta(src);
 		CArtiBodyNode* rootTrim = NULL;
-		ret = CArtiBodyTree::Clone(file2body.GetBody(), &rootTrim);
+		ret = CArtiBodyTree::Clone(theta.GetBody(), &rootTrim);
 		if (ret)
 		{
 			std::set<std::string> rms;
@@ -391,6 +391,7 @@ bool trim(const char* src, const char* dst, const char* const names_rm[], int n_
 			}
 
 			file_dst.WriteBvhFile(dst);
+
 		}
 	}
 	catch(const std::string &exp)

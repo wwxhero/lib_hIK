@@ -148,24 +148,24 @@ void CPGThetaRuntime::Initialize(const std::string& path, CArtiBodyNode* root_re
 	}
 }
 
-CThetaArtiBody::CThetaArtiBody(const char* path)
+CPGThetaClose::CPGThetaClose(const char* path)
 	: m_rootBody(NULL)
 {
 	Initialize(path);
 }
 
-CThetaArtiBody::CThetaArtiBody(const std::string& path)
+CPGThetaClose::CPGThetaClose(const std::string& path)
 	: m_rootBody(NULL)
 {
 	Initialize(path);
 }
 
-CThetaArtiBody::~CThetaArtiBody()
+CPGThetaClose::~CPGThetaClose()
 {
 	CArtiBodyTree::Destroy(m_rootBody);
 }
 
-void CThetaArtiBody::Initialize(const std::string& path)
+void CPGThetaClose::Initialize(const std::string& path)
 {
 	CArtiBodyFile artiFile(path);
 	m_rootBody = artiFile.CreateBody(CArtiBodyFile::toType(path));
@@ -205,7 +205,7 @@ void CThetaArtiBody::Initialize(const std::string& path)
 	CArtiBodyTree::FK_Update<false>(m_rootBody);
 }
 
-bool CThetaArtiBody::Merge(const CThetaArtiBody& f2b_other)
+bool CPGThetaClose::Merge(const CPGThetaClose& f2b_other)
 {
 	bool body_eq = CArtiBodyTree::Similar(m_rootBody, f2b_other.m_rootBody);
 	if (body_eq)
@@ -217,7 +217,7 @@ bool CThetaArtiBody::Merge(const CThetaArtiBody& f2b_other)
 	return body_eq;
 }
 
-void CThetaArtiBody::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints)
+void CPGThetaClose::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints)
 {
 	unsigned int n_frames = frames();
 	err_out.resize(n_frames, n_frames);
@@ -289,7 +289,7 @@ void Dump(G& g, const char* fileName, int lineNo)
 	write_graphviz(dot_file, g);
 }
 
-CPGClose::CPGClose(std::size_t n_vs, const CThetaArtiBody* theta_src)
+CPGClose::CPGClose(std::size_t n_vs, const CPGThetaClose* theta_src)
 	: CPGTransition(n_vs)
 	, c_thetaSrc_ref(theta_src)
 	, m_thetaFile(theta_src->GetBody(), (int)n_vs)
@@ -375,7 +375,7 @@ CPGClose::~CPGClose()
 }
 
 
-CPostureGraphOpen::CPostureGraphOpen(const CThetaArtiBody* theta)
+CPostureGraphOpen::CPostureGraphOpen(const CPGThetaClose* theta)
 	: PostureGraphMatrix< VertexGen, EdgeGen>((std::size_t)(theta->frames()))
 	, m_theta(theta)
 {
