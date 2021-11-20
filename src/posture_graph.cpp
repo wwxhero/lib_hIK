@@ -292,55 +292,63 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 	return ok;
 }
 
-bool posture_graph_merge(const char* interests_conf_path, const char* pg_dir_0, const char* pg_dir_1, const char* pg_name, Real eps_err)
+HPG posture_graph_merge(HPG hpg_0, const HPG hpg_1, const char* confXML, Real eps_err)
 {
-	// bool ok = false;
-	// try
-	// {
-	// 	CPGRuntime pg_0, pg_1;
-	// 	pg_0.Load(pg_dir_0, pg_name);
-	// 	pg_1.Load(pg_dir_1, pg_name);
-	// 	CPGThetaClose theta_0(pg_0.Theta());
-	// 	CPGThetaClose theta_1(pg_1.Theta());
-	// 	CPGThetaClose& theta = theta_0;
-	// 	ok = theta.Merge(theta_1);
-	// 	if (ok)
-	// 	{
-	// 		CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
-	// 		if (NULL == interests_conf)
-	// 		{
-	// 			std::stringstream err;
-	// 			err << "loading " << interests_conf_path << " failed";
-	// 			LOGIKVarErr(LogInfoCharPtr, err.str().c_str());
-	// 			return false;
-	// 		}
+	try
+	{
+		bool ok = false;
+		HPG hpg = H_INVALID;
+		CPGClose* pg_0 = CAST_2PPG(hpg_0);
+		CPGClose* pg_1 = CAST_2PPG(hpg_1);
+		// pg_0.Load(pg_dir_0, pg_name);
+		// pg_1.Load(pg_dir_1, pg_name);
+		IKAssert(NULL != pg_0 && NULL != pg_1);
 
-	// 		Eigen::MatrixXr err_tb;
-	// 		htr2body.ETB_Setup(err_tb, interests_conf->Joints);
+		CPGThetaClose theta(pg_0->Theta());
+		ok = theta.Merge(pg_1->Theta());
+		if (!ok)
+		{
+			std::string err("Merge theta failed: the theta are not compatible");
+			LOGIKVarErr(LogInfoCharPtr, err.c_str());
+			return H_INVALID;
+		}
 
-	// 		CONF::CInterestsConf::UnLoad(interests_conf);
+		CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
+		ok = (NULL != interests_conf);
+		if (!ok)
+		{
+			std::stringstream err;
+			err << "loading " << interests_conf_path << " failed";
+			LOGIKVarErr(LogInfoCharPtr, err.str().c_str());
+			return H_INVALID;
+		}
 
-	// 		CPostureGraphOpen pg_open(theta);
-	// 		const int T_PID0 = 0;
-	// 		const int T_PID1 = pg_0.N_theta();
-	// 		std::vector<int> postures_T = {T_PID0, T_PID1};
-	// 		CPostureGraphOpen::MergeTransitions(pg_open, pg_0, pg_1, err_tb, epsErr, postures_T);
-	// 		CPGClose* pg_gen = CPostureGraphOpen::GenerateClosePG(pg_open, err_tb, T_PID0);
-	// 		ok = (NULL != pg_gen);
-	// 		if (ok)
-	// 		{
-	// 			pg_gen->Save(dir_out);
-	// 			delete pg_gen;
-	// 		}
-	// 	}
-	// }
-	// catch (std::string& err)
-	// {
-	// 	LOGIKVarErr(LogInfoCharPtr, err.c_str());
-	// 	ok = false;
-	// }
-	// return ok;
-	return false;
+		Eigen::MatrixXr err_tb;
+		theta.ETB_Setup(err_tb, interests_conf->Joints);
+		CONF::CInterestsConf::UnLoad(interests_conf);
+
+		CPostureGraphOpen pg_open(theta);
+		const int T_PID0 = 0;
+		const int T_PID1 = pg_0.N_theta();
+		std::vector<int> postures_T = {T_PID0, T_PID1};
+		CPostureGraphOpen::MergeTransitions(pg_open, pg_0, pg_1, err_tb, epsErr, postures_T);
+		CPGClose* pg_gen = CPostureGraphOpen::GenerateClosePG(pg_open, err_tb, T_PID0);
+		ok = (NULL != pg_gen);
+		if (!ok)
+		{
+			std::string err("Generate CPGClose failed");
+			LOGIKVarErr(LogInfoCharPtr, err.c_str());
+			return H_INVALID;
+		}
+
+		hpg = CAST_2HPG(pg_gen);
+		return hpg;
+	}
+	catch (std::string& err)
+	{
+		LOGIKVarErr(LogInfoCharPtr, err.c_str());
+		return H_INVALID;
+	}
 }
 
 bool convert_pg2dot(const char* path_src, const char* path_dst)
