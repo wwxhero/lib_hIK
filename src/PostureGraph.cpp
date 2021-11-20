@@ -168,6 +168,22 @@ CPGThetaClose::CPGThetaClose()
 {
 }
 
+CPGThetaClose::CPGThetaClose(const CPGThetaClose& src)
+	: m_rootBody(NULL)
+{
+	if (!CArtiBodyTree::Clone(src.m_rootBody, &m_rootBody))
+		throw std::string("clone body failed");
+	std::size_t n_motions = src.m_motions.size();
+	m_motions.resize(n_motions);
+
+	for (std::size_t i_motion = 0; i_motion < n_motions; i_motion ++)
+	{
+		TransformArchive& motions_i_dst = m_motions[i_motion];
+		const TransformArchive& motions_i_src = src.m_motions[i_motion];
+		motions_i_dst = motions_i_src;
+	}
+}
+
 CPGThetaClose::~CPGThetaClose()
 {
 	if (NULL != m_rootBody)
@@ -213,14 +229,14 @@ void CPGThetaClose::Initialize(const CArtiBodyFile& artiFile)
 	CArtiBodyTree::FK_Update<false>(m_rootBody);
 }
 
-bool CPGThetaClose::Merge(const CPGThetaClose& f2b_other)
+bool CPGThetaClose::Merge(const CPGThetaClose& theta_other)
 {
-	bool body_eq = CArtiBodyTree::Similar(m_rootBody, f2b_other.m_rootBody);
+	bool body_eq = CArtiBodyTree::Similar(m_rootBody, theta_other.m_rootBody);
 	if (body_eq)
 	{
 		m_motions.insert(m_motions.end()
-					, f2b_other.m_motions.begin()
-					, f2b_other.m_motions.end());
+					, theta_other.m_motions.begin()
+					, theta_other.m_motions.end());
 	}
 	return body_eq;
 }
@@ -651,7 +667,7 @@ void CPostureGraphOpen::MergeTransitions(CPostureGraphOpen& graph, const CPGTran
 	std::set<int> pids_ignore(postureids_ignore.begin(), postureids_ignore.end());
 
 	const CPGTransition* pgs[] = {&pg_0, &pg_1};
-	int i_v_base[] = {0, boost::num_vertices(pg_0)};
+	int i_v_base[] = {0, (int)boost::num_vertices(pg_0)};
 	for (int i_pg = 0; i_pg < 2; i_pg ++)
 	{
 		int i_v_base_i = i_v_base[i_pg];

@@ -347,11 +347,11 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 		theta.ETB_Setup(err_tb, interests_conf->Joints);
 		CONF::CInterestsConf::UnLoad(interests_conf);
 
-		CPostureGraphOpen pg_open(theta);
+		CPostureGraphOpen pg_open(&theta);
 		const int T_PID0 = 0;
-		const int T_PID1 = pg_0.N_theta();
+		const int T_PID1 = pg_0->Theta().N_Theta();
 		std::vector<int> postures_T = {T_PID0, T_PID1};
-		CPostureGraphOpen::MergeTransitions(pg_open, pg_0, pg_1, err_tb, epsErr, postures_T);
+		CPostureGraphOpen::MergeTransitions(pg_open, *pg_0, *pg_1, err_tb, eps_err, postures_T);
 		CPGClose* pg_gen = CPostureGraphOpen::GenerateClosePG(pg_open, err_tb, T_PID0);
 		ok = (NULL != pg_gen);
 		if (!ok)
@@ -369,7 +369,6 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 		LOGIKVarErr(LogInfoCharPtr, err.c_str());
 		return H_INVALID;
 	}
-	return H_INVALID;
 }
 
 bool save_pg(HPG hpg, const char* dir_out)

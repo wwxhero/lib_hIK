@@ -62,6 +62,7 @@ public:
 	CPGThetaClose(const char* path);
 	CPGThetaClose(const std::string& path);
 	CPGThetaClose();
+	CPGThetaClose(const CPGThetaClose& src);
 	virtual ~CPGThetaClose();
 public:
 	template<bool G_SPACE>
@@ -269,6 +270,10 @@ public:
 	
 	bool Load(const char* dir, const char* pg_name);
 	void Save(const char* dir) const;
+	const CPGThetaClose& Theta() const
+	{
+		return m_theta;
+	}
 private:
 	bool LoadThetas(const std::string& path_theta);
 private:
