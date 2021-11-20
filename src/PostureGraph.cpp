@@ -302,6 +302,12 @@ CPGClose::CPGClose(std::size_t n_vs)
 {
 }
 
+CPGClose::CPGClose()
+	: CPGTransition(0)
+{
+
+}
+
 void CPGClose::Initialize(CPGClose& graph, const Registry& reg, const Eigen::MatrixXr& errTB_src, int pid_T_src, const CPGThetaClose& theta_src)
 {
 	struct V_ERR
@@ -389,6 +395,57 @@ void CPGClose::Save(const char* dir) const
 	}
 	m_theta.ResetPose<false>();
 	abfile.WriteBvhFile(htr_path.u8string().c_str());
+}
+
+bool CPGClose::Load(const char* dir, const char* pg_name)
+{
+	fs::path dir_path(dir);
+	std::string filename_transi(pg_name); filename_transi += ".pg";
+	fs::path path_transi(dir_path); path_transi.append(filename_transi);
+	bool loaded_transi = LoadTransitions(path_transi.u8string().c_str());
+
+	std::string filename_theta(pg_name); filename_theta += ".htr";
+	fs::path path_theta(dir_path); path_theta.append(filename_theta);
+	bool loaded_theta = LoadThetas(path_theta.u8string().c_str());
+
+	LOGIKVar(LogInfoCharPtr, pg_name);
+	LOGIKVar(LogInfoBool, loaded_transi);
+	LOGIKVar(LogInfoBool, loaded_theta);
+	bool loaded =  (loaded_transi && loaded_theta);
+
+#if defined _DEBUG
+	IKAssert(!loaded || m_theta.N_Theta() == num_vertices(*this));
+	if (loaded)
+	{
+		bool all_vertices_error_untagged = true;
+		//check error
+		auto v_range = boost::vertices(*this);
+		for (vertex_iterator it_v = v_range.first; it_v != v_range.second && all_vertices_error_untagged; it_v++)
+		{
+			const auto& v_property = (*this)[*it_v];
+			all_vertices_error_untagged = !ErrorTagged(v_property);
+		}
+		IKAssert(all_vertices_error_untagged);
+	}
+	LOGIKVar(LogInfoInt, m_theta.N_Theta());
+#endif
+
+	return loaded;
+}
+
+bool CPGClose::LoadThetas(const std::string& path_theta)
+{
+	try
+	{
+		CArtiBodyFile abfile(path_theta);
+		m_theta.Initialize(abfile);
+		return true;
+	}
+	catch (std::string &exp)
+	{
+		LOGIKVarErr(LogInfoCharPtr, exp.c_str());
+		return false;
+	}
 }
 
 CPGClose::~CPGClose()
@@ -609,18 +666,18 @@ bool CPGRuntime::Load(const char* dir, CArtiBodyNode* root)
 {
 	const char* pg_name = root->GetName_c();
 	fs::path dir_path(dir);
-	std::string filename_t(pg_name); filename_t += ".pg";
-	fs::path path_t(dir_path); path_t.append(filename_t);
-	bool loaded_t = LoadTransitions(path_t.u8string().c_str());
+	std::string filename_transi(pg_name); filename_transi += ".pg";
+	fs::path path_transi(dir_path); path_transi.append(filename_transi);
+	bool loaded_transi = LoadTransitions(path_transi.u8string().c_str());
 
 	std::string filename_theta(pg_name); filename_theta += ".htr";
 	fs::path path_theta(dir_path); path_theta.append(filename_theta);
 	bool loaded_theta = LoadThetas(path_theta.u8string().c_str(), root);
 
 	LOGIKVar(LogInfoCharPtr, pg_name);
-	LOGIKVar(LogInfoBool, loaded_t);
+	LOGIKVar(LogInfoBool, loaded_transi);
 	LOGIKVar(LogInfoBool, loaded_theta);
-	bool loaded =  (loaded_t && loaded_theta);
+	bool loaded =  (loaded_transi && loaded_theta);
 
 #if defined _DEBUG
 	IKAssert(!loaded || m_thetas->N_Theta() == num_vertices(*this));
@@ -640,8 +697,6 @@ bool CPGRuntime::Load(const char* dir, CArtiBodyNode* root)
 
 	return loaded;
 }
-
-
 
 bool CPGRuntime::LoadThetas(const char* filePath, CArtiBodyNode* body_ref)
 {

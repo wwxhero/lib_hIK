@@ -49,3 +49,9 @@ T CAST_2H(F* p)
 
 #define CAST_2PCONFFKRC(hConfFKRC)\
 	CAST_2P<HCONFMOPIPE, CConfMoPipe>(hConfFKRC)
+
+#define CAST_2PPG(hPG)\
+	CAST_2P<HPG, CPGClose>(hPG)
+
+#define CAST_2HPG(pPG)\
+	CAST_2H<CPGClose, HPG>(pPG)

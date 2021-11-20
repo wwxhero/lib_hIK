@@ -264,9 +264,13 @@ protected:
 	CPGClose(std::size_t n_vs);
 	static void Initialize(CPGClose& graph_src, const Registry& reg, const Eigen::MatrixXr& errTB_src, int pid_T_src, const CPGThetaClose& theta_src);
 public:
+	CPGClose();
 	virtual ~CPGClose();
+	
+	bool Load(const char* dir, const char* pg_name);
 	void Save(const char* dir) const;
-
+private:
+	bool LoadThetas(const std::string& path_theta);
 private:
 	CPGThetaClose m_theta;
 };

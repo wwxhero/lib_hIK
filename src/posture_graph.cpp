@@ -1,5 +1,6 @@
 #include "pch.h"
 #include <fstream>
+#include "handle_helper.hpp"
 #include "Math.hpp"
 #include "posture_graph.h"
 #include "ArtiBody.hpp"
@@ -292,6 +293,24 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 	return ok;
 }
 
+HPG posture_graph_load(const char* pg_dir_0, const char* pg_name)
+{
+	CPGClose* pg = new CPGClose();
+	if (!pg->Load(pg_dir_0, pg_name))
+	{
+		delete pg;
+		return H_INVALID;
+	}
+	else
+		return CAST_2HPG(pg);
+}
+
+void posture_graph_release(HPG hPG)
+{
+	CPGClose* pg = CAST_2PPG(hPG);
+	delete pg;
+}
+
 HPG posture_graph_merge(HPG hpg_0, const HPG hpg_1, const char* confXML, Real eps_err)
 {
 	try
@@ -324,6 +343,7 @@ HPG posture_graph_merge(HPG hpg_0, const HPG hpg_1, const char* confXML, Real ep
 		}
 
 		Eigen::MatrixXr err_tb;
+
 		theta.ETB_Setup(err_tb, interests_conf->Joints);
 		CONF::CInterestsConf::UnLoad(interests_conf);
 
