@@ -463,25 +463,12 @@ CPostureGraphOpen::~CPostureGraphOpen()
 {
 }
 
-void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore)
+void CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore)
 {
-	std::set<int> pids_ignore(postureids_ignore.begin(), postureids_ignore.end());
-
-	int n_theta = graph.m_theta->N_Theta();
-	int i_theta = 0;
-	bool i_theta_ignored = (pids_ignore.end() != pids_ignore.find(i_theta));
-	for (int i_theta_p = i_theta + 1; i_theta_p < n_theta; i_theta ++, i_theta_p ++)
-	{
-		bool i_theta_p_ignored = (pids_ignore.end() != pids_ignore.find(i_theta_p));
-		if (!i_theta_ignored && !i_theta_p_ignored)
-			boost::add_edge(i_theta, i_theta + 1, graph);
-		i_theta_ignored = i_theta_p_ignored;
-	}
-
 #if defined _DEBUG
 	Dump(graph, __FILE__, __LINE__);
 #endif
-
+	int n_theta = graph.m_theta->N_Theta();
 	// err_epsilon = (1-cos(theta_eps_deg*deg2rad/2))*65535;
 	Real err_epsilon = (1 - cos(deg2rad(epsErr_deg) / (Real)2));
 	IKAssert(errTB.rows() == n_theta);
@@ -639,8 +626,49 @@ void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::M
 	Dump(graph, __FILE__, __LINE__);
 #endif
 
-
 }
+
+void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore)
+{
+	std::set<int> pids_ignore(postureids_ignore.begin(), postureids_ignore.end());
+
+	int n_theta = graph.m_theta->N_Theta();
+	int i_theta = 0;
+	bool i_theta_ignored = (pids_ignore.end() != pids_ignore.find(i_theta));
+	for (int i_theta_p = i_theta + 1; i_theta_p < n_theta; i_theta ++, i_theta_p ++)
+	{
+		bool i_theta_p_ignored = (pids_ignore.end() != pids_ignore.find(i_theta_p));
+		if (!i_theta_ignored && !i_theta_p_ignored)
+			boost::add_edge(i_theta, i_theta + 1, graph);
+		i_theta_ignored = i_theta_p_ignored;
+	}
+
+	EliminateDupTheta(graph, errTB, epsErr_deg, pids_ignore);
+}
+
+void CPostureGraphOpen::MergeTransitions(CPostureGraphOpen& graph, const CPGTransition& pg_0, const CPGTransition& pg_1, const Eigen::MatrixXr& errTB, Real epsErr_deg, std::vector<int>& postureids_ignore)
+{
+	std::set<int> pids_ignore(postureids_ignore.begin(), postureids_ignore.end());
+
+	const CPGTransition* pgs[] = {&pg_0, &pg_1};
+	int i_v_base[] = {0, boost::num_vertices(pg_0)};
+	for (int i_pg = 0; i_pg < 2; i_pg ++)
+	{
+		int i_v_base_i = i_v_base[i_pg];
+		auto pg_i = pgs[i_pg];
+		auto e_range_i = boost::edges(*pgs[i_pg]);
+		for (CPGTransition::edge_iterator it_e = e_range_i.first; it_e != e_range_i.second; it_e++)
+		{
+			auto e = *it_e;
+			int i_theta_0 = boost::source(e, *pg_i) + i_v_base_i;
+			int i_theta_1 = boost::target(e, *pg_i) + i_v_base_i;
+			boost::add_edge(i_theta_0, i_theta_1, graph);
+		}
+	}
+
+	EliminateDupTheta(graph, errTB, epsErr_deg, pids_ignore);
+}
+
 
 CPGClose* CPostureGraphOpen::GenerateClosePG(const CPostureGraphOpen& graph_src, const Eigen::MatrixXr& errTB, int pid_T_src)
 {

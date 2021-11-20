@@ -311,7 +311,7 @@ void posture_graph_release(HPG hPG)
 	delete pg;
 }
 
-HPG posture_graph_merge(HPG hpg_0, const HPG hpg_1, const char* confXML, Real eps_err)
+HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, Real eps_err)
 {
 	try
 	{
@@ -369,6 +369,19 @@ HPG posture_graph_merge(HPG hpg_0, const HPG hpg_1, const char* confXML, Real ep
 		LOGIKVarErr(LogInfoCharPtr, err.c_str());
 		return H_INVALID;
 	}
+	return H_INVALID;
+}
+
+bool save_pg(HPG hpg, const char* dir_out)
+{
+	CPGClose* pPG = CAST_2PPG(hpg);
+	if (pPG)
+	{
+		pPG->Save(dir_out);
+		return true;
+	}
+	else
+		return false;
 }
 
 bool convert_pg2dot(const char* path_src, const char* path_dst)
