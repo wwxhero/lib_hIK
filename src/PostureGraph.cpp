@@ -481,9 +481,9 @@ CPostureGraphOpen::~CPostureGraphOpen()
 
 void CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore)
 {
-//#if defined _DEBUG
+#if defined _DEBUG
 	Dump(graph_eps, __FILE__, __LINE__);
-//#endif
+#endif
 	int n_theta = graph_eps.m_theta->N_Theta();
 	// err_epsilon = (1-cos(theta_eps_deg*deg2rad/2))*65535;
 	Real err_epsilon = (1 - cos(deg2rad(epsErr_deg) / (Real)2));
@@ -503,9 +503,9 @@ void CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph_eps, const st
 		}
 	}
 
-//#if defined _DEBUG
+#if defined _DEBUG
 	Dump(graph_eps, __FILE__, __LINE__);
-//#endif
+#endif
 
 	//tag rm for each vertex
 	auto v_range = boost::vertices(graph_eps);
@@ -645,9 +645,9 @@ void CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph_eps, const st
 		}
 	}
 
-//#if defined _DEBUG
+#if defined _DEBUG
 	Dump(graph, __FILE__, __LINE__);
-//#endif
+#endif
 
 }
 
