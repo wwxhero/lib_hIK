@@ -498,7 +498,7 @@ void CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph_eps, const st
 			bool j_ignored = (pids_ignore.end() != pids_ignore.find(j_theta));
 			if (j_ignored)
 				continue;
-			if (errTB(i_theta, j_theta) <= err_epsilon)
+			if (errTB(i_theta, j_theta) < err_epsilon)
 				boost::add_edge(i_theta, j_theta, graph_eps);
 		}
 	}
@@ -636,7 +636,7 @@ void CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph_eps, const st
 				{
 					vertex_descriptor v_i = *it_v_i;
 					vertex_descriptor v_j = *it_v_j;
-					if (errTB(v_i, v_j) > err_epsilon)
+					if (!(errTB(v_i, v_j) < err_epsilon))
 					{
 						boost::add_edge(v_i, v_j, graph);
 					}
