@@ -445,7 +445,7 @@ public:
 
 	const CPGThetaClose* Theta() const { return m_theta; }
 private:
-	static void EliminateDupTheta(CPostureGraphOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore);
+	static void EliminateDupTheta(CPostureGraphOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore);
 private:
 	const CPGThetaClose* m_theta;
 };

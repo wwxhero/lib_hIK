@@ -479,12 +479,12 @@ CPostureGraphOpen::~CPostureGraphOpen()
 {
 }
 
-void CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore)
+void CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore)
 {
-#if defined _DEBUG
-	Dump(graph, __FILE__, __LINE__);
-#endif
-	int n_theta = graph.m_theta->N_Theta();
+//#if defined _DEBUG
+	Dump(graph_eps, __FILE__, __LINE__);
+//#endif
+	int n_theta = graph_eps.m_theta->N_Theta();
 	// err_epsilon = (1-cos(theta_eps_deg*deg2rad/2))*65535;
 	Real err_epsilon = (1 - cos(deg2rad(epsErr_deg) / (Real)2));
 	IKAssert(errTB.rows() == n_theta);
@@ -498,33 +498,33 @@ void CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph, const Eigen:
 			bool j_ignored = (pids_ignore.end() != pids_ignore.find(j_theta));
 			if (j_ignored)
 				continue;
-			if (errTB(i_theta, j_theta) < err_epsilon)
-				boost::add_edge(i_theta, j_theta, graph);
+			if (errTB(i_theta, j_theta) <= err_epsilon)
+				boost::add_edge(i_theta, j_theta, graph_eps);
 		}
 	}
 
-#if defined _DEBUG
-	Dump(graph, __FILE__, __LINE__);
-#endif
+//#if defined _DEBUG
+	Dump(graph_eps, __FILE__, __LINE__);
+//#endif
 
 	//tag rm for each vertex
-	auto v_range = boost::vertices(graph);
+	auto v_range = boost::vertices(graph_eps);
 	vertex_iterator it_v_end = v_range.second;
 	for (vertex_iterator it_v = v_range.first; it_v != it_v_end; it_v++)
 	{
-		auto& v_property = (graph)[*it_v];
+		auto& v_property = (graph_eps)[*it_v];
 		v_property.tag_rm = false;
 		v_property.deg = 0;
 	}
 
 	// compute degree for the vertex (work around for adjacent matrix)
-	auto e_range = boost::edges(graph);
+	auto e_range = boost::edges(graph_eps);
 	const edge_iterator it_e_end = e_range.second;
 	for (edge_iterator it_e = e_range.first; it_e != it_e_end; it_e++)
 	{
 		auto e = *it_e;
-		vertex_descriptor v[] = { boost::source(e, graph), boost::target(e, graph) };
-		(graph)[v[0]].deg++; (graph)[v[1]].deg++;
+		vertex_descriptor v[] = { boost::source(e, graph_eps), boost::target(e, graph_eps) };
+		(graph_eps)[v[0]].deg++; (graph_eps)[v[1]].deg++;
 	}
 
 	// tag edge degrees and sort edges by degree
@@ -533,9 +533,9 @@ void CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph, const Eigen:
 	{
 		auto e = *it_e;
 		edges_eps.push_back(e);
-		vertex_descriptor v[] = { boost::source(e, graph), boost::target(e, graph) };
-		std::size_t deg[] = { (graph)[v[0]].deg, (graph)[v[1]].deg };
-		auto& e_property = (graph)[e];
+		vertex_descriptor v[] = { boost::source(e, graph_eps), boost::target(e, graph_eps) };
+		std::size_t deg[] = { (graph_eps)[v[0]].deg, (graph_eps)[v[1]].deg };
+		auto& e_property = (graph_eps)[e];
 		e_property.deg = std::max(deg[0], deg[1]);
 	}
 
@@ -554,49 +554,56 @@ void CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph, const Eigen:
 	private:
 		CPostureGraphOpen& graph;
 	};
-	edges_eps.sort(ComEdgeByDeg(graph));
+	edges_eps.sort(ComEdgeByDeg(graph_eps));
 
+	// tag for vertices removal
 	while (!edges_eps.empty())
 	{
 		bool exists_a_tagged_vertex = false;
 		for (auto e : edges_eps)
 		{
-			vertex_descriptor v[] = { boost::source(e, graph), boost::target(e, graph) };
-			std::size_t deg[] = { (graph)[v[0]].deg, (graph)[v[1]].deg };
-			bool rm[] = { (graph)[v[0]].tag_rm, (graph)[v[1]].tag_rm };
+			vertex_descriptor v[] = { boost::source(e, graph_eps), boost::target(e, graph_eps) };
+			std::size_t deg[] = { (graph_eps)[v[0]].deg, (graph_eps)[v[1]].deg };
+			bool rm[] = { (graph_eps)[v[0]].tag_rm, (graph_eps)[v[1]].tag_rm };
 			if (!rm[0] && !rm[1])
 			{
 				if (deg[0] < deg[1])
 				{
-					(graph)[v[1]].tag_rm = true;
+					(graph_eps)[v[1]].tag_rm = true;
 					exists_a_tagged_vertex = true;
 				}
 				else if (deg[0] > deg[1])
 				{
-					(graph)[v[0]].tag_rm = true;
+					(graph_eps)[v[0]].tag_rm = true;
 					exists_a_tagged_vertex = true;
 				}
 			}
 		}
 		if (!exists_a_tagged_vertex && !edges_eps.empty())
-			(graph)[boost::source(*edges_eps.begin(), graph)].tag_rm = true;
+			(graph_eps)[boost::source(*edges_eps.begin(), graph_eps)].tag_rm = true;
 
 		for (auto it_e = edges_eps.begin()
 			; it_e != edges_eps.end()
 			; )
 		{
 			auto e = *it_e;
-			vertex_descriptor v[] = { boost::source(e, graph), boost::target(e, graph) };
-			bool rm[] = { (graph)[v[0]].tag_rm, (graph)[v[1]].tag_rm };
+			vertex_descriptor v[] = { boost::source(e, graph_eps), boost::target(e, graph_eps) };
+			bool rm[] = { (graph_eps)[v[0]].tag_rm, (graph_eps)[v[1]].tag_rm };
 			if (rm[0] || rm[1])
 			{
-				(graph)[v[0]].deg--; (graph)[v[1]].deg--;
+				(graph_eps)[v[0]].deg--; (graph_eps)[v[1]].deg--;
 				it_e = edges_eps.erase(it_e);
 			}
 			else
 				it_e++;
 		}
 	}
+
+	// remove vertices
+	CPostureGraphOpen& graph = graph_eps;
+
+	for (auto e_0 : transi_0)
+		boost::add_edge(e_0.first, e_0.second, graph);
 
 
 	for (vertex_iterator it_v = v_range.first; it_v != it_v_end; it_v++)
@@ -638,16 +645,16 @@ void CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph, const Eigen:
 		}
 	}
 
-#if defined _DEBUG
+//#if defined _DEBUG
 	Dump(graph, __FILE__, __LINE__);
-#endif
+//#endif
 
 }
 
 void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore)
 {
 	std::set<int> pids_ignore(postureids_ignore.begin(), postureids_ignore.end());
-
+	// initialize epsilon edges
 	int n_theta = graph.m_theta->N_Theta();
 	int i_theta = 0;
 	bool i_theta_ignored = (pids_ignore.end() != pids_ignore.find(i_theta));
@@ -659,15 +666,20 @@ void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::M
 		i_theta_ignored = i_theta_p_ignored;
 	}
 
-	EliminateDupTheta(graph, errTB, epsErr_deg, pids_ignore);
+	// initialize not epsilon edges
+	std::vector<std::pair<int, int>> transi_0;
+	EliminateDupTheta(graph, transi_0, errTB, epsErr_deg, pids_ignore);
 }
 
 void CPostureGraphOpen::MergeTransitions(CPostureGraphOpen& graph, const CPGTransition& pg_0, const CPGTransition& pg_1, const Eigen::MatrixXr& errTB, Real epsErr_deg, std::vector<int>& postureids_ignore)
 {
 	std::set<int> pids_ignore(postureids_ignore.begin(), postureids_ignore.end());
 
+	// initialize not epsilon edges
 	const CPGTransition* pgs[] = {&pg_0, &pg_1};
 	int i_v_base[] = {0, (int)boost::num_vertices(pg_0)};
+	std::vector<std::pair<int, int>> transi_0(boost::num_edges(pg_0) + boost::num_edges(pg_1));
+	int i_transi = 0;
 	for (int i_pg = 0; i_pg < 2; i_pg ++)
 	{
 		int i_v_base_i = i_v_base[i_pg];
@@ -678,11 +690,12 @@ void CPostureGraphOpen::MergeTransitions(CPostureGraphOpen& graph, const CPGTran
 			auto e = *it_e;
 			int i_theta_0 = boost::source(e, *pg_i) + i_v_base_i;
 			int i_theta_1 = boost::target(e, *pg_i) + i_v_base_i;
-			boost::add_edge(i_theta_0, i_theta_1, graph);
+			// boost::add_edge(i_theta_0, i_theta_1, graph);
+			transi_0[i_transi ++] = std::make_pair(i_theta_0, i_theta_1);
 		}
 	}
 
-	EliminateDupTheta(graph, errTB, epsErr_deg, pids_ignore);
+	EliminateDupTheta(graph, transi_0, errTB, epsErr_deg, pids_ignore);
 }
 
 
