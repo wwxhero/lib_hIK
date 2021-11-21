@@ -361,7 +361,14 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 
 		CPostureGraphOpen pg_open(&theta);
 		std::vector<int> postures_T = { T_PID0, T_PID1 };
-		CPostureGraphOpen::MergeTransitions(pg_open, *pg_0, *pg_1, err_tb, eps_err, postures_T);
+		ok = CPostureGraphOpen::MergeTransitions(pg_open, *pg_0, *pg_1, err_tb, eps_err, postures_T);
+		if (!ok)
+		{
+			std::string err("Not an epsilon edge exists between two PGs");
+			LOGIKVarErr(LogInfoCharPtr, err.c_str());
+			return H_INVALID;
+		}
+
 		CPGClose* pg_gen = CPostureGraphOpen::GenerateClosePG(pg_open, err_tb, T_PID0);
 		ok = (NULL != pg_gen);
 		if (!ok)

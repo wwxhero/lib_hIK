@@ -438,7 +438,7 @@ public:
 
 	static void InitTransitions(CPostureGraphOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore);
 
-	static void MergeTransitions(CPostureGraphOpen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const Eigen::MatrixXr& err_tb, Real epsErr, std::vector<int>& postures_ignore);
+	static bool MergeTransitions(CPostureGraphOpen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const Eigen::MatrixXr& err_tb, Real epsErr, std::vector<int>& postures_ignore);
 
 	static CPGClose* GenerateClosePG(const CPostureGraphOpen& graph_src, const Eigen::MatrixXr& errTB, int pid_T_src);
 
@@ -446,7 +446,7 @@ public:
 
 	const CPGThetaClose* Theta() const { return m_theta; }
 private:
-	static void EliminateDupTheta(CPostureGraphOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore);
+	static bool EliminateDupTheta(CPostureGraphOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore);
 private:
 	const CPGThetaClose* m_theta;
 };
