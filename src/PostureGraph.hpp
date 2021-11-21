@@ -88,6 +88,7 @@ public:
 	}
 
 	void ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints);
+	void ETB_Setup_cross(Eigen::MatrixXr& err_out, const std::list<std::string>& joints, const std::vector<std::pair<int, int>>& segs);
 
 	int N_Theta() const {return (int)m_motions.size();}
 

@@ -285,6 +285,62 @@ void CPGThetaClose::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::str
 	CArtiBodyTree::FK_Update<false>(m_rootBody);
 }
 
+void CPGThetaClose::ETB_Setup_cross(Eigen::MatrixXr& err_out, const std::list<std::string>& joints, const std::vector<std::pair<int, int>>& segs)
+{
+	TransformArchive tm_bk;
+	CArtiBodyTree::Serialize<true>(m_rootBody, tm_bk); // backup the original configuration
+	
+	Real err_max = (Real)tm_bk.Size();
+	unsigned int n_theta = N_Theta();
+	err_out = Eigen::MatrixXr::Constant(n_theta, n_theta, err_max);
+
+	std::list<const CArtiBodyNode*> interest_bodies;
+	int n_bodies = CArtiBodyTree::GetBodies(m_rootBody, joints, interest_bodies);
+	TransformArchive tm_data_i(n_bodies);
+	TransformArchive tm_data_j(n_bodies);
+
+	auto UpdateTransforms = [] (std::list<const CArtiBodyNode*>& interest_bodies, TransformArchive& tm_data)
+		{
+			int i_tm = 0;
+			for (auto body : interest_bodies)
+			{
+				_TRANSFORM& tm_i = tm_data[i_tm ++];
+				body->GetJoint()->GetTransform()->CopyTo(tm_i);
+			}
+		};
+
+	const auto& segs_x = segs;
+	const auto& segs_y = segs;
+	int n_segs = (int)segs.size();
+
+	for (int i_seg = 0; i_seg < n_segs; i_seg ++)
+	{
+		for (int j_seg = i_seg + 1; j_seg < n_segs; j_seg ++)
+		{
+			const auto& rg_x = segs_x[i_seg];
+			const auto& rg_y = segs_y[j_seg];
+			for (int i_theta = rg_x.first; i_theta < rg_x.second; i_theta++)
+			{
+				PoseBody<false>(i_theta, m_rootBody);
+				UpdateTransforms(interest_bodies, tm_data_i);
+				for (int j_theta = rg_y.first; j_theta < rg_y.second; j_theta++)
+				{
+					PoseBody<false>(j_theta, m_rootBody);
+					UpdateTransforms(interest_bodies, tm_data_j);
+					auto& vis_scale_ij = err_out(i_theta, j_theta);
+					auto& vis_scale_ji = err_out(j_theta, i_theta);
+					auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
+					vis_scale_ij = err_ij;
+					vis_scale_ji = err_ij;
+				}
+			}
+		}
+	}
+
+	CArtiBodyTree::Serialize<false>(m_rootBody, tm_bk); // restore the original configuration
+	CArtiBodyTree::FK_Update<false>(m_rootBody);
+}
+
 template<typename G>
 void Dump(G& g, const char* fileName, int lineNo)
 {

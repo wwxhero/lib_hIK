@@ -377,7 +377,9 @@ public:
 		return src;
 	}
 
-	static Real Error_q(const TransformArchive &tm, const TransformArchive &tm_prime); //in range [0, 1]
+	std::size_t Size() const { return m_data.size(); }
+
+	static Real Error_q(const TransformArchive &tm, const TransformArchive &tm_prime); //in range [0, 1*n]
 private:
 	std::vector<_TRANSFORM> m_data;
 };

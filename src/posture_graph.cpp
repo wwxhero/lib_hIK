@@ -114,12 +114,17 @@ bool init_err_tb_merged(const char* interests_conf_path, const char* pg_theta_0,
 
 		CPGThetaClose theta_0(pg_theta_0);
 		CPGThetaClose theta_1(pg_theta_1);
-
+		const int T_PID1 = theta_0.N_Theta();
 		bool merged = theta_0.Merge(theta_1);
 		if (merged)
 		{
 			Eigen::MatrixXr err_out;
-			theta_0.ETB_Setup(err_out, interests_conf->Joints);
+			std::vector<std::pair<int, int>> segs = {
+											std::make_pair(0, 1),						// [0, 1)
+											std::make_pair(1, T_PID1),					// [1, N_0)
+											std::make_pair(T_PID1, theta_0.N_Theta())	// [N_0, N)
+										};
+			theta_0.ETB_Setup_cross(err_out, interests_conf->Joints, segs);
 			err_tb->n_rows = (int)err_out.rows();
 			err_tb->n_cols = (int)err_out.cols();
 			auto data_size = err_out.rows() * err_out.cols() * sizeof(Real);
@@ -342,15 +347,20 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 			return H_INVALID;
 		}
 
-		Eigen::MatrixXr err_tb;
+		const int T_PID0 = 0;
+		const int T_PID1 = pg_0->Theta().N_Theta();
 
-		theta.ETB_Setup(err_tb, interests_conf->Joints);
+		Eigen::MatrixXr err_tb;
+		std::vector<std::pair<int, int>> segs = {
+											std::make_pair(0, 1),						// [0, 1)
+											std::make_pair(1, T_PID1),					// [1, N_0)
+											std::make_pair(T_PID1, theta.N_Theta())		// [N_0, N)
+										};
+		theta.ETB_Setup_cross(err_tb, interests_conf->Joints, segs);
 		CONF::CInterestsConf::UnLoad(interests_conf);
 
 		CPostureGraphOpen pg_open(&theta);
-		const int T_PID0 = 0;
-		const int T_PID1 = pg_0->Theta().N_Theta();
-		std::vector<int> postures_T = {T_PID0, T_PID1};
+		std::vector<int> postures_T = { T_PID0, T_PID1 };
 		CPostureGraphOpen::MergeTransitions(pg_open, *pg_0, *pg_1, err_tb, eps_err, postures_T);
 		CPGClose* pg_gen = CPostureGraphOpen::GenerateClosePG(pg_open, err_tb, T_PID0);
 		ok = (NULL != pg_gen);
