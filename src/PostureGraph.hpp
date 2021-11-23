@@ -220,7 +220,7 @@ public:
 
 class CPGClose : public CPGTransition
 {
-	friend class CPostureGraphOpen;
+	friend class CPGOpen;
 public:
 	struct Registry
 	{
@@ -428,25 +428,25 @@ struct EdgeGen
 	std::size_t deg;
 };
 
-class CPostureGraphOpen : public PostureGraphMatrix<VertexGen, EdgeGen>
+class CPGOpen : public PostureGraphMatrix<VertexGen, EdgeGen>
 
 {
 public:
-	CPostureGraphOpen(const CPGThetaClose* theta);
+	CPGOpen(const CPGThetaClose* theta);
 
-	virtual ~CPostureGraphOpen();
+	virtual ~CPGOpen();
 
-	static void InitTransitions(CPostureGraphOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore);
+	static void InitTransitions(CPGOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore);
 
-	static bool MergeTransitions(CPostureGraphOpen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const Eigen::MatrixXr& err_tb, Real epsErr, std::vector<int>& postures_ignore);
+	static bool MergeTransitions(CPGOpen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const Eigen::MatrixXr& err_tb, Real epsErr, std::vector<int>& postures_ignore);
 
-	static CPGClose* GenerateClosePG(const CPostureGraphOpen& graph_src, const Eigen::MatrixXr& errTB, int pid_T_src);
+	static CPGClose* GenerateClosePG(const CPGOpen& graph_src, const Eigen::MatrixXr& errTB, int pid_T_src);
 
 	void Save(const char* dir, PG_FileType type = F_PG) const;
 
 	const CPGThetaClose* Theta() const { return m_theta; }
 private:
-	static bool EliminateDupTheta(CPostureGraphOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore);
+	static bool EliminateDupTheta(CPGOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore);
 private:
 	const CPGThetaClose* m_theta;
 };

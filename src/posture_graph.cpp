@@ -278,11 +278,11 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 
 		CONF::CInterestsConf::UnLoad(interests_conf);
 
-		CPostureGraphOpen pg_epsilon(&theta);
+		CPGOpen pg_epsilon(&theta);
 		const int T_PID = 0;
 		std::vector<int> postures_T = {T_PID};
-		CPostureGraphOpen::InitTransitions(pg_epsilon, err_tb, epsErr, postures_T);
-		CPGClose* pg_gen = CPostureGraphOpen::GenerateClosePG(pg_epsilon, err_tb, T_PID);
+		CPGOpen::InitTransitions(pg_epsilon, err_tb, epsErr, postures_T);
+		CPGClose* pg_gen = CPGOpen::GenerateClosePG(pg_epsilon, err_tb, T_PID);
 		ok = (NULL != pg_gen);
 		if (ok)
 		{
@@ -359,9 +359,9 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 		theta.ETB_Setup_cross(err_tb, interests_conf->Joints, segs);
 		CONF::CInterestsConf::UnLoad(interests_conf);
 
-		CPostureGraphOpen pg_open(&theta);
+		CPGOpen pg_open(&theta);
 		std::vector<int> postures_T = { T_PID0, T_PID1 };
-		ok = CPostureGraphOpen::MergeTransitions(pg_open, *pg_0, *pg_1, err_tb, eps_err, postures_T);
+		ok = CPGOpen::MergeTransitions(pg_open, *pg_0, *pg_1, err_tb, eps_err, postures_T);
 		if (!ok)
 		{
 			std::string err("Not an epsilon edge exists between two PGs");
@@ -369,7 +369,7 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 			return H_INVALID;
 		}
 
-		CPGClose* pg_gen = CPostureGraphOpen::GenerateClosePG(pg_open, err_tb, T_PID0);
+		CPGClose* pg_gen = CPGOpen::GenerateClosePG(pg_open, err_tb, T_PID0);
 		ok = (NULL != pg_gen);
 		if (!ok)
 		{

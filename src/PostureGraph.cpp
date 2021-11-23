@@ -525,17 +525,17 @@ CPGClose::~CPGClose()
 }
 
 
-CPostureGraphOpen::CPostureGraphOpen(const CPGThetaClose* theta)
+CPGOpen::CPGOpen(const CPGThetaClose* theta)
 	: PostureGraphMatrix< VertexGen, EdgeGen>((std::size_t)(theta->N_Theta()))
 	, m_theta(theta)
 {
 }
 
-CPostureGraphOpen::~CPostureGraphOpen()
+CPGOpen::~CPGOpen()
 {
 }
 
-bool CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore)
+bool CPGOpen::EliminateDupTheta(CPGOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore)
 {
 #if defined _DEBUG
 	Dump(graph_eps, __FILE__, __LINE__);
@@ -607,7 +607,7 @@ bool CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph_eps, const st
 	class ComEdgeByDeg
 	{
 	public:
-		ComEdgeByDeg(CPostureGraphOpen& g)
+		ComEdgeByDeg(CPGOpen& g)
 			: graph(g)
 		{
 
@@ -617,7 +617,7 @@ bool CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph_eps, const st
 			return (graph)[e_i].deg > (graph)[e_j].deg;
 		}
 	private:
-		CPostureGraphOpen& graph;
+		CPGOpen& graph;
 	};
 	edges_eps.sort(ComEdgeByDeg(graph_eps));
 
@@ -665,7 +665,7 @@ bool CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph_eps, const st
 	}
 
 	// remove vertices
-	CPostureGraphOpen& graph = graph_eps;
+	CPGOpen& graph = graph_eps;
 
 	for (auto e_0 : transi_0)
 		boost::add_edge(e_0.first, e_0.second, graph);
@@ -716,7 +716,7 @@ bool CPostureGraphOpen::EliminateDupTheta(CPostureGraphOpen& graph_eps, const st
 	return true;
 }
 
-void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore)
+void CPGOpen::InitTransitions(CPGOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore)
 {
 	std::set<int> pids_ignore(postureids_ignore.begin(), postureids_ignore.end());
 	// initialize epsilon edges
@@ -737,7 +737,7 @@ void CPostureGraphOpen::InitTransitions(CPostureGraphOpen& graph, const Eigen::M
 	EliminateDupTheta(graph, transi_0, errTB, epsErr_deg, pids_ignore);
 }
 
-bool CPostureGraphOpen::MergeTransitions(CPostureGraphOpen& graph, const CPGTransition& pg_0, const CPGTransition& pg_1, const Eigen::MatrixXr& errTB, Real epsErr_deg, std::vector<int>& postureids_ignore)
+bool CPGOpen::MergeTransitions(CPGOpen& graph, const CPGTransition& pg_0, const CPGTransition& pg_1, const Eigen::MatrixXr& errTB, Real epsErr_deg, std::vector<int>& postureids_ignore)
 {
 	std::set<int> pids_ignore(postureids_ignore.begin(), postureids_ignore.end());
 
@@ -765,7 +765,7 @@ bool CPostureGraphOpen::MergeTransitions(CPostureGraphOpen& graph, const CPGTran
 }
 
 
-CPGClose* CPostureGraphOpen::GenerateClosePG(const CPostureGraphOpen& graph_src, const Eigen::MatrixXr& errTB, int pid_T_src)
+CPGClose* CPGOpen::GenerateClosePG(const CPGOpen& graph_src, const Eigen::MatrixXr& errTB, int pid_T_src)
 {
 	CPGClose::Registry regG;
 	regG.Register_v(pid_T_src); // 'T' posture is the first posture registered which has no edges
@@ -842,7 +842,7 @@ bool CPGRuntime::LoadThetas(const char* filePath, CArtiBodyNode* body_ref)
 	return loaded;
 }
 
-void CPostureGraphOpen::Save(const char* dir, PG_FileType type) const
+void CPGOpen::Save(const char* dir, PG_FileType type) const
 {
 	fs::path file_path(dir);
 	std::string file_name(m_theta->GetBody()->GetName_c()); file_name += ".dot";
