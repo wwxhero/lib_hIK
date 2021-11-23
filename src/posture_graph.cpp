@@ -388,7 +388,7 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 	}
 }
 
-bool save_pg(HPG hpg, const char* dir_out)
+bool posture_graph_save(HPG hpg, const char* dir_out)
 {
 	CPGClose* pPG = CAST_2PPG(hpg);
 	if (pPG)
@@ -459,4 +459,10 @@ bool trim(const char* src, const char* dst, const char* const names_rm[], int n_
 	}
 
 	return ret;
+}
+
+int N_Theta(HPG hpg)
+{
+	CPGClose* pPG = CAST_2PPG(hpg);
+	return pPG->Theta().N_Theta();
 }
