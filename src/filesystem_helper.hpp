@@ -9,7 +9,7 @@
 
 namespace fs = std::experimental::filesystem;
 
-bool TextEQ(const std::string& txt_0, const std::string& txt_1)
+inline bool TextEQ(const std::string& txt_0, const std::string& txt_1)
 {
 	std::size_t len = txt_0.size();
 	bool eq = (len == txt_1.size());
@@ -137,8 +137,8 @@ void TraverseDirTree_filter(const std::string& dirPath, LAMBDA_onext OnDir, cons
 		{
 			filesize.LowPart = ffd.nFileSizeLow;
 			filesize.HighPart = ffd.nFileSizeHigh;
-
-			if (TextEQ(ffd.cFileName, filename_filter))
+			
+			if (TextEQ(fs::path(ffd.cFileName).u8string(), filename_filter))
 			{
 				OnDir(dirPath.c_str());
 			}
