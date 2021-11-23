@@ -364,7 +364,22 @@ public:
 		return m_data[i];
 	}
 
-	static Real Error_q(const TransformArchive &tm, const TransformArchive &tm_prime); //in range [0, 1]
+	const TransformArchive& operator=(const TransformArchive& src)
+	{
+		int n_tms = (int)src.m_data.size();
+		m_data.resize(n_tms);
+		for (int i_tm = 0; i_tm < n_tms; i_tm ++)
+		{
+			_TRANSFORM& tm_i_dst = m_data[i_tm];
+			const _TRANSFORM& tm_i_src = src.m_data[i_tm];
+			tm_i_dst = tm_i_src;
+		}
+		return src;
+	}
+
+	std::size_t Size() const { return m_data.size(); }
+
+	static Real Error_q(const TransformArchive &tm, const TransformArchive &tm_prime); //in range [0, 1*n]
 private:
 	std::vector<_TRANSFORM> m_data;
 };

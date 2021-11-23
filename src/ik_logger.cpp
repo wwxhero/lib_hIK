@@ -39,6 +39,7 @@ void AssertionFail(const char *file, unsigned int line)
 	g_LoggerFast.OutFmt("[%s:%d] ASSERTION FAILED\n"
 						, file_short(file)
 						, line);
+	g_LoggerFast.Flush();
 #endif
 }
 

@@ -401,6 +401,29 @@ public:
 
 	}
 
+	static bool Clone(const CArtiBodyNode* src, CArtiBodyNode** dst)
+	{
+		switch(src->c_type)
+		{
+			case BODY_TYPE::fbx:
+				return Clone(src, dst, CloneNode_fbx);
+			case BODY_TYPE::bvh:
+				return Clone(src, dst, CloneNode_bvh);
+			case BODY_TYPE::htr:
+			{
+				auto CloneNode = [](const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt) -> bool
+				{
+					return CArtiBodyTree::CloneNode_htr(src, dst, Eigen::Matrix3r::Identity(), name_dst_opt);
+				};
+				return Clone(src, dst, CloneNode);
+			}
+			default:
+				IKAssert(0);
+				*dst = NULL;
+				return false;
+		}
+	}
+
 	static void KINA_Initialize(CArtiBodyNode* root);
 
 	template<bool G_SPACE>
@@ -481,6 +504,10 @@ STOP_PROFILER
 		CArtiBodyTree::TraverseDFS(root, onEnterBody, onLeaveBody);
 	}
 
+	static void Destroy(CArtiBodyNode* node);
+
+	static bool Similar(const CArtiBodyNode* root_0, const CArtiBodyNode* root_1);
+
 //the following code for building posture graph, not for real-time usage
 	static void Body_T_Test(const CArtiBodyNode* body
 					, const Eigen::Vector3r& dir_up
@@ -499,4 +526,7 @@ STOP_PROFILER
 #ifdef _DEBUG
 	static void Connect(CArtiBodyNode* from, CArtiBodyNode* to, CNN type);
 #endif
+
+
+
 };

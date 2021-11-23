@@ -63,6 +63,11 @@ typedef struct _HCONFFKRC
 	void* p;
 } HCONFMOPIPE;
 
+typedef struct _HPG
+{
+	void* p;
+} HPG;
+
 #define VALID_HANDLE(h)\
 	((h).p != NULL)
 
@@ -74,6 +79,7 @@ typedef void* HMOTIONNODE;
 typedef void* HBVH;
 typedef void* HCONF;
 typedef void* HCONFMOPIPE;
+typedef void* HPG;
 
 #define VALID_HANDLE(h)\
 	((h) != NULL)

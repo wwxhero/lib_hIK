@@ -54,7 +54,7 @@ protected:
 	CArtiBodyNode* m_rootBody;
 	std::vector<CIKChain*> m_kChains;
 	int m_nSpecMax;
-	CFile2PostureGraphClose* m_pg;
+	CPGRuntime* m_pg;
 };
 
 class CIKGroupTree : public Tree<CIKGroupNode>

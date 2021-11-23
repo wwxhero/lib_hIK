@@ -2,6 +2,7 @@
 
 #include <stack>
 #include <queue>
+#include "ik_logger.h"
 #include "articulated_body.h"
 
 template<typename TNode> class Tree;
@@ -11,6 +12,8 @@ class TreeNode
 {
 	template<typename TNode>
 	friend void Tree<TNode>::Connect(TNode* body_from, TNode* body_to, CNN type);
+	template<typename TNode>
+	friend void Tree<TNode>::Disconnect(TNode* parent, TNode* child);
 protected:
 	TreeNode()
 		: m_parent(NULL)
@@ -226,6 +229,27 @@ public:
 		*hook[inverse] = target[inverse];
 	}
 
+private:
+	static void Disconnect(NodeType* parent, NodeType* child)
+	{
+		NodeType* from = parent;
+		NodeType** to = &(parent->m_firstChild);
+		while (child != (*to)
+			&& NULL != (*to))
+		{
+			from = (*to);
+			to = &(from->m_nextSibling);
+		}
+
+		if (child == (*to))
+			*to = child->m_nextSibling;
+
+		child->m_parent = NULL;
+		child->m_nextSibling = NULL;
+	};
+
+public:
+
 	static void Destroy(NodeType* root)
 	{
 		auto onEnterBody = [](NodeType* node_this)
@@ -236,7 +260,9 @@ public:
 						{
 							delete node_this;
 						};
-
+		NodeType* root_p = root->GetParent();
+		if (NULL != root_p)
+			Disconnect(root_p, root);
 		Tree<NodeType>::TraverseDFS(root, onEnterBody, onLeaveBody);
 	}
 
@@ -295,4 +321,5 @@ public:
 		}
 		return traversing;
 	}
+
 };

@@ -268,6 +268,57 @@ void CArtiBodyTree::KINA_Initialize(CArtiBodyNode* root)
 	Tree<CArtiBodyNode>::TraverseDFS(root, onEnterBody, onLeaveBody);
 }
 
+
+void CArtiBodyTree::Destroy(CArtiBodyNode* node)
+{
+	CArtiBodyNode* root = node;
+	for (CArtiBodyNode* root_p = root->GetParent()
+		; NULL != root_p
+		; root = root_p, root_p = root_p->GetParent());
+	bool is_sub_root = (node != root);
+	
+	Tree<CArtiBodyNode>::Destroy(node);
+
+	if (is_sub_root)
+		KINA_Initialize(root);
+}
+
+bool CArtiBodyTree::Similar(const CArtiBodyNode* root_0, const CArtiBodyNode* root_1)
+{
+	std::list<const CArtiBodyNode*> bodies_0;
+	auto OnEnterNode_0 = [&bodies_0](const CArtiBodyNode* node) -> bool
+		{
+			bodies_0.push_back(node);
+			return true;
+		};
+	auto OnLeaveBody = [](const CArtiBodyNode* node) -> bool
+		{
+			return true;
+		};
+	Super::TraverseDFS(root_0, OnEnterNode_0, OnLeaveBody);
+
+	std::list<const CArtiBodyNode*> bodies_1;
+	auto OnEnterNode_1 = [&bodies_1](const CArtiBodyNode* node) -> bool
+		{
+			bodies_1.push_back(node);
+			return true;
+		};
+	Super::TraverseDFS(root_1, OnEnterNode_1, OnLeaveBody);
+
+	bool match = true;
+
+	auto it_0 = bodies_0.begin(); auto it_1 = bodies_1.begin();
+	for (
+		; bodies_0.end() != it_0 && bodies_1.end() != it_1 && match
+		; it_0++, it_1++)
+		match = (std::string((*it_0)->GetName_c())
+				== std::string((*it_1)->GetName_c()));
+
+	return match 
+		&& (bodies_0.end() == it_0) 
+		&& (bodies_1.end() == it_1);
+}
+
 void CArtiBodyTree::Body_T_Test(const CArtiBodyNode* body, const Eigen::Vector3r& dir_up, const Eigen::Vector3r& dir_forward
 					, const std::vector<std::string>& names_interest
 					, int part_body_idx_range[parts_total][2]

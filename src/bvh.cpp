@@ -14,6 +14,7 @@
 #include "Math.hpp"
 #include "loggerfast.h"
 #include "MoNode.hpp"
+#include "PostureGraph.hpp"
 
 
 #define ZERO_ENTITY_TT_HOMO
@@ -406,53 +407,38 @@ HBODY create_tree_body_bvh_file(const wchar_t* path_src)
 {
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 	auto path_src_c = converter.to_bytes(path_src);
-	CFile2ArtiBody bvh(path_src_c);
-	const CArtiBodyNode* body_bvh = bvh.GetBody();
-	if (BODY_TYPE::bvh == body_bvh->c_type)
-	{
-		CArtiBodyNode* body_ret = NULL;
-		CArtiBodyTree::Clone(body_bvh, &body_ret, CArtiBodyTree::CloneNode_bvh);
-		return CAST_2HBODY(body_ret);
-	}
-	else
-		return H_INVALID;
+	CArtiBodyFile bvh(path_src_c);
+	CArtiBodyNode* body_bvh = bvh.CreateBodyBVH();
+	return CAST_2HBODY(body_bvh);
 }
 
 HBODY create_tree_body_bvh(HBVH hBvh)
 {
-	CFile2ArtiBody* bvh = CAST_2PBVH(hBvh);
-	const CArtiBodyNode* body_bvh = bvh->GetBody();
-	if (BODY_TYPE::bvh == body_bvh->c_type)
-	{
-		CArtiBodyNode* body_ret = NULL;
-		CArtiBodyTree::Clone(body_bvh, &body_ret, CArtiBodyTree::CloneNode_bvh);
-		return CAST_2HBODY(body_ret);
-	}
-	else
-		return H_INVALID;
-
+	CArtiBodyFile* bvh = CAST_2PBVH(hBvh);
+	return CAST_2HBODY(bvh->CreateBodyBVH());
 }
 
 
 
 HBVH load_bvh_c(const char* path_src)
 {
-	CFile2ArtiBody* bvh = NULL;
+	CArtiBodyFile* bvh = NULL;
 	try
 	{
-		bvh = new CFile2ArtiBody(path_src);
+		bvh = new CArtiBodyFile(path_src);
 	}
 	catch (const std::string& info)
 	{
-		LOGIK(info.c_str());
+		LOGIKVarErr(LogInfoCharPtr, info.c_str());
 		return H_INVALID;
 	}
 	catch (...)
 	{
-		LOGIK("Unknown expection");
+		const char* err = "Unknown expection";
+		LOGIKVarErr(LogInfoCharPtr, err);
 		return H_INVALID;
 	}
-	return CAST_2HBVH( bvh);
+	return CAST_2HBVH(bvh);
 }
 
 HBVH load_bvh_w(const wchar_t* path_src)
@@ -464,20 +450,21 @@ HBVH load_bvh_w(const wchar_t* path_src)
 
 HBVH copy_bvh(HBVH src)
 {
-	CFile2ArtiBody* bvh_src = CAST_2PBVH(src);
-	CFile2ArtiBody* bvh_dup = NULL;
+	CArtiBodyFile* bvh_src = CAST_2PBVH(src);
+	CArtiBodyFile* bvh_dup = NULL;
 	try
 	{
-		bvh_dup = new CFile2ArtiBody(*bvh_src);
+		bvh_dup = new CArtiBodyFile(*bvh_src);
 	}
 	catch (const std::string& info)
 	{
-		LOGIK(info.c_str());
+		LOGIKVarErr(LogInfoCharPtr, info.c_str());
 		return H_INVALID;
 	}
 	catch (...)
 	{
-		LOGIK("Unknown expection");
+		const char* err = "Unknown expection";
+		LOGIKVarErr(LogInfoCharPtr, err);
 		return H_INVALID;
 	}
 	return CAST_2HBVH(bvh_dup);
@@ -629,8 +616,7 @@ bool ResetRestPose(const char* path_src, int frame, const char* path_dst, double
 	}
 	catch (std::string& exp)
 	{
-		LOGIK(exp.c_str());
-		LOGIKFlush();
+		LOGIKVarErr(LogInfoCharPtr, exp.c_str());
 		return false;
 	}
 }
@@ -673,7 +659,7 @@ bool convert(const char* src, const char* dst, bool htr2bvh)
 	CArtiBodyNode* bodies[2] = {nullptr};
 	try
 	{
-		CFile2ArtiBody bvh_src(src);
+		CPGThetaClose bvh_src(src);
 		if (htr2bvh)
 		{
 			bodies[0] = bvh_src.GetBody();
@@ -703,7 +689,7 @@ bool convert(const char* src, const char* dst, bool htr2bvh)
 				(Real)0, (Real)0, (Real)1
 			};
 			CMoTree::Connect_cross(&mo_node_src, &mo_node_dst, CNN::FIRSTCHD, id);
-			int n_frames = bvh_src.frames();
+			int n_frames = bvh_src.N_Theta();
 			CArtiBodyRef2File bvh_reset(bodies[1], n_frames);
 			for (int i_frame = 0; i_frame < n_frames; i_frame ++)
 			{

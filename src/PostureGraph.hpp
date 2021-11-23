@@ -24,6 +24,95 @@
 
 enum PG_FileType {F_PG = 0, F_DOT};
 
+// it should be optimized to get rid of derivation to avoid unnecessary memory consumption from BvhObject from runtime.
+class CPGThetaRuntime
+{
+public:
+	CPGThetaRuntime(const char* path, CArtiBodyNode* body_ref);
+	CPGThetaRuntime(const std::string& path, CArtiBodyNode* body_ref);
+	template<bool G_SPACE>
+	void PoseBody(int i_frame) const
+	{
+		const TransformArchive& motion_i = m_motions[i_frame];
+		std::size_t n_tms = m_jointsRef.size();
+		for (std::size_t j_tm = 0; j_tm < n_tms; j_tm ++)
+		{
+			const _TRANSFORM& tm_ij = motion_i[j_tm];
+			IJoint* joint_j = m_jointsRef[j_tm];
+			joint_j->GetTransform()->CopyFrom(tm_ij);
+		}
+		CArtiBodyTree::FK_Update<G_SPACE>(m_rootRef);
+	}
+	int N_Theta() const
+	{
+		return (int)m_motions.size();
+	}
+private:
+	void Initialize(const std::string& path, CArtiBodyNode* body_std);
+
+private:
+	std::vector<IJoint*> m_jointsRef;
+	CArtiBodyNode* m_rootRef;
+	std::vector<TransformArchive> m_motions;
+};
+
+class CPGThetaClose
+{
+public:
+	CPGThetaClose(const char* path);
+	CPGThetaClose(const std::string& path);
+	CPGThetaClose();
+	CPGThetaClose(const CPGThetaClose& src);
+	virtual ~CPGThetaClose();
+public:
+	template<bool G_SPACE>
+	void PoseBody(int i_frame) const
+	{
+		PoseBody<G_SPACE>(i_frame, m_rootBody);
+	}
+
+	template<bool G_SPACE>
+	void ResetPose() const
+	{
+		auto onEnterBodyReset = [](CArtiBodyNode* body)
+			{
+				IJoint* joint = body->GetJoint();
+				joint->SetRotation(Eigen::Quaternionr::Identity());
+				joint->SetTranslation(Eigen::Vector3r::Zero());
+			};
+		auto onLeaveBodyReset = [](CArtiBodyNode* body)
+			{
+			};
+		CArtiBodyTree::TraverseDFS(m_rootBody, onEnterBodyReset, onLeaveBodyReset);
+		CArtiBodyTree::FK_Update<G_SPACE>(m_rootBody);
+	}
+
+	void ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints);
+	void ETB_Setup_cross(Eigen::MatrixXr& err_out, const std::list<std::string>& joints, const std::vector<std::pair<int, int>>& segs);
+
+	int N_Theta() const {return (int)m_motions.size();}
+
+	const CArtiBodyNode* GetBody() const { return m_rootBody; }
+	CArtiBodyNode* GetBody() { return m_rootBody;  }
+
+	bool Merge(const CPGThetaClose& f2b);
+protected:
+	template<bool G_SPACE>
+	void PoseBody(int i_frame, CArtiBodyNode* body) const
+	{
+		IKAssert(i_frame < (int)m_motions.size());
+		TransformArchive& tms_i = const_cast<TransformArchive&>(m_motions[i_frame]);
+		CArtiBodyTree::Serialize<false>(body, tms_i);
+		CArtiBodyTree::FK_Update<G_SPACE>(body);
+	}
+
+public:
+	void Initialize(const CArtiBodyFile& abFile);
+private:
+	CArtiBodyNode* m_rootBody;
+	std::vector<TransformArchive> m_motions;
+};
+
 template<typename VertexData, typename EdgeData>
 class PostureGraphList
 	: public boost::adjacency_list< boost::vecS
@@ -89,10 +178,10 @@ inline void EraseTag(VertexSearch& v_prop)
 	v_prop.err = CIKChain::ERROR_MIN;
 }
 
-class CPostureGraphClose : public PostureGraphList<VertexSearch, boost::no_property>
+class CPGTransition : public PostureGraphList<VertexSearch, boost::no_property>
 {
 public:
-	CPostureGraphClose(std::size_t n_vs)
+	CPGTransition(std::size_t n_vs)
 		: PostureGraphList<VertexSearch, boost::no_property>(n_vs)
 	{
 	}
@@ -101,6 +190,11 @@ public:
 	{
 		std::ofstream file(filePath, std::ofstream::binary);
 		IKAssert(std::ios_base::failbit != file.rdstate());
+		if (std::ios_base::failbit == file.rdstate())
+		{
+			LOGIKVarErr(LogInfoCharPtr, filePath);
+			return;
+		}
 		if (F_DOT == type)
 			write_graphviz(file, *this);
 		else
@@ -124,9 +218,9 @@ public:
 };
 
 
-class CPostureGraphClose2File : public CPostureGraphClose
+class CPGClose : public CPGTransition
 {
-	friend class CPostureGraphOpen;
+	friend class CPGOpen;
 public:
 	struct Registry
 	{
@@ -162,38 +256,45 @@ public:
 			std::size_t v_1;
 		} REGISTER_e;
 
+	private:
 		std::map<std::size_t, std::size_t> V_map;
+	public:
 		std::list<REGISTER_v> V;
-
 		std::list<REGISTER_e> E;
 	};
 protected:
-	CPostureGraphClose2File(std::size_t n_vs, const CFile2ArtiBody* theta_src);
-	static void Initialize(CPostureGraphClose2File& graph, const Registry& reg, const Eigen::MatrixXr& errTB_src);
+	CPGClose(std::size_t n_vs);
+	static void Initialize(CPGClose& graph_src, const Registry& reg, const Eigen::MatrixXr& errTB_src, int pid_T_src, const CPGThetaClose& theta_src);
 public:
-	virtual ~CPostureGraphClose2File();
-
+	CPGClose();
+	virtual ~CPGClose();
+	
+	bool Load(const char* dir, const char* pg_name);
 	void Save(const char* dir) const;
-
+	const CPGThetaClose& Theta() const
+	{
+		return m_theta;
+	}
 private:
-	const CFile2ArtiBody* c_thetaSrc_ref;
-	CArtiBodyRef2File m_thetaFile;
+	bool LoadThetas(const std::string& path_theta);
+private:
+	CPGThetaClose m_theta;
 };
 
 
 
 
-class CFile2PostureGraphClose : public CPostureGraphClose
+class CPGRuntime : public CPGTransition
 {
 public:
-	CFile2PostureGraphClose()
-		: CPostureGraphClose(0)
+	CPGRuntime()
+		: CPGTransition(0)
 		, m_thetas(NULL)
 		, m_theta_star(0)
 	{
 	}
 
-	~CFile2PostureGraphClose()
+	~CPGRuntime()
 	{
 		if (NULL != m_thetas)
 			delete m_thetas;
@@ -213,7 +314,7 @@ public:
 	}
 
 	template<typename LAMBDA_Err>
-	static int LocalMin(CFile2PostureGraphClose& graph, LAMBDA_Err err)
+	static int LocalMin(CPGRuntime& graph, LAMBDA_Err err)
 	{
 		auto ErrTheta = [&graph, err](vertex_descriptor theta) -> Real
 			{
@@ -224,7 +325,7 @@ public:
 		class GreatorThetaErr
 		{
 		public:
-			explicit GreatorThetaErr(const CFile2PostureGraphClose& a_graph)
+			explicit GreatorThetaErr(const CPGRuntime& a_graph)
 				: m_graph_ref(a_graph)
 			{
 			}
@@ -233,7 +334,7 @@ public:
 				return m_graph_ref[left].err > m_graph_ref[right].err;
 			}
 		private:
-			const CFile2PostureGraphClose& m_graph_ref;
+			const CPGRuntime& m_graph_ref;
 		} greator_thetaErr(graph);
 
 		vertex_descriptor theta_star_k = graph.m_theta_star;
@@ -255,7 +356,7 @@ public:
 		} theta_err_kp = {boost::num_vertices(graph), REAL_MAX};
 		int n_min = 0;
 
-		const int N_CANDIDATES = 10;
+		const int N_CANDIDATES = 20;
 		bool descend_local_min = true;
 		while (!err_known.empty()
 			&& descend_local_min)
@@ -303,7 +404,7 @@ public:
 		for (auto theta_tagged : tagged)
 			EraseTag(graph[theta_tagged]);
 		IKAssert(-1 < (int)theta_err_kp.theta
-			&& (int)theta_err_kp.theta < graph.m_thetas->frames());
+			&& (int)theta_err_kp.theta < graph.m_thetas->N_Theta());
 
 		return (int)theta_err_kp.theta;
 	}
@@ -311,7 +412,7 @@ public:
 private:
 	bool LoadThetas(const char* filePath, CArtiBodyNode* body_ref);
 
-	CFile2ArtiBodyRef* m_thetas;
+	CPGThetaRuntime* m_thetas;
 	vertex_descriptor m_theta_star;
 
 };
@@ -327,23 +428,27 @@ struct EdgeGen
 	std::size_t deg;
 };
 
-class CPostureGraphOpen : public PostureGraphMatrix<VertexGen, EdgeGen>
+class CPGOpen : public PostureGraphMatrix<VertexGen, EdgeGen>
 
 {
 public:
-	CPostureGraphOpen(const CFile2ArtiBody* theta);
+	CPGOpen(const CPGThetaClose* theta);
 
-	virtual ~CPostureGraphOpen();
+	virtual ~CPGOpen();
 
-	static void InitTransitions(CPostureGraphOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg);
+	static void InitTransitions(CPGOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore);
 
-	static CPostureGraphClose2File* GenerateClosePG(const CPostureGraphOpen& graph_src, const Eigen::MatrixXr& errTB);
+	static bool MergeTransitions(CPGOpen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const Eigen::MatrixXr& err_tb, Real epsErr, std::vector<int>& postures_ignore);
+
+	static CPGClose* GenerateClosePG(const CPGOpen& graph_src, const Eigen::MatrixXr& errTB, int pid_T_src);
 
 	void Save(const char* dir, PG_FileType type = F_PG) const;
 
-	const CFile2ArtiBody* Theta() const { return m_theta; }
+	const CPGThetaClose* Theta() const { return m_theta; }
 private:
-	const CFile2ArtiBody* m_theta;
+	static bool EliminateDupTheta(CPGOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore);
+private:
+	const CPGThetaClose* m_theta;
 };
 
 
