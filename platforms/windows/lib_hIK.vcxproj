@@ -249,7 +249,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(LIB_TICPP_BIN);$(LIB_OPENCV_BIN)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(LIB_TICPP_BIN)</AdditionalLibraryDirectories>
       <AdditionalDependencies>ticppd.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
