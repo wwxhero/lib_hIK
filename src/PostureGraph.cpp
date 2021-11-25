@@ -694,18 +694,18 @@ bool CPGOpen::EliminateDupTheta(CPGOpen& graph_eps, const std::vector<std::pair<
 				boost::remove_edge(*it_edge_incident, graph);
 			}
 
-			for (auto it_v_i = neightbors_v.begin(); it_v_i != neightbors_v.end(); it_v_i++)
+			auto it_v_n = neightbors_v.begin();
+			vertex_descriptor v_star = *it_v_n;
+			for (it_v_n ++; it_v_n != neightbors_v.end(); it_v_n ++)
 			{
-				auto it_v_j = it_v_i;
-				for (it_v_j++; it_v_j != neightbors_v.end(); it_v_j++)
-				{
-					vertex_descriptor v_i = *it_v_i;
-					vertex_descriptor v_j = *it_v_j;
-					if (!(errTB(v_i, v_j) < err_epsilon))
-					{
-						boost::add_edge(v_i, v_j, graph);
-					}
-				}
+				if (errTB(*it_v, *it_v_n) < errTB(*it_v, v_star))
+					v_star = *it_v_n;
+			}
+
+			for (it_v_n = neightbors_v.begin(); it_v_n != neightbors_v.end(); it_v_n ++)
+			{
+				if (*it_v_n != v_star) // avoid self-pointing edge
+					boost::add_edge(v_star, *it_v_n, graph);
 			}
 		}
 	}
