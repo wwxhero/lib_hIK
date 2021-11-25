@@ -427,17 +427,15 @@ void CPGClose::Initialize(CPGClose& graph, const Registry& reg, const Eigen::Mat
 
 	lstV_ERR_T.sort(V_ERRCompare()); // by err_T
 
-	std::size_t deg_sigma = 0;
-	std::size_t n_vs = 0;
+	std::size_t deg_max = 0;
 	auto v_range = boost::vertices(graph);
-	for (auto it_v = v_range.first; it_v != v_range.second; it_v ++, n_vs ++)
-		deg_sigma += boost::degree(*it_v, graph);
-	std::size_t deg_average = (std::size_t)floor((Real)deg_sigma/(Real)n_vs);
+	for (auto it_v = v_range.first; it_v != v_range.second; it_v ++)
+		deg_max = std::max(deg_max, boost::degree(*it_v, graph));
 
 	std::size_t n_cnn_T = 0;
 	for (auto it_v_err = lstV_ERR_T.begin()
 		; it_v_err != lstV_ERR_T.end()
-		  && n_cnn_T < deg_average
+		  && n_cnn_T < deg_max
 		; it_v_err ++, n_cnn_T ++)
 		boost::add_edge(0, it_v_err->v_dst, graph);
 #if defined _DEBUG
