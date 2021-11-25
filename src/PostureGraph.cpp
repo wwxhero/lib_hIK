@@ -743,7 +743,7 @@ bool CPGOpen::MergeTransitions(CPGOpen& graph, const CPGTransition& pg_0, const 
 	const CPGTransition* pgs[] = {&pg_0, &pg_1};
 	int i_v_base[] = {0, (int)boost::num_vertices(pg_0)};
 	std::vector<std::pair<int, int>> transi_0(boost::num_edges(pg_0) + boost::num_edges(pg_1));
-	int i_transi = 0;
+	int n_transi = 0;
 	for (int i_pg = 0; i_pg < 2; i_pg ++)
 	{
 		int i_v_base_i = i_v_base[i_pg];
@@ -754,10 +754,13 @@ bool CPGOpen::MergeTransitions(CPGOpen& graph, const CPGTransition& pg_0, const 
 			auto e = *it_e;
 			int i_theta_0 = boost::source(e, *pg_i) + i_v_base_i;
 			int i_theta_1 = boost::target(e, *pg_i) + i_v_base_i;
-			// boost::add_edge(i_theta_0, i_theta_1, graph);
-			transi_0[i_transi ++] = std::make_pair(i_theta_0, i_theta_1);
+			bool edge_not_ignored = (pids_ignore.end() == pids_ignore.find(i_theta_0)
+									&& pids_ignore.end() == pids_ignore.find(i_theta_1));
+			if (edge_not_ignored)
+				transi_0[n_transi ++] = std::make_pair(i_theta_0, i_theta_1);
 		}
 	}
+	transi_0.resize(n_transi);
 	// E = (E_0 U E_1), E_eps = phi
 	return EliminateDupTheta(graph, transi_0, errTB, epsErr_deg, pids_ignore);
 }
