@@ -249,13 +249,13 @@ EXIT:
 }
 
 
-bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, const char* dir_out, Real epsErr, const _ERROR_TB* err_tb_exter)
+bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, const char* dir_out, Real epsErr, const _ERROR_TB* err_tb_exter, int* n_theta_raw, int* n_theta_pg)
 {
 	bool ok = false;
 	try
 	{
 		CPGThetaClose theta(path_htr);
-
+		*n_theta_raw = theta.N_Theta();
 		CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
 		if (NULL == interests_conf)
 		{
@@ -287,6 +287,7 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 		if (ok)
 		{
 			pg_gen->Save(dir_out);
+			*n_theta_pg = pg_gen->Theta().N_Theta();
 			delete pg_gen;
 		}
 	}
