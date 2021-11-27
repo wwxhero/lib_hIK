@@ -37,9 +37,9 @@ void CPGThetaRuntime::Initialize(const std::string& path, CArtiBodyNode* root_re
 	std::unique_ptr<CArtiBodyNode, void(*)(CArtiBodyNode*)> root_file_gc(
 																root_file
 																, [](CArtiBodyNode* ptr)
-        															{
-        															    CArtiBodyTree::Destroy(ptr);
-        															});
+																	{
+																		CArtiBodyTree::Destroy(ptr);
+																	});
 
 	std::vector<CHANNEL> channels;
 
@@ -241,10 +241,10 @@ bool CPGThetaClose::Merge(const CPGThetaClose& theta_other)
 	return body_eq;
 }
 
-void CPGThetaClose::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints)
+void CPGThetaClose::ETB_Setup_homo(IErrorTB* err_out, const std::list<std::string>& joints)
 {
 	unsigned int n_theta = N_Theta();
-	err_out.resize(n_theta, n_theta);
+	err_out = IErrorTB::Factory::CreateHOMO(n_theta);
 
 	TransformArchive tm_bk;
 	CArtiBodyTree::Serialize<true>(m_rootBody, tm_bk); // backup the original configuration
@@ -272,73 +272,72 @@ void CPGThetaClose::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::str
 		{
 			PoseBody<false>(j_theta, m_rootBody);
 			UpdateTransforms(interest_bodies, tm_data_j);
-			auto& vis_scale_ij = err_out(i_theta, j_theta);
-			auto& vis_scale_ji = err_out(j_theta, i_theta);
 			auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
-			vis_scale_ij = err_ij;
-			vis_scale_ji = err_ij;
+			err_out->Set(i_theta, j_theta, err_ij);
 		}
-		err_out(i_theta, i_theta) = (Real)0;
+		err_out->Set(i_theta, i_theta, (Real)0);
 	}
 
 	CArtiBodyTree::Serialize<false>(m_rootBody, tm_bk); // restore the original configuration
 	CArtiBodyTree::FK_Update<false>(m_rootBody);
 }
 
-void CPGThetaClose::ETB_Setup_cross(Eigen::MatrixXr& err_out, const std::list<std::string>& joints, const std::vector<std::pair<int, int>>& segs)
+void CPGThetaClose::ETB_Setup_cross(IErrorTB* err_out, const std::list<std::string>& joints, const std::vector<std::pair<int, int>>& segs)
 {
-	TransformArchive tm_bk;
-	CArtiBodyTree::Serialize<true>(m_rootBody, tm_bk); // backup the original configuration
-	
-	Real err_max = (Real)tm_bk.Size();
-	unsigned int n_theta = N_Theta();
-	err_out = Eigen::MatrixXr::Constant(n_theta, n_theta, err_max);
+	//TransformArchive tm_bk;
+	//CArtiBodyTree::Serialize<true>(m_rootBody, tm_bk); // backup the original configuration
+	//
+	//Real err_max = (Real)tm_bk.Size();
+	//unsigned int n_theta = N_Theta();
+	//err_out = Eigen::MatrixXr::Constant(n_theta, n_theta, err_max);
 
-	std::list<const CArtiBodyNode*> interest_bodies;
-	int n_bodies = CArtiBodyTree::GetBodies(m_rootBody, joints, interest_bodies);
-	TransformArchive tm_data_i(n_bodies);
-	TransformArchive tm_data_j(n_bodies);
+	//std::list<const CArtiBodyNode*> interest_bodies;
+	//int n_bodies = CArtiBodyTree::GetBodies(m_rootBody, joints, interest_bodies);
+	//TransformArchive tm_data_i(n_bodies);
+	//TransformArchive tm_data_j(n_bodies);
 
-	auto UpdateTransforms = [] (std::list<const CArtiBodyNode*>& interest_bodies, TransformArchive& tm_data)
-		{
-			int i_tm = 0;
-			for (auto body : interest_bodies)
-			{
-				_TRANSFORM& tm_i = tm_data[i_tm ++];
-				body->GetJoint()->GetTransform()->CopyTo(tm_i);
-			}
-		};
+	//auto UpdateTransforms = [] (std::list<const CArtiBodyNode*>& interest_bodies, TransformArchive& tm_data)
+	//	{
+	//		int i_tm = 0;
+	//		for (auto body : interest_bodies)
+	//		{
+	//			_TRANSFORM& tm_i = tm_data[i_tm ++];
+	//			body->GetJoint()->GetTransform()->CopyTo(tm_i);
+	//		}
+	//	};
 
-	const auto& segs_x = segs;
-	const auto& segs_y = segs;
-	int n_segs = (int)segs.size();
+	//const auto& segs_x = segs;
+	//const auto& segs_y = segs;
+	//int n_segs = (int)segs.size();
 
-	for (int i_seg = 0; i_seg < n_segs; i_seg ++)
-	{
-		for (int j_seg = i_seg + 1; j_seg < n_segs; j_seg ++)
-		{
-			const auto& rg_x = segs_x[i_seg];
-			const auto& rg_y = segs_y[j_seg];
-			for (int i_theta = rg_x.first; i_theta < rg_x.second; i_theta++)
-			{
-				PoseBody<false>(i_theta, m_rootBody);
-				UpdateTransforms(interest_bodies, tm_data_i);
-				for (int j_theta = rg_y.first; j_theta < rg_y.second; j_theta++)
-				{
-					PoseBody<false>(j_theta, m_rootBody);
-					UpdateTransforms(interest_bodies, tm_data_j);
-					auto& vis_scale_ij = err_out(i_theta, j_theta);
-					auto& vis_scale_ji = err_out(j_theta, i_theta);
-					auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
-					vis_scale_ij = err_ij;
-					vis_scale_ji = err_ij;
-				}
-			}
-		}
-	}
+	//for (int i_seg = 0; i_seg < n_segs; i_seg ++)
+	//{
+	//	for (int j_seg = i_seg + 1; j_seg < n_segs; j_seg ++)
+	//	{
+	//		const auto& rg_x = segs_x[i_seg];
+	//		const auto& rg_y = segs_y[j_seg];
+	//		for (int i_theta = rg_x.first; i_theta < rg_x.second; i_theta++)
+	//		{
+	//			PoseBody<false>(i_theta, m_rootBody);
+	//			UpdateTransforms(interest_bodies, tm_data_i);
+	//			for (int j_theta = rg_y.first; j_theta < rg_y.second; j_theta++)
+	//			{
+	//				PoseBody<false>(j_theta, m_rootBody);
+	//				UpdateTransforms(interest_bodies, tm_data_j);
+	//				auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
+	//				err_out->Set(i_theta, j_theta, err_ij);
+	//			}
+	//		}
+	//	}
+	//}
 
-	CArtiBodyTree::Serialize<false>(m_rootBody, tm_bk); // restore the original configuration
-	CArtiBodyTree::FK_Update<false>(m_rootBody);
+	//CArtiBodyTree::Serialize<false>(m_rootBody, tm_bk); // restore the original configuration
+	//CArtiBodyTree::FK_Update<false>(m_rootBody);
+}
+
+void CPGThetaClose::ETB_Release(IErrorTB* etb)
+{
+	delete etb;
 }
 
 template<typename G>
@@ -380,7 +379,7 @@ CPGClose::CPGClose()
 
 }
 
-void CPGClose::Initialize(CPGClose& graph, const Registry& reg, const Eigen::MatrixXr& errTB_src, int pid_T_src, const CPGThetaClose& theta_src)
+void CPGClose::Initialize(CPGClose& graph, const Registry& reg, const IErrorTB* errTB_src, int pid_T_src, const CPGThetaClose& theta_src)
 {
 	struct V_ERR
 	{
@@ -411,7 +410,7 @@ void CPGClose::Initialize(CPGClose& graph, const Registry& reg, const Eigen::Mat
 		const auto& reg_v = *it_reg_v;
 		theta_src.PoseBody<false>((int)reg_v.v_src);
 		abfile.UpdateMotion((int)reg_v.v_dst);
-		lstV_ERR_T.push_back({reg_v.v_dst, errTB_src(pid_T_src, reg_v.v_src)});
+		lstV_ERR_T.push_back({reg_v.v_dst, errTB_src->Get(pid_T_src, reg_v.v_src)});
 	}
 	theta_src.ResetPose<false>();
 	graph.m_theta.Initialize(abfile);
@@ -533,14 +532,14 @@ CPGOpen::~CPGOpen()
 {
 }
 
-bool CPGOpen::EliminateDupTheta(CPGOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore)
+bool CPGOpen::EliminateDupTheta(CPGOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg, const std::set<int>& pids_ignore)
 {
 #if defined _DEBUG
 	Dump(graph_eps, __FILE__, __LINE__);
 #endif
 	int n_theta = graph_eps.m_theta->N_Theta();
 	Real err_epsilon = (1 - cos(deg2rad(epsErr_deg) / (Real)2));
-	IKAssert(errTB.rows() == n_theta);
+	IKAssert(errTB->N_Theta() == n_theta);
 	int n_transi_eps = 0;
 	for (int i_theta = 0; i_theta < n_theta; i_theta++)
 	{
@@ -552,7 +551,7 @@ bool CPGOpen::EliminateDupTheta(CPGOpen& graph_eps, const std::vector<std::pair<
 			bool j_ignored = (pids_ignore.end() != pids_ignore.find(j_theta));
 			if (j_ignored)
 				continue;
-			if (errTB(i_theta, j_theta) < err_epsilon)
+			if (errTB->Get(i_theta, j_theta) < err_epsilon)
 			{
 				boost::add_edge(i_theta, j_theta, graph_eps);
 				n_transi_eps ++;
@@ -696,7 +695,7 @@ bool CPGOpen::EliminateDupTheta(CPGOpen& graph_eps, const std::vector<std::pair<
 			vertex_descriptor v_star = *it_v_n;
 			for (it_v_n ++; it_v_n != neightbors_v.end(); it_v_n ++)
 			{
-				if (errTB(*it_v, *it_v_n) < errTB(*it_v, v_star))
+				if (errTB->Get(*it_v, *it_v_n) < errTB->Get(*it_v, v_star))
 					v_star = *it_v_n;
 			}
 
@@ -714,7 +713,7 @@ bool CPGOpen::EliminateDupTheta(CPGOpen& graph_eps, const std::vector<std::pair<
 	return true;
 }
 
-void CPGOpen::InitTransitions(CPGOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore)
+void CPGOpen::InitTransitions(CPGOpen& graph, const IErrorTB* errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore)
 {
 	std::set<int> pids_ignore(postureids_ignore.begin(), postureids_ignore.end());
 	// initialize epsilon edges
@@ -735,7 +734,7 @@ void CPGOpen::InitTransitions(CPGOpen& graph, const Eigen::MatrixXr& errTB, Real
 	EliminateDupTheta(graph, transi_0, errTB, epsErr_deg, pids_ignore);
 }
 
-bool CPGOpen::MergeTransitions(CPGOpen& graph, const CPGTransition& pg_0, const CPGTransition& pg_1, const Eigen::MatrixXr& errTB, Real epsErr_deg, std::vector<int>& postureids_ignore)
+bool CPGOpen::MergeTransitions(CPGOpen& graph, const CPGTransition& pg_0, const CPGTransition& pg_1, const IErrorTB* errTB, Real epsErr_deg, std::vector<int>& postureids_ignore)
 {
 	std::set<int> pids_ignore(postureids_ignore.begin(), postureids_ignore.end());
 
@@ -766,7 +765,7 @@ bool CPGOpen::MergeTransitions(CPGOpen& graph, const CPGTransition& pg_0, const 
 }
 
 
-CPGClose* CPGOpen::GenerateClosePG(const CPGOpen& graph_src, const Eigen::MatrixXr& errTB, int pid_T_src)
+CPGClose* CPGOpen::GenerateClosePG(const CPGOpen& graph_src, const IErrorTB* errTB, int pid_T_src)
 {
 	CPGClose::Registry regG;
 	regG.Register_v(pid_T_src); // 'T' posture is the first posture registered which has no edges

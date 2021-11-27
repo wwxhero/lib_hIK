@@ -59,9 +59,6 @@ bool init_err_tb(const char* interests_conf_path, const char* path_htr, _ERROR_T
 {
 	try
 	{
-		err_tb->data = NULL;
-		err_tb->n_rows = 0;
-		err_tb->n_cols = 0;
 		CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
 		if (!interests_conf_path)
 		{
@@ -76,13 +73,10 @@ bool init_err_tb(const char* interests_conf_path, const char* path_htr, _ERROR_T
 		}*/
 
 		CPGThetaClose theta(path_htr);
-		Eigen::MatrixXr err_out;
-		theta.ETB_Setup(err_out, interests_conf->Joints);
-		err_tb->n_rows = (int)err_out.rows();
-		err_tb->n_cols = (int)err_out.cols();
-		auto data_size = err_out.rows() * err_out.cols() * sizeof(Real);
-		err_tb->data = (Real*)malloc(data_size);
-		memcpy(err_tb->data, err_out.data(), data_size); //err_out is a column major matrix
+		IErrorTB* err_out = NULL;
+		theta.ETB_Setup_homo(err_out, interests_conf->Joints);
+		err_out->CopyTo(err_tb);
+		theta.ETB_Release(err_out);
 	}
 	catch(const std::string& err)
 	{
@@ -118,18 +112,15 @@ bool init_err_tb_merged(const char* interests_conf_path, const char* pg_theta_0,
 		bool merged = theta_0.Merge(theta_1);
 		if (merged)
 		{
-			Eigen::MatrixXr err_out;
+			IErrorTB* err_out = NULL;
 			std::vector<std::pair<int, int>> segs = {
 											std::make_pair(0, 1),						// [0, 1)
 											std::make_pair(1, T_PID1),					// [1, N_0)
 											std::make_pair(T_PID1, theta_0.N_Theta())	// [N_0, N)
 										};
 			theta_0.ETB_Setup_cross(err_out, interests_conf->Joints, segs);
-			err_tb->n_rows = (int)err_out.rows();
-			err_tb->n_cols = (int)err_out.cols();
-			auto data_size = err_out.rows() * err_out.cols() * sizeof(Real);
-			err_tb->data = (Real*)malloc(data_size);
-			memcpy(err_tb->data, err_out.data(), data_size); //err_out is a column major matrix
+			err_out->CopyTo(err_tb);
+			theta_0.ETB_Release(err_out);
 		}
 		return merged;
 	}
@@ -249,7 +240,7 @@ EXIT:
 }
 
 
-bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, const char* dir_out, Real epsErr, const _ERROR_TB* err_tb_exter, int* n_theta_raw, int* n_theta_pg)
+bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, const char* dir_out, Real epsErr, int* n_theta_raw, int* n_theta_pg)
 {
 	bool ok = false;
 	try
@@ -265,16 +256,9 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 			return false;
 		}
 
-		Eigen::MatrixXr err_tb;
+		IErrorTB* err_tb = NULL;
 
-		if (NULL == err_tb_exter)
-			theta.ETB_Setup(err_tb, interests_conf->Joints);
-		else
-		{
-			err_tb = Eigen::Map<Eigen::MatrixXr>(err_tb_exter->data
-												, err_tb_exter->n_rows
-												, err_tb_exter->n_cols);
-		}
+		theta.ETB_Setup_homo(err_tb, interests_conf->Joints);
 
 		CONF::CInterestsConf::UnLoad(interests_conf);
 
@@ -283,6 +267,8 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 		std::vector<int> postures_T = {T_PID};
 		CPGOpen::InitTransitions(pg_epsilon, err_tb, epsErr, postures_T);
 		CPGClose* pg_gen = CPGOpen::GenerateClosePG(pg_epsilon, err_tb, T_PID);
+		theta.ETB_Release(err_tb);
+
 		ok = (NULL != pg_gen);
 		if (ok)
 		{
@@ -351,7 +337,7 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 		const int T_PID0 = 0;
 		const int T_PID1 = pg_0->Theta().N_Theta();
 
-		Eigen::MatrixXr err_tb;
+		IErrorTB* err_tb = NULL;
 		std::vector<std::pair<int, int>> segs = {
 											std::make_pair(0, 1),						// [0, 1)
 											std::make_pair(1, T_PID1),					// [1, N_0)
@@ -359,6 +345,13 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 										};
 		theta.ETB_Setup_cross(err_tb, interests_conf->Joints, segs);
 		CONF::CInterestsConf::UnLoad(interests_conf);
+
+		std::unique_ptr<IErrorTB, void(*)(IErrorTB*)> err_tb_gc(
+																err_tb
+																, [](IErrorTB* ptr)
+        															{
+        																CPGThetaClose::ETB_Release(ptr);
+        															});
 
 		CPGOpen pg_open(&theta);
 		std::vector<int> postures_T = { T_PID0, T_PID1 };

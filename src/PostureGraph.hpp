@@ -20,6 +20,7 @@
 #include "Math.hpp"
 #include "ArtiBody.hpp"
 #include "IKChain.hpp"
+#include "ErrorTB.hpp"
 
 
 enum PG_FileType {F_PG = 0, F_DOT};
@@ -87,8 +88,9 @@ public:
 		CArtiBodyTree::FK_Update<G_SPACE>(m_rootBody);
 	}
 
-	void ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints);
-	void ETB_Setup_cross(Eigen::MatrixXr& err_out, const std::list<std::string>& joints, const std::vector<std::pair<int, int>>& segs);
+	void ETB_Setup_homo(IErrorTB* err_out, const std::list<std::string>& joints);
+	void ETB_Setup_cross(IErrorTB* err_out, const std::list<std::string>& joints, const std::vector<std::pair<int, int>>& segs);
+	static void ETB_Release(IErrorTB* err_out);
 
 	int N_Theta() const {return (int)m_motions.size();}
 
@@ -264,7 +266,7 @@ public:
 	};
 protected:
 	CPGClose(std::size_t n_vs);
-	static void Initialize(CPGClose& graph_src, const Registry& reg, const Eigen::MatrixXr& errTB_src, int pid_T_src, const CPGThetaClose& theta_src);
+	static void Initialize(CPGClose& graph_src, const Registry& reg, const IErrorTB* errTB_src, int pid_T_src, const CPGThetaClose& theta_src);
 public:
 	CPGClose();
 	virtual ~CPGClose();
@@ -436,17 +438,17 @@ public:
 
 	virtual ~CPGOpen();
 
-	static void InitTransitions(CPGOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore);
+	static void InitTransitions(CPGOpen& graph, const IErrorTB* errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore);
 
-	static bool MergeTransitions(CPGOpen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const Eigen::MatrixXr& err_tb, Real epsErr, std::vector<int>& postures_ignore);
+	static bool MergeTransitions(CPGOpen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const IErrorTB* err_tb, Real epsErr, std::vector<int>& postures_ignore);
 
-	static CPGClose* GenerateClosePG(const CPGOpen& graph_src, const Eigen::MatrixXr& errTB, int pid_T_src);
+	static CPGClose* GenerateClosePG(const CPGOpen& graph_src, const IErrorTB* errTB, int pid_T_src);
 
 	void Save(const char* dir, PG_FileType type = F_PG) const;
 
 	const CPGThetaClose* Theta() const { return m_theta; }
 private:
-	static bool EliminateDupTheta(CPGOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore);
+	static bool EliminateDupTheta(CPGOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg, const std::set<int>& pids_ignore);
 private:
 	const CPGThetaClose* m_theta;
 };
