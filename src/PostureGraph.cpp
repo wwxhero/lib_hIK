@@ -241,45 +241,30 @@ bool CPGThetaClose::Merge(const CPGThetaClose& theta_other)
 	return body_eq;
 }
 
-void CPGThetaClose::ETB_Setup_homo(IErrorTB* err_out, const std::list<std::string>& joints)
+CPGThetaClose::Query* CPGThetaClose::BeginQuery(const std::list<std::string>& joints) const
 {
-	unsigned int n_theta = N_Theta();
-	err_out = IErrorTB::Factory::CreateHOMO(n_theta);
+	CPGThetaClose::Query* query = new CPGThetaClose::Query;
+	CArtiBodyTree::Serialize<true>(m_rootBody, query->tm_bk);
+	query->n_interests = CArtiBodyTree::GetBodies(m_rootBody, joints, query->interests);
+	return query;
+}
 
-	TransformArchive tm_bk;
-	CArtiBodyTree::Serialize<true>(m_rootBody, tm_bk); // backup the original configuration
-
-	std::list<const CArtiBodyNode*> interest_bodies;
-	int n_bodies = CArtiBodyTree::GetBodies(m_rootBody, joints, interest_bodies);
-	TransformArchive tm_data_i(n_bodies);
-	TransformArchive tm_data_j(n_bodies);
-
-	auto UpdateTransforms = [] (std::list<const CArtiBodyNode*>& interest_bodies, TransformArchive& tm_data)
-		{
-			int i_tm = 0;
-			for (auto body : interest_bodies)
-			{
-				_TRANSFORM& tm_i = tm_data[i_tm ++];
-				body->GetJoint()->GetTransform()->CopyTo(tm_i);
-			}
-		};
-
-	for (unsigned int i_theta = 0; i_theta < n_theta; i_theta++)
-	{
-		PoseBody<false>(i_theta, m_rootBody);
-		UpdateTransforms(interest_bodies, tm_data_i);
-		for (unsigned int j_theta = 0; j_theta < i_theta; j_theta++)
-		{
-			PoseBody<false>(j_theta, m_rootBody);
-			UpdateTransforms(interest_bodies, tm_data_j);
-			auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
-			err_out->Set(i_theta, j_theta, err_ij);
-		}
-		err_out->Set(i_theta, i_theta, (Real)0);
-	}
-
-	CArtiBodyTree::Serialize<false>(m_rootBody, tm_bk); // restore the original configuration
+void CPGThetaClose::EndQuery(CPGThetaClose::Query* query) const
+{
+	CArtiBodyTree::Serialize<false>(m_rootBody, query->tm_bk);
 	CArtiBodyTree::FK_Update<false>(m_rootBody);
+	delete query;
+}
+
+void CPGThetaClose::QueryTheta(CPGThetaClose::Query* query, int i_theta, TransformArchive& tm_data) const
+{
+	PoseBody<false>(i_theta, m_rootBody);
+	int i_tm = 0;
+	for (auto body : query->interests)
+	{
+		_TRANSFORM& tm_i = tm_data[i_tm ++];
+		body->GetJoint()->GetTransform()->CopyTo(tm_i);
+	}
 }
 
 void CPGThetaClose::ETB_Setup_cross(IErrorTB* err_out, const std::list<std::string>& joints, const std::vector<std::pair<int, int>>& segs)
@@ -335,10 +320,7 @@ void CPGThetaClose::ETB_Setup_cross(IErrorTB* err_out, const std::list<std::stri
 	//CArtiBodyTree::FK_Update<false>(m_rootBody);
 }
 
-void CPGThetaClose::ETB_Release(IErrorTB* etb)
-{
-	delete etb;
-}
+
 
 template<typename G>
 void Dump(G& g, const char* fileName, int lineNo)

@@ -73,10 +73,9 @@ bool init_err_tb(const char* interests_conf_path, const char* path_htr, _ERROR_T
 		}*/
 
 		CPGThetaClose theta(path_htr);
-		IErrorTB* err_out = NULL;
-		theta.ETB_Setup_homo(err_out, interests_conf->Joints);
-		err_out->CopyTo(err_tb);
-		theta.ETB_Release(err_out);
+		IErrorTB* err_out = IErrorTB::Factory::CreateHOMO(theta, interests_conf->Joints);
+		err_out->Alloc(err_tb);
+		IErrorTB::Factory::Release(err_out);
 	}
 	catch(const std::string& err)
 	{
@@ -119,8 +118,8 @@ bool init_err_tb_merged(const char* interests_conf_path, const char* pg_theta_0,
 											std::make_pair(T_PID1, theta_0.N_Theta())	// [N_0, N)
 										};
 			theta_0.ETB_Setup_cross(err_out, interests_conf->Joints, segs);
-			err_out->CopyTo(err_tb);
-			theta_0.ETB_Release(err_out);
+			err_out->Alloc(err_tb);
+			IErrorTB::Factory::Release(err_out);
 		}
 		return merged;
 	}
@@ -134,10 +133,7 @@ bool init_err_tb_merged(const char* interests_conf_path, const char* pg_theta_0,
 
 void uninit_err_tb(_ERROR_TB* err_tb)
 {
-	free(err_tb->data);
-	err_tb->data = NULL;
-	err_tb->n_rows = 0;
-	err_tb->n_cols = 0;
+	IErrorTB::Free(err_tb);
 }
 
 Real err_entry(const _ERROR_TB* err_tb, int i_row, int i_col)
@@ -256,9 +252,7 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 			return false;
 		}
 
-		IErrorTB* err_tb = NULL;
-
-		theta.ETB_Setup_homo(err_tb, interests_conf->Joints);
+		IErrorTB* err_tb = IErrorTB::Factory::CreateHOMO(theta, interests_conf->Joints);
 
 		CONF::CInterestsConf::UnLoad(interests_conf);
 
@@ -267,7 +261,7 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 		std::vector<int> postures_T = {T_PID};
 		CPGOpen::InitTransitions(pg_epsilon, err_tb, epsErr, postures_T);
 		CPGClose* pg_gen = CPGOpen::GenerateClosePG(pg_epsilon, err_tb, T_PID);
-		theta.ETB_Release(err_tb);
+		IErrorTB::Factory::Release(err_tb);
 
 		ok = (NULL != pg_gen);
 		if (ok)
@@ -350,7 +344,7 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 																err_tb
 																, [](IErrorTB* ptr)
         															{
-        																CPGThetaClose::ETB_Release(ptr);
+        																IErrorTB::Factory::Release(ptr);
         															});
 
 		CPGOpen pg_open(&theta);

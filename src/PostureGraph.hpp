@@ -88,9 +88,20 @@ public:
 		CArtiBodyTree::FK_Update<G_SPACE>(m_rootBody);
 	}
 
-	void ETB_Setup_homo(IErrorTB* err_out, const std::list<std::string>& joints);
+	struct Query
+	{
+		TransformArchive tm_bk;
+		std::list<const CArtiBodyNode*> interests;
+		int n_interests;
+	};
+
+	Query* BeginQuery(const std::list<std::string>& joints) const;
+	void EndQuery(Query* query) const;
+	void QueryTheta(Query* query, int i_theta, TransformArchive& tm_data) const;
+
+
 	void ETB_Setup_cross(IErrorTB* err_out, const std::list<std::string>& joints, const std::vector<std::pair<int, int>>& segs);
-	static void ETB_Release(IErrorTB* err_out);
+
 
 	int N_Theta() const {return (int)m_motions.size();}
 
