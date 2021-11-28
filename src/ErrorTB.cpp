@@ -109,7 +109,7 @@ public:
 		return m_refTheta->N_Theta();
 	}
 
-	void AttachThetaRef(const CPGThetaClose& theta, const std::list<std::string>& joints)
+	void AttachThetaRef(const CPGTheta& theta, const std::list<std::string>& joints)
 	{
 		IKAssert(NULL == m_refTheta);
 		m_refTheta = &theta;
@@ -119,8 +119,8 @@ public:
 	}
 
 private:
-	const CPGThetaClose* m_refTheta;
-	CPGThetaClose::Query* m_refQuery;
+	const CPGTheta* m_refTheta;
+	CPGTheta::Query* m_refQuery;
 	mutable TransformArchive m_thetaData_i;
 	mutable TransformArchive m_thetaData_j;
 };
@@ -163,7 +163,7 @@ void IErrorTB::Free(_ERROR_TB* err_tb)
 	err_tb->n_cols = 0;
 }
 
-IErrorTB* IErrorTB::Factory::CreateHOMO(const CPGThetaClose& theta, const std::list<std::string>& joints)
+IErrorTB* IErrorTB::Factory::CreateHOMO(const CPGTheta& theta, const std::list<std::string>& joints)
 {
 	unsigned int n_theta = theta.N_Theta();
 	if (n_theta < MAX_N_THETA_HOMO)

@@ -72,7 +72,7 @@ bool init_err_tb(const char* interests_conf_path, const char* path_htr, _ERROR_T
 			interests_conf->Dump();
 		}*/
 
-		CPGThetaClose theta(path_htr);
+		CPGTheta theta(path_htr);
 		IErrorTB* err_out = IErrorTB::Factory::CreateHOMO(theta, interests_conf->Joints);
 		err_out->Alloc(err_tb);
 		IErrorTB::Factory::Release(err_out);
@@ -105,8 +105,8 @@ bool init_err_tb_merged(const char* interests_conf_path, const char* pg_theta_0,
 			interests_conf->Dump();
 		}*/
 
-		CPGThetaClose theta_0(pg_theta_0);
-		CPGThetaClose theta_1(pg_theta_1);
+		CPGTheta theta_0(pg_theta_0);
+		CPGTheta theta_1(pg_theta_1);
 		const int T_PID1 = theta_0.N_Theta();
 		bool merged = theta_0.Merge(theta_1);
 		if (merged)
@@ -165,7 +165,7 @@ bool dissect(const char* confXML, const char* path, const char* dir_out)
 			goto EXIT;
 		}
 
-		CPGThetaClose theta(path);
+		CPGTheta theta(path);
 		const CArtiBodyNode* body_root = theta.GetBody();
 		IKAssert(NULL != body_root);
 		ik_group = CIKGroupTree::Generate(body_root, *body_conf);
@@ -241,7 +241,7 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 	bool ok = false;
 	try
 	{
-		CPGThetaClose theta(path_htr);
+		CPGTheta theta(path_htr);
 		*n_theta_raw = theta.N_Theta();
 		CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
 		if (NULL == interests_conf)
@@ -256,19 +256,19 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 
 		CONF::CInterestsConf::UnLoad(interests_conf);
 
-		CPGOpen pg_epsilon(&theta);
+		CPGMatrixGen pg_epsilon(&theta);
 		const int T_PID = 0;
 		std::vector<int> postures_T = {T_PID};
-		CPGOpen::InitTransitions(pg_epsilon, err_tb, epsErr, postures_T);
-		CPGClose* pg_gen = CPGOpen::GenerateClosePG(pg_epsilon, err_tb, T_PID);
+		CPGMatrixGen::InitTransitions(pg_epsilon, err_tb, epsErr, postures_T);
+		CPG* pg = CPGMatrixGen::GeneratePG(pg_epsilon, err_tb, T_PID);
 		IErrorTB::Factory::Release(err_tb);
 
-		ok = (NULL != pg_gen);
+		ok = (NULL != pg);
 		if (ok)
 		{
-			pg_gen->Save(dir_out);
-			*n_theta_pg = pg_gen->Theta().N_Theta();
-			delete pg_gen;
+			pg->Save(dir_out);
+			*n_theta_pg = pg->Theta().N_Theta();
+			delete pg;
 		}
 	}
 	catch (std::string& err)
@@ -281,7 +281,7 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 
 HPG posture_graph_load(const char* pg_dir_0, const char* pg_name)
 {
-	CPGClose* pg = new CPGClose();
+	CPG* pg = new CPG();
 	if (!pg->Load(pg_dir_0, pg_name))
 	{
 		delete pg;
@@ -293,7 +293,7 @@ HPG posture_graph_load(const char* pg_dir_0, const char* pg_name)
 
 void posture_graph_release(HPG hPG)
 {
-	CPGClose* pg = CAST_2PPG(hPG);
+	CPG* pg = CAST_2PPG(hPG);
 	delete pg;
 }
 
@@ -303,13 +303,13 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 	{
 		bool ok = false;
 		HPG hpg = H_INVALID;
-		CPGClose* pg_0 = CAST_2PPG(hpg_0);
-		CPGClose* pg_1 = CAST_2PPG(hpg_1);
+		CPG* pg_0 = CAST_2PPG(hpg_0);
+		CPG* pg_1 = CAST_2PPG(hpg_1);
 		// pg_0.Load(pg_dir_0, pg_name);
 		// pg_1.Load(pg_dir_1, pg_name);
 		IKAssert(NULL != pg_0 && NULL != pg_1);
 
-		CPGThetaClose theta(pg_0->Theta());
+		CPGTheta theta(pg_0->Theta());
 		ok = theta.Merge(pg_1->Theta());
 		if (!ok)
 		{
@@ -347,9 +347,9 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
         																IErrorTB::Factory::Release(ptr);
         															});
 
-		CPGOpen pg_open(&theta);
+		CPGMatrixGen pg_cross_gen(&theta);
 		std::vector<int> postures_T = { T_PID0, T_PID1 };
-		ok = CPGOpen::MergeTransitions(pg_open, *pg_0, *pg_1, err_tb, eps_err, postures_T);
+		ok = CPGMatrixGen::MergeTransitions(pg_cross_gen, *pg_0, *pg_1, err_tb, eps_err, postures_T);
 		if (!ok)
 		{
 			std::string err("Not an epsilon edge exists between two PGs");
@@ -357,16 +357,16 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 			return H_INVALID;
 		}
 
-		CPGClose* pg_gen = CPGOpen::GenerateClosePG(pg_open, err_tb, T_PID0);
-		ok = (NULL != pg_gen);
+		CPG* pg = CPGMatrixGen::GeneratePG(pg_cross_gen, err_tb, T_PID0);
+		ok = (NULL != pg);
 		if (!ok)
 		{
-			std::string err("Generate CPGClose failed");
+			std::string err("Generate CPG failed");
 			LOGIKVarErr(LogInfoCharPtr, err.c_str());
 			return H_INVALID;
 		}
 
-		hpg = CAST_2HPG(pg_gen);
+		hpg = CAST_2HPG(pg);
 		return hpg;
 	}
 	catch (std::string& err)
@@ -378,7 +378,7 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 
 bool posture_graph_save(HPG hpg, const char* dir_out)
 {
-	CPGClose* pPG = CAST_2PPG(hpg);
+	CPG* pPG = CAST_2PPG(hpg);
 	if (pPG)
 	{
 		pPG->Save(dir_out);
@@ -401,7 +401,7 @@ bool trim(const char* src, const char* dst, const char* const names_rm[], int n_
 	bool ret = false;
 	try
 	{
-		CPGThetaClose theta(src);
+		CPGTheta theta(src);
 		CArtiBodyNode* rootTrim = NULL;
 		ret = CArtiBodyTree::Clone(theta.GetBody(), &rootTrim);
 		if (ret)
@@ -451,6 +451,6 @@ bool trim(const char* src, const char* dst, const char* const names_rm[], int n_
 
 int N_Theta(HPG hpg)
 {
-	CPGClose* pPG = CAST_2PPG(hpg);
+	CPG* pPG = CAST_2PPG(hpg);
 	return pPG->Theta().N_Theta();
 }

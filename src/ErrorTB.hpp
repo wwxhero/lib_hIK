@@ -2,7 +2,7 @@
 #include <list>
 #include "posture_graph.h"
 
-class CPGThetaClose;
+class CPGTheta;
 
 class IErrorTB
 {
@@ -10,7 +10,7 @@ public:
 	class Factory
 	{
 	public:
-		static IErrorTB* CreateHOMO(const CPGThetaClose& theta, const std::list<std::string>& joints);
+		static IErrorTB* CreateHOMO(const CPGTheta& theta, const std::list<std::string>& joints);
 		static void Release(IErrorTB* etb);
 	};
 	virtual void Set(int i_theta, int j_theta, Real err_ij) = 0;

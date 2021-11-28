@@ -57,14 +57,14 @@ private:
 	std::vector<TransformArchive> m_motions;
 };
 
-class CPGThetaClose
+class CPGTheta
 {
 public:
-	CPGThetaClose(const char* path);
-	CPGThetaClose(const std::string& path);
-	CPGThetaClose();
-	CPGThetaClose(const CPGThetaClose& src);
-	virtual ~CPGThetaClose();
+	CPGTheta(const char* path);
+	CPGTheta(const std::string& path);
+	CPGTheta();
+	CPGTheta(const CPGTheta& src);
+	virtual ~CPGTheta();
 public:
 	template<bool G_SPACE>
 	void PoseBody(int i_frame) const
@@ -108,7 +108,7 @@ public:
 	const CArtiBodyNode* GetBody() const { return m_rootBody; }
 	CArtiBodyNode* GetBody() { return m_rootBody;  }
 
-	bool Merge(const CPGThetaClose& f2b);
+	bool Merge(const CPGTheta& f2b);
 protected:
 	template<bool G_SPACE>
 	void PoseBody(int i_frame, CArtiBodyNode* body) const
@@ -231,9 +231,9 @@ public:
 };
 
 
-class CPGClose : public CPGTransition
+class CPG : public CPGTransition
 {
-	friend class CPGOpen;
+	friend class CPGMatrixGen;
 public:
 	struct Registry
 	{
@@ -276,22 +276,22 @@ public:
 		std::list<REGISTER_e> E;
 	};
 protected:
-	CPGClose(std::size_t n_vs);
-	static void Initialize(CPGClose& graph_src, const Registry& reg, const IErrorTB* errTB_src, int pid_T_src, const CPGThetaClose& theta_src);
+	CPG(std::size_t n_vs);
+	static void Initialize(CPG& graph_src, const Registry& reg, const IErrorTB* errTB_src, int pid_T_src, const CPGTheta& theta_src);
 public:
-	CPGClose();
-	virtual ~CPGClose();
+	CPG();
+	virtual ~CPG();
 	
 	bool Load(const char* dir, const char* pg_name);
 	void Save(const char* dir) const;
-	const CPGThetaClose& Theta() const
+	const CPGTheta& Theta() const
 	{
 		return m_theta;
 	}
 private:
 	bool LoadThetas(const std::string& path_theta);
 private:
-	CPGThetaClose m_theta;
+	CPGTheta m_theta;
 };
 
 
@@ -441,27 +441,27 @@ struct EdgeGen
 	std::size_t deg;
 };
 
-class CPGOpen : public PostureGraphMatrix<VertexGen, EdgeGen>
+class CPGMatrixGen : public PostureGraphMatrix<VertexGen, EdgeGen>
 
 {
 public:
-	CPGOpen(const CPGThetaClose* theta);
+	CPGMatrixGen(const CPGTheta* theta);
 
-	virtual ~CPGOpen();
+	virtual ~CPGMatrixGen();
 
-	static void InitTransitions(CPGOpen& graph, const IErrorTB* errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore);
+	static void InitTransitions(CPGMatrixGen& graph, const IErrorTB* errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore);
 
-	static bool MergeTransitions(CPGOpen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const IErrorTB* err_tb, Real epsErr, std::vector<int>& postures_ignore);
+	static bool MergeTransitions(CPGMatrixGen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const IErrorTB* err_tb, Real epsErr, std::vector<int>& postures_ignore);
 
-	static CPGClose* GenerateClosePG(const CPGOpen& graph_src, const IErrorTB* errTB, int pid_T_src);
+	static CPG* GeneratePG(const CPGMatrixGen& graph_src, const IErrorTB* errTB, int pid_T_src);
 
 	void Save(const char* dir, PG_FileType type = F_PG) const;
 
-	const CPGThetaClose* Theta() const { return m_theta; }
+	const CPGTheta* Theta() const { return m_theta; }
 private:
-	static bool EliminateDupTheta(CPGOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg, const std::set<int>& pids_ignore);
+	static bool EliminateDupTheta(CPGMatrixGen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg, const std::set<int>& pids_ignore);
 private:
-	const CPGThetaClose* m_theta;
+	const CPGTheta* m_theta;
 };
 
 
