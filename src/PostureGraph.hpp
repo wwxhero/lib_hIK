@@ -271,13 +271,13 @@ public:
 		std::list<REGISTER_v> V;
 		std::list<REGISTER_e> E;
 	};
-protected:
-	CPG(std::size_t n_vs);
-	static void Initialize(CPG& graph_src, const Registry& reg, const CPGTheta& theta_src);
+
 public:
+	CPG(std::size_t n_vs);
 	CPG();
 	virtual ~CPG();
-	
+
+	static void Initialize(CPG& graph_src, const Registry& reg, const CPGTheta& theta_src);	
 	bool Load(const char* dir, const char* pg_name);
 	void Save(const char* dir) const;
 	const CPGTheta& Theta() const
