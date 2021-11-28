@@ -277,7 +277,7 @@ public:
 	};
 protected:
 	CPG(std::size_t n_vs);
-	static void Initialize(CPG& graph_src, const Registry& reg, const IErrorTB* errTB_src, int pid_T_src, const CPGTheta& theta_src);
+	static void Initialize(CPG& graph_src, const Registry& reg, const CPGTheta& theta_src);
 public:
 	CPG();
 	virtual ~CPG();
@@ -449,11 +449,11 @@ public:
 
 	virtual ~CPGMatrixGen();
 
-	static void InitTransitions(CPGMatrixGen& graph, const IErrorTB* errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore);
+	static void InitTransitions(CPGMatrixGen& graph, const IErrorTB* errTB, Real epsErr_deg);
 
 	static bool MergeTransitions(CPGMatrixGen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const IErrorTB* err_tb, Real epsErr, std::vector<int>& postures_ignore);
 
-	static CPG* GeneratePG(const CPGMatrixGen& graph_src, const IErrorTB* errTB, int pid_T_src);
+	static CPG* GeneratePG(const CPGMatrixGen& graph_src);
 
 	void Save(const char* dir, PG_FileType type = F_PG) const;
 

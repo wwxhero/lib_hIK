@@ -39,6 +39,7 @@ public:
 
 	virtual Real Get(int i_theta, int j_theta) const
 	{
+		IKAssert(0 != i_theta || 0 != j_theta);
 		if (i_theta == j_theta)
 			return (Real)0;
 		else
@@ -173,7 +174,7 @@ IErrorTB* IErrorTB::Factory::CreateHOMO(const CPGTheta& theta, const std::list<s
 		auto query = theta.BeginQuery(joints);
 		TransformArchive tm_data_i(query->n_interests);
 		TransformArchive tm_data_j(query->n_interests);
-		for (unsigned int i_theta = 0; i_theta < n_theta_m; i_theta ++)
+		for (unsigned int i_theta = 1; i_theta < n_theta_m; i_theta ++) // to skip the injected 'T' posture
 		{
 			theta.QueryTheta(query, i_theta, tm_data_i);
 			for (unsigned int j_theta = i_theta + 1; j_theta < n_theta; j_theta ++)

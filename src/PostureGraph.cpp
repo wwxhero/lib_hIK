@@ -369,7 +369,7 @@ CPG::CPG()
 
 }
 
-void CPG::Initialize(CPG& graph, const Registry& reg, const IErrorTB* errTB_src, int pid_T_src, const CPGTheta& theta_src)
+void CPG::Initialize(CPG& graph, const Registry& reg, const CPGTheta& theta_src)
 {
 	struct V_ERR
 	{
@@ -388,19 +388,25 @@ void CPG::Initialize(CPG& graph, const Registry& reg, const IErrorTB* errTB_src,
 
 	std::list<V_ERR> lstV_ERR_T;
 	auto it_reg_v = reg.V.begin();
-	IKAssert(pid_T_src == it_reg_v->v_src
+	IKAssert(0 == it_reg_v->v_src
 			&& 0 == it_reg_v->v_dst); 	// the 'T' posture is supposed to be the first one to be registered
 
 	CArtiBodyRef2File abfile(theta_src.GetBody(), (int)graph.m_vertices.size());
 
-	theta_src.PoseBody<false>(pid_T_src);
+	theta_src.PoseBody<false>(0);
 	abfile.UpdateMotion(0);
+	CArtiBodyNode* body_theta_src = const_cast<CArtiBodyNode*>(theta_src.GetBody());
+	TransformArchive tm_0;
+	CArtiBodyTree::Serialize<true>(body_theta_src, tm_0);
+
+	TransformArchive tm_i;
 	for (it_reg_v ++; it_reg_v != reg.V.end(); it_reg_v ++) // skip the 'T' posture to avoid a self-pointing edge
 	{
 		const auto& reg_v = *it_reg_v;
 		theta_src.PoseBody<false>((int)reg_v.v_src);
 		abfile.UpdateMotion((int)reg_v.v_dst);
-		lstV_ERR_T.push_back({reg_v.v_dst, errTB_src->Get(pid_T_src, reg_v.v_src)});
+		CArtiBodyTree::Serialize<true>(body_theta_src, tm_i);
+		lstV_ERR_T.push_back({reg_v.v_dst, TransformArchive::Error_q(tm_0, tm_i)});
 	}
 	theta_src.ResetPose<false>();
 	graph.m_theta.Initialize(abfile);
@@ -703,9 +709,9 @@ bool CPGMatrixGen::EliminateDupTheta(CPGMatrixGen& graph_eps, const std::vector<
 	return true;
 }
 
-void CPGMatrixGen::InitTransitions(CPGMatrixGen& graph, const IErrorTB* errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore)
+void CPGMatrixGen::InitTransitions(CPGMatrixGen& graph, const IErrorTB* errTB, Real epsErr_deg)
 {
-	std::set<int> pids_ignore(postureids_ignore.begin(), postureids_ignore.end());
+	std::set<int> pids_ignore = {0}; //ignore the 'T' posture
 	// initialize epsilon edges
 	int n_theta = graph.m_theta->N_Theta();
 	int i_theta = 0;
@@ -755,10 +761,10 @@ bool CPGMatrixGen::MergeTransitions(CPGMatrixGen& graph, const CPGTransition& pg
 }
 
 
-CPG* CPGMatrixGen::GeneratePG(const CPGMatrixGen& graph_src, const IErrorTB* errTB, int pid_T_src)
+CPG* CPGMatrixGen::GeneratePG(const CPGMatrixGen& graph_src)
 {
 	CPG::Registry regG;
-	regG.Register_v(pid_T_src); // 'T' posture is the first posture registered which has no edges
+	regG.Register_v(0); // 'T' posture is the first posture registered which has no edges
 	auto e_range_src = boost::edges(graph_src);
 	const edge_iterator it_e_end_src = e_range_src.second;
 	for (auto it_e_src = e_range_src.first
@@ -771,7 +777,7 @@ CPG* CPGMatrixGen::GeneratePG(const CPGMatrixGen& graph_src, const IErrorTB* err
 		regG.Register_e(v_dst[0], v_dst[1]);
 	}
 	CPG* graph_dst = new CPG(regG.V.size());
-	CPG::Initialize(*graph_dst, regG, errTB, pid_T_src, *graph_src.Theta());
+	CPG::Initialize(*graph_dst, regG, *graph_src.Theta());
 	return graph_dst;
 }
 

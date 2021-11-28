@@ -257,11 +257,10 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 		CONF::CInterestsConf::UnLoad(interests_conf);
 
 		CPGMatrixGen pg_epsilon(&theta);
-		const int T_PID = 0;
-		std::vector<int> postures_T = {T_PID};
-		CPGMatrixGen::InitTransitions(pg_epsilon, err_tb, epsErr, postures_T);
-		CPG* pg = CPGMatrixGen::GeneratePG(pg_epsilon, err_tb, T_PID);
+		CPGMatrixGen::InitTransitions(pg_epsilon, err_tb, epsErr);
 		IErrorTB::Factory::Release(err_tb);
+		CPG* pg = CPGMatrixGen::GeneratePG(pg_epsilon);
+
 
 		ok = (NULL != pg);
 		if (ok)
@@ -357,7 +356,7 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 			return H_INVALID;
 		}
 
-		CPG* pg = CPGMatrixGen::GeneratePG(pg_cross_gen, err_tb, T_PID0);
+		CPG* pg = CPGMatrixGen::GeneratePG(pg_cross_gen);
 		ok = (NULL != pg);
 		if (!ok)
 		{
