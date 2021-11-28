@@ -451,7 +451,7 @@ public:
 
 	static void InitTransitions(CPGMatrixGen& graph, const IErrorTB* errTB, Real epsErr_deg);
 
-	static bool MergeTransitions(CPGMatrixGen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const IErrorTB* err_tb, Real epsErr, std::vector<int>& postures_ignore);
+	static bool MergeTransitions(CPGMatrixGen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const IErrorTB* err_tb, Real epsErr, int n_theta_0, int n_theta_1);
 
 	static CPG* GeneratePG(const CPGMatrixGen& graph_src);
 
@@ -459,7 +459,7 @@ public:
 
 	const CPGTheta* Theta() const { return m_theta; }
 private:
-	static bool EliminateDupTheta(CPGMatrixGen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg, const std::set<int>& pids_ignore);
+	static void EliminateDupTheta(CPGMatrixGen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg);
 private:
 	const CPGTheta* m_theta;
 };

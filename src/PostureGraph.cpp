@@ -528,43 +528,8 @@ CPGMatrixGen::~CPGMatrixGen()
 {
 }
 
-bool CPGMatrixGen::EliminateDupTheta(CPGMatrixGen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg, const std::set<int>& pids_ignore)
+void CPGMatrixGen::EliminateDupTheta(CPGMatrixGen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg)
 {
-#if defined _DEBUG
-	Dump(graph_eps, __FILE__, __LINE__);
-#endif
-	int n_theta = graph_eps.m_theta->N_Theta();
-	Real err_epsilon = (1 - cos(deg2rad(epsErr_deg) / (Real)2));
-	IKAssert(errTB->N_Theta() == n_theta);
-	int n_transi_eps = 0;
-	for (int i_theta = 0; i_theta < n_theta; i_theta++)
-	{
-		bool i_ignored = (pids_ignore.end() != pids_ignore.find(i_theta));
-		if (i_ignored)
-			continue;
-		for (int j_theta = i_theta + 1; j_theta < n_theta; j_theta++)
-		{
-			bool j_ignored = (pids_ignore.end() != pids_ignore.find(j_theta));
-			if (j_ignored)
-				continue;
-			if (errTB->Get(i_theta, j_theta) < err_epsilon)
-			{
-				boost::add_edge(i_theta, j_theta, graph_eps);
-				n_transi_eps ++;
-			}
-		}
-	}
-
-#if defined _DEBUG
-	LOGIKVar(LogInfoInt, n_transi_eps);
-#endif
-	if (0 == n_transi_eps)
-		return false;
-
-#if defined _DEBUG
-	Dump(graph_eps, __FILE__, __LINE__);
-#endif
-
 	//tag rm for each vertex
 	auto v_range = boost::vertices(graph_eps);
 	vertex_iterator it_v_end = v_range.second;
@@ -703,37 +668,55 @@ bool CPGMatrixGen::EliminateDupTheta(CPGMatrixGen& graph_eps, const std::vector<
 		}
 	}
 
-#if defined _DEBUG
-	Dump(graph, __FILE__, __LINE__);
-#endif
-	return true;
 }
 
 void CPGMatrixGen::InitTransitions(CPGMatrixGen& graph, const IErrorTB* errTB, Real epsErr_deg)
 {
-	std::set<int> pids_ignore = {0}; //ignore the 'T' posture
 	// initialize epsilon edges
 	int n_theta = graph.m_theta->N_Theta();
-	int i_theta = 0;
-	bool i_theta_ignored = (pids_ignore.end() != pids_ignore.find(i_theta));
+	int i_theta = 1;
 	for (int i_theta_p = i_theta + 1; i_theta_p < n_theta; i_theta ++, i_theta_p ++)
+		boost::add_edge(i_theta, i_theta + 1, graph);
+
+#if defined _DEBUG
+	Dump(graph_eps, __FILE__, __LINE__);
+#endif
+
+	Real err_epsilon = (1 - cos(deg2rad(epsErr_deg) / (Real)2));
+	IKAssert(errTB->N_Theta() == n_theta);
+	int n_transi_eps = 0;
+	for (i_theta = 1; i_theta < n_theta; i_theta++)
 	{
-		bool i_theta_p_ignored = (pids_ignore.end() != pids_ignore.find(i_theta_p));
-		if (!i_theta_ignored && !i_theta_p_ignored)
-			boost::add_edge(i_theta, i_theta + 1, graph);
-		i_theta_ignored = i_theta_p_ignored;
+		for (int j_theta = i_theta + 1; j_theta < n_theta; j_theta++)
+		{
+			if (errTB->Get(i_theta, j_theta) < err_epsilon)
+			{
+				boost::add_edge(i_theta, j_theta, graph);
+				n_transi_eps ++;
+			}
+		}
 	}
 
-	// initialize not epsilon edges
-	std::vector<std::pair<int, int>> transi_0;
-	// E = phi, E_eps = {(i, i+1)| i in THETA}
-	EliminateDupTheta(graph, transi_0, errTB, epsErr_deg, pids_ignore);
+#if defined _DEBUG
+	LOGIKVar(LogInfoInt, n_transi_eps);
+	Dump(graph_eps, __FILE__, __LINE__);
+#endif
+
+	if (n_transi_eps > 0)
+	{
+		// initialize not epsilon edges which is phi for homo pg generation
+		std::vector<std::pair<int, int>> transi_0;
+		// E = phi, E_eps = {(i, i+1)| i in THETA} U {(i, j) | Error(i, j) < err_eps}
+		EliminateDupTheta(graph, transi_0, errTB, epsErr_deg);
+	}
+
+#if defined _DEBUG
+	Dump(graph, __FILE__, __LINE__);
+#endif
 }
 
-bool CPGMatrixGen::MergeTransitions(CPGMatrixGen& graph, const CPGTransition& pg_0, const CPGTransition& pg_1, const IErrorTB* errTB, Real epsErr_deg, std::vector<int>& postureids_ignore)
+bool CPGMatrixGen::MergeTransitions(CPGMatrixGen& graph, const CPGTransition& pg_0, const CPGTransition& pg_1, const IErrorTB* errTB, Real epsErr_deg, int n_theta_0, int n_theta_1)
 {
-	std::set<int> pids_ignore(postureids_ignore.begin(), postureids_ignore.end());
-
 	// initialize not epsilon edges
 	const CPGTransition* pgs[] = {&pg_0, &pg_1};
 	int i_v_base[] = {0, (int)boost::num_vertices(pg_0)};
@@ -749,15 +732,37 @@ bool CPGMatrixGen::MergeTransitions(CPGMatrixGen& graph, const CPGTransition& pg
 			auto e = *it_e;
 			int i_theta_0 = boost::source(e, *pg_i) + i_v_base_i;
 			int i_theta_1 = boost::target(e, *pg_i) + i_v_base_i;
-			bool edge_not_ignored = (pids_ignore.end() == pids_ignore.find(i_theta_0)
-									&& pids_ignore.end() == pids_ignore.find(i_theta_1));
-			if (edge_not_ignored)
+			bool incident_T = ((n_theta_0 != i_theta_0 && 0 != i_theta_0)
+								&& (n_theta_0 != i_theta_1 && 0 != i_theta_1));
+			if (!incident_T)
 				transi_0[n_transi ++] = std::make_pair(i_theta_0, i_theta_1);
 		}
 	}
 	transi_0.resize(n_transi);
-	// E = (E_0 U E_1), E_eps = phi
-	return EliminateDupTheta(graph, transi_0, errTB, epsErr_deg, pids_ignore);
+
+	// initialize epsilon edges
+	int n_theta = n_theta_0 + n_theta_1;
+	IKAssert(n_theta == errTB->N_Theta());
+	Real err_epsilon = (1 - cos(deg2rad(epsErr_deg) / (Real)2));
+	int n_transi_eps = 0;
+	for (int i_theta = 1; i_theta < n_theta_0; i_theta ++)
+	{
+		for (int j_theta = n_theta_0 + 1; j_theta < n_theta; j_theta ++ )
+		{
+			if (errTB->Get(i_theta, j_theta) < err_epsilon)
+			{
+				boost::add_edge(i_theta, j_theta, graph);
+				n_transi_eps ++;
+			}
+		}
+	}
+
+	// E = (E_0 U E_1), E_eps != phi
+	bool merge_able = (n_transi_eps > 0);
+	if (merge_able)
+		EliminateDupTheta(graph, transi_0, errTB, epsErr_deg);
+
+	return merge_able;
 }
 
 

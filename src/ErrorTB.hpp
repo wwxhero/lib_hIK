@@ -11,6 +11,7 @@ public:
 	{
 	public:
 		static IErrorTB* CreateHOMO(const CPGTheta& theta, const std::list<std::string>& joints);
+		static IErrorTB* CreateX(const CPGTheta& theta, const std::list<std::string>& joints, int n_theta_0, int n_theta_1);
 		static void Release(IErrorTB* etb);
 	};
 	virtual void Set(int i_theta, int j_theta, Real err_ij) = 0;

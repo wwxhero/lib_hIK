@@ -261,7 +261,6 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 		IErrorTB::Factory::Release(err_tb);
 		CPG* pg = CPGMatrixGen::GeneratePG(pg_epsilon);
 
-
 		ok = (NULL != pg);
 		if (ok)
 		{
@@ -304,12 +303,12 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 		HPG hpg = H_INVALID;
 		CPG* pg_0 = CAST_2PPG(hpg_0);
 		CPG* pg_1 = CAST_2PPG(hpg_1);
-		// pg_0.Load(pg_dir_0, pg_name);
-		// pg_1.Load(pg_dir_1, pg_name);
 		IKAssert(NULL != pg_0 && NULL != pg_1);
 
 		CPGTheta theta(pg_0->Theta());
+		int n_theta_0 = theta.N_Theta();
 		ok = theta.Merge(pg_1->Theta());
+		int n_theta_1 = theta.N_Theta();
 		if (!ok)
 		{
 			std::string err("Merge theta failed: the theta are not compatible");
@@ -330,13 +329,8 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 		const int T_PID0 = 0;
 		const int T_PID1 = pg_0->Theta().N_Theta();
 
-		IErrorTB* err_tb = NULL;
-		std::vector<std::pair<int, int>> segs = {
-											std::make_pair(0, 1),						// [0, 1)
-											std::make_pair(1, T_PID1),					// [1, N_0)
-											std::make_pair(T_PID1, theta.N_Theta())		// [N_0, N)
-										};
-		theta.ETB_Setup_cross(err_tb, interests_conf->Joints, segs);
+		IErrorTB* err_tb = IErrorTB::Factory::CreateX(theta, interests_conf->Joints, n_theta_0, n_theta_1);
+
 		CONF::CInterestsConf::UnLoad(interests_conf);
 
 		std::unique_ptr<IErrorTB, void(*)(IErrorTB*)> err_tb_gc(
@@ -347,8 +341,7 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
         															});
 
 		CPGMatrixGen pg_cross_gen(&theta);
-		std::vector<int> postures_T = { T_PID0, T_PID1 };
-		ok = CPGMatrixGen::MergeTransitions(pg_cross_gen, *pg_0, *pg_1, err_tb, eps_err, postures_T);
+		ok = CPGMatrixGen::MergeTransitions(pg_cross_gen, *pg_0, *pg_1, err_tb, eps_err, n_theta_0, n_theta_1);
 		if (!ok)
 		{
 			std::string err("Not an epsilon edge exists between two PGs");
