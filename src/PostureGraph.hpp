@@ -90,7 +90,7 @@ public:
 
 	struct Query
 	{
-		TransformArchive tm_bk;
+		CArtiBodyNode* rootPose;
 		std::list<const CArtiBodyNode*> interests;
 		int n_interests;
 	};

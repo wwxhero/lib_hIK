@@ -244,21 +244,29 @@ bool CPGThetaClose::Merge(const CPGThetaClose& theta_other)
 CPGThetaClose::Query* CPGThetaClose::BeginQuery(const std::list<std::string>& joints) const
 {
 	CPGThetaClose::Query* query = new CPGThetaClose::Query;
-	CArtiBodyTree::Serialize<true>(m_rootBody, query->tm_bk);
-	query->n_interests = CArtiBodyTree::GetBodies(m_rootBody, joints, query->interests);
-	return query;
+	if (CArtiBodyTree::Clone(m_rootBody, &query->rootPose))
+	{
+		query->n_interests = CArtiBodyTree::GetBodies(query->rootPose, joints, query->interests);
+		return query;
+	}
+	else
+	{
+		IKAssert(0); // not expect it to happen
+		delete query;
+		return NULL;
+	}
+
 }
 
 void CPGThetaClose::EndQuery(CPGThetaClose::Query* query) const
 {
-	CArtiBodyTree::Serialize<false>(m_rootBody, query->tm_bk);
-	CArtiBodyTree::FK_Update<false>(m_rootBody);
+	CArtiBodyTree::Destroy(query->rootPose);
 	delete query;
 }
 
 void CPGThetaClose::QueryTheta(CPGThetaClose::Query* query, int i_theta, TransformArchive& tm_data) const
 {
-	PoseBody<false>(i_theta, m_rootBody);
+	PoseBody<false>(i_theta, query->rootPose);
 	int i_tm = 0;
 	for (auto body : query->interests)
 	{
