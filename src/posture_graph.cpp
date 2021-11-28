@@ -107,17 +107,12 @@ bool init_err_tb_merged(const char* interests_conf_path, const char* pg_theta_0,
 
 		CPGTheta theta_0(pg_theta_0);
 		CPGTheta theta_1(pg_theta_1);
-		const int T_PID1 = theta_0.N_Theta();
+		int n_theta_0 = theta_0.N_Theta();
+		int n_theta_1 = theta_1.N_Theta();
 		bool merged = theta_0.Merge(theta_1);
 		if (merged)
 		{
-			IErrorTB* err_out = NULL;
-			std::vector<std::pair<int, int>> segs = {
-											std::make_pair(0, 1),						// [0, 1)
-											std::make_pair(1, T_PID1),					// [1, N_0)
-											std::make_pair(T_PID1, theta_0.N_Theta())	// [N_0, N)
-										};
-			theta_0.ETB_Setup_cross(err_out, interests_conf->Joints, segs);
+			IErrorTB* err_out = IErrorTB::Factory::CreateX(theta_0, interests_conf->Joints, n_theta_0, n_theta_1);
 			err_out->Alloc(err_tb);
 			IErrorTB::Factory::Release(err_out);
 		}
@@ -304,11 +299,12 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 		CPG* pg_0 = CAST_2PPG(hpg_0);
 		CPG* pg_1 = CAST_2PPG(hpg_1);
 		IKAssert(NULL != pg_0 && NULL != pg_1);
+		int n_theta_0 = pg_0->Theta().N_Theta();
+		int n_theta_1 = pg_1->Theta().N_Theta();
 
 		CPGTheta theta(pg_0->Theta());
-		int n_theta_0 = theta.N_Theta();
 		ok = theta.Merge(pg_1->Theta());
-		int n_theta_1 = theta.N_Theta();
+
 		if (!ok)
 		{
 			std::string err("Merge theta failed: the theta are not compatible");
@@ -325,9 +321,6 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 			LOGIKVarErr(LogInfoCharPtr, err.str().c_str());
 			return H_INVALID;
 		}
-
-		const int T_PID0 = 0;
-		const int T_PID1 = pg_0->Theta().N_Theta();
 
 		IErrorTB* err_tb = IErrorTB::Factory::CreateX(theta, interests_conf->Joints, n_theta_0, n_theta_1);
 

@@ -275,61 +275,6 @@ void CPGTheta::QueryTheta(CPGTheta::Query* query, int i_theta, TransformArchive&
 	}
 }
 
-void CPGTheta::ETB_Setup_cross(IErrorTB* err_out, const std::list<std::string>& joints, const std::vector<std::pair<int, int>>& segs)
-{
-	//TransformArchive tm_bk;
-	//CArtiBodyTree::Serialize<true>(m_rootBody, tm_bk); // backup the original configuration
-	//
-	//Real err_max = (Real)tm_bk.Size();
-	//unsigned int n_theta = N_Theta();
-	//err_out = Eigen::MatrixXr::Constant(n_theta, n_theta, err_max);
-
-	//std::list<const CArtiBodyNode*> interest_bodies;
-	//int n_bodies = CArtiBodyTree::GetBodies(m_rootBody, joints, interest_bodies);
-	//TransformArchive tm_data_i(n_bodies);
-	//TransformArchive tm_data_j(n_bodies);
-
-	//auto UpdateTransforms = [] (std::list<const CArtiBodyNode*>& interest_bodies, TransformArchive& tm_data)
-	//	{
-	//		int i_tm = 0;
-	//		for (auto body : interest_bodies)
-	//		{
-	//			_TRANSFORM& tm_i = tm_data[i_tm ++];
-	//			body->GetJoint()->GetTransform()->CopyTo(tm_i);
-	//		}
-	//	};
-
-	//const auto& segs_x = segs;
-	//const auto& segs_y = segs;
-	//int n_segs = (int)segs.size();
-
-	//for (int i_seg = 0; i_seg < n_segs; i_seg ++)
-	//{
-	//	for (int j_seg = i_seg + 1; j_seg < n_segs; j_seg ++)
-	//	{
-	//		const auto& rg_x = segs_x[i_seg];
-	//		const auto& rg_y = segs_y[j_seg];
-	//		for (int i_theta = rg_x.first; i_theta < rg_x.second; i_theta++)
-	//		{
-	//			PoseBody<false>(i_theta, m_rootBody);
-	//			UpdateTransforms(interest_bodies, tm_data_i);
-	//			for (int j_theta = rg_y.first; j_theta < rg_y.second; j_theta++)
-	//			{
-	//				PoseBody<false>(j_theta, m_rootBody);
-	//				UpdateTransforms(interest_bodies, tm_data_j);
-	//				auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
-	//				err_out->Set(i_theta, j_theta, err_ij);
-	//			}
-	//		}
-	//	}
-	//}
-
-	//CArtiBodyTree::Serialize<false>(m_rootBody, tm_bk); // restore the original configuration
-	//CArtiBodyTree::FK_Update<false>(m_rootBody);
-}
-
-
-
 template<typename G>
 void Dump(G& g, const char* fileName, int lineNo)
 {
@@ -679,7 +624,7 @@ void CPGMatrixGen::InitTransitions(CPGMatrixGen& graph, const IErrorTB* errTB, R
 		boost::add_edge(i_theta, i_theta + 1, graph);
 
 #if defined _DEBUG
-	Dump(graph_eps, __FILE__, __LINE__);
+	Dump(graph, __FILE__, __LINE__);
 #endif
 
 	Real err_epsilon = (1 - cos(deg2rad(epsErr_deg) / (Real)2));
@@ -699,7 +644,7 @@ void CPGMatrixGen::InitTransitions(CPGMatrixGen& graph, const IErrorTB* errTB, R
 
 #if defined _DEBUG
 	LOGIKVar(LogInfoInt, n_transi_eps);
-	Dump(graph_eps, __FILE__, __LINE__);
+	Dump(graph, __FILE__, __LINE__);
 #endif
 
 	if (n_transi_eps > 0)
@@ -732,8 +677,8 @@ bool CPGMatrixGen::MergeTransitions(CPGMatrixGen& graph, const CPGTransition& pg
 			auto e = *it_e;
 			int i_theta_0 = boost::source(e, *pg_i) + i_v_base_i;
 			int i_theta_1 = boost::target(e, *pg_i) + i_v_base_i;
-			bool incident_T = ((n_theta_0 != i_theta_0 && 0 != i_theta_0)
-								&& (n_theta_0 != i_theta_1 && 0 != i_theta_1));
+			bool incident_T = ((n_theta_0 == i_theta_0 || 0 == i_theta_0)
+								|| (n_theta_0 == i_theta_1 || 0 == i_theta_1));
 			if (!incident_T)
 				transi_0[n_transi ++] = std::make_pair(i_theta_0, i_theta_1);
 		}

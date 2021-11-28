@@ -99,10 +99,6 @@ public:
 	void EndQuery(Query* query) const;
 	void QueryTheta(Query* query, int i_theta, TransformArchive& tm_data) const;
 
-
-	void ETB_Setup_cross(IErrorTB* err_out, const std::list<std::string>& joints, const std::vector<std::pair<int, int>>& segs);
-
-
 	int N_Theta() const {return (int)m_motions.size();}
 
 	const CArtiBodyNode* GetBody() const { return m_rootBody; }
