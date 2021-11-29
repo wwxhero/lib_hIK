@@ -263,7 +263,36 @@ CPG* generate_pg_homo(CPGTheta& theta, const std::list<std::string>& joints, Rea
 	IErrorTB* err_tb = IErrorTB::Factory::CreateHOMO(theta, joints);
 	TPGGen pg_epsilon(&theta);
 	TPGGenHelper::InitTransitions(pg_epsilon, err_tb, epsErr);
-	CPG* pg = TPGGenHelper::GeneratePG(pg_epsilon);
 	IErrorTB::Factory::Release(err_tb);
-	return pg;
+	return TPGGenHelper::GeneratePG(pg_epsilon);
+}
+
+template<typename TPGGen, typename TPGGenHelper>
+CPG* generate_pg_cross(CPG* pg_0, CPG* pg_1, const std::list<std::string>& joints, Real epsErr)
+{
+	const CPGTheta& theta_0 = pg_0->Theta();
+	const CPGTheta& theta_1 = pg_1->Theta();
+	int n_theta_0 = theta_0.N_Theta();
+	int n_theta_1 = theta_1.N_Theta();
+	CPGTheta theta(theta_0);
+	bool ok = theta.Merge(theta_1);
+
+	if (!ok)
+	{
+		std::string err("Merge theta failed: the thetas are not compatible");
+		LOGIKVarErr(LogInfoCharPtr, err.c_str());
+		return NULL;
+	}
+
+	TPGGen pg_cross_gen(&theta);
+	IErrorTB* err_tb = IErrorTB::Factory::CreateX(theta, joints, n_theta_0, n_theta_1);
+	ok = TPGGenHelper::MergeTransitions(pg_cross_gen, *pg_0, *pg_1, err_tb, epsErr, n_theta_0, n_theta_1);
+	IErrorTB::Factory::Release(err_tb);
+	if (!ok)
+	{
+		std::string err("Not an epsilon edge exists between two PGs");
+		LOGIKVarErr(LogInfoCharPtr, err.c_str());
+		return NULL;
+	}
+	return TPGGenHelper::GeneratePG(pg_cross_gen);
 }

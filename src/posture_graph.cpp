@@ -291,74 +291,49 @@ void posture_graph_release(HPG hPG)
 
 HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, Real eps_err)
 {
-	// try
-	// {
-	// 	bool ok = false;
-	// 	HPG hpg = H_INVALID;
-	// 	CPG* pg_0 = CAST_2PPG(hpg_0);
-	// 	CPG* pg_1 = CAST_2PPG(hpg_1);
-	// 	IKAssert(NULL != pg_0 && NULL != pg_1);
-	// 	int n_theta_0 = pg_0->Theta().N_Theta();
-	// 	int n_theta_1 = pg_1->Theta().N_Theta();
+	try
+	{
+		bool ok = false;
+		HPG hpg = H_INVALID;
+		CPG* pg_0 = CAST_2PPG(hpg_0);
+		CPG* pg_1 = CAST_2PPG(hpg_1);
+		IKAssert(NULL != pg_0 && NULL != pg_1);
+		int n_theta_0 = pg_0->Theta().N_Theta();
+		int n_theta_1 = pg_1->Theta().N_Theta();
 
-	// 	CPGTheta theta(pg_0->Theta());
-	// 	ok = theta.Merge(pg_1->Theta());
+		CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
+		ok = (NULL != interests_conf);
+		if (!ok)
+		{
+			std::stringstream err;
+			err << "loading " << interests_conf_path << " failed";
+			LOGIKVarErr(LogInfoCharPtr, err.str().c_str());
+			return H_INVALID;
+		}
 
-	// 	if (!ok)
-	// 	{
-	// 		std::string err("Merge theta failed: the theta are not compatible");
-	// 		LOGIKVarErr(LogInfoCharPtr, err.c_str());
-	// 		return H_INVALID;
-	// 	}
+		CPG* pg = NULL;
+		if (n_theta_0*n_theta_1 < MAX_N_THETA_X)
+			pg = generate_pg_cross<CPGMatrixGen, CPGMatrixGenHelper>(pg_0, pg_1, interests_conf->Joints, eps_err);
+		else
+			pg = generate_pg_cross<CPGListGen, CPGListGenHelper>(pg_0, pg_1, interests_conf->Joints, eps_err);
 
-	// 	CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(interests_conf_path);
-	// 	ok = (NULL != interests_conf);
-	// 	if (!ok)
-	// 	{
-	// 		std::stringstream err;
-	// 		err << "loading " << interests_conf_path << " failed";
-	// 		LOGIKVarErr(LogInfoCharPtr, err.str().c_str());
-	// 		return H_INVALID;
-	// 	}
+		CONF::CInterestsConf::UnLoad(interests_conf);
+		ok = (NULL != pg);
+		if (!ok)
+		{
+			std::string err("Generate CPG failed");
+			LOGIKVarErr(LogInfoCharPtr, err.c_str());
+			return H_INVALID;
+		}
 
-	// 	IErrorTB* err_tb = IErrorTB::Factory::CreateX(theta, interests_conf->Joints, n_theta_0, n_theta_1);
-
-	// 	CONF::CInterestsConf::UnLoad(interests_conf);
-
-	// 	std::unique_ptr<IErrorTB, void(*)(IErrorTB*)> err_tb_gc(
-	// 															err_tb
-	// 															, [](IErrorTB* ptr)
- //        															{
- //        																IErrorTB::Factory::Release(ptr);
- //        															});
-
-	// 	CPGMatrixGen pg_cross_gen(&theta);
-	// 	ok = CPGMatrixGen::MergeTransitions(pg_cross_gen, *pg_0, *pg_1, err_tb, eps_err, n_theta_0, n_theta_1);
-	// 	if (!ok)
-	// 	{
-	// 		std::string err("Not an epsilon edge exists between two PGs");
-	// 		LOGIKVarErr(LogInfoCharPtr, err.c_str());
-	// 		return H_INVALID;
-	// 	}
-
-	// 	CPG* pg = CPGMatrixGen::GeneratePG(pg_cross_gen);
-	// 	ok = (NULL != pg);
-	// 	if (!ok)
-	// 	{
-	// 		std::string err("Generate CPG failed");
-	// 		LOGIKVarErr(LogInfoCharPtr, err.c_str());
-	// 		return H_INVALID;
-	// 	}
-
-	// 	hpg = CAST_2HPG(pg);
-	// 	return hpg;
-	// }
-	// catch (std::string& err)
-	// {
-	// 	LOGIKVarErr(LogInfoCharPtr, err.c_str());
-	// 	return H_INVALID;
-	// }
-	return H_INVALID;
+		hpg = CAST_2HPG(pg);
+		return hpg;
+	}
+	catch (std::string& err)
+	{
+		LOGIKVarErr(LogInfoCharPtr, err.c_str());
+		return H_INVALID;
+	}
 }
 
 bool posture_graph_save(HPG hpg, const char* dir_out)
