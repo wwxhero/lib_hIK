@@ -406,6 +406,7 @@
     <ClInclude Include="..\..\src\MoNode.hpp" />
     <ClInclude Include="..\..\src\MotionPipeConf.hpp" />
     <ClInclude Include="..\..\src\PostureGraph.hpp" />
+    <ClInclude Include="..\..\src\PostureGraph_helper.hpp" />
     <ClInclude Include="..\..\src\Transform.hpp" />
     <ClInclude Include="..\..\src\treebase.hpp" />
   </ItemGroup>

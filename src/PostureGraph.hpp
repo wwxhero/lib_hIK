@@ -163,7 +163,7 @@ protected:
 };
 
 template<typename VertexData, typename EdgeData>
-class PostureGraphDynaList
+class PostureGraphEDynaList
 	: public boost::adjacency_list< boost::listS
 								, boost::vecS
 								, boost::undirectedS
@@ -171,7 +171,7 @@ class PostureGraphDynaList
 								, EdgeData >
 {
 protected:
-	PostureGraphDynaList(std::size_t n_vertices)
+	PostureGraphEDynaList(std::size_t n_vertices)
 		: boost::adjacency_list< boost::listS
 								, boost::vecS
 								, boost::undirectedS
@@ -179,7 +179,7 @@ protected:
 								, EdgeData >(n_vertices)
 	{
 	}
-	~PostureGraphDynaList() {};
+	~PostureGraphEDynaList() {};
 
 };
 
@@ -457,48 +457,43 @@ struct EdgeGen
 	std::size_t deg;
 };
 
-class CPGMatrixGen : public PostureGraphMatrix<VertexGen, EdgeGen>
+template <typename GenBase>
+class TPGGen : public GenBase
 {
 public:
-	CPGMatrixGen(const CPGTheta* theta);
-
-	virtual ~CPGMatrixGen();
-
-	static void InitTransitions(CPGMatrixGen& graph, const IErrorTB* errTB, Real epsErr_deg);
-
-	static bool MergeTransitions(CPGMatrixGen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const IErrorTB* err_tb, Real epsErr, int n_theta_0, int n_theta_1);
-
-	static CPG* GeneratePG(const CPGMatrixGen& graph_src);
-
+	TPGGen(const CPGTheta* theta)
+		: GenBase((std::size_t)(theta->N_Theta()))
+		, m_theta(theta)
+	{
+	}
+	virtual ~TPGGen()
+	{
+	}
 	const CPGTheta* Theta() const { return m_theta; }
-
-	void Remove(vertex_descriptor v, const IErrorTB* errTB);
-private:
-	static void EliminateDupTheta(CPGMatrixGen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg);
 private:
 	const CPGTheta* m_theta;
 };
 
-class CPGListGen : public PostureGraphDynaList<VertexGen, EdgeGen>
+class CPGMatrixGen : public TPGGen<PostureGraphMatrix<VertexGen, EdgeGen>>
 {
+	typedef TPGGen<PostureGraphMatrix<VertexGen, EdgeGen>> Super;
+public:
+	typedef PostureGraphMatrix<VertexGen, EdgeGen>::vertex_descriptor vertex_descriptor;
+	typedef PostureGraphMatrix<VertexGen, EdgeGen>::edge_descriptor edge_descriptor;
+public:
+	CPGMatrixGen(const CPGTheta* theta);
+	void Remove(vertex_descriptor v, const IErrorTB* errTB);
+};
+
+class CPGListGen : public TPGGen<PostureGraphEDynaList<VertexGen, EdgeGen>>
+{
+	typedef TPGGen<PostureGraphEDynaList<VertexGen, EdgeGen>> Super;
+public:
+	typedef PostureGraphEDynaList<VertexGen, EdgeGen>::vertex_descriptor vertex_descriptor;
+	typedef PostureGraphEDynaList<VertexGen, EdgeGen>::edge_descriptor edge_descriptor;
 public:
 	CPGListGen(const CPGTheta* theta);
-
-	virtual ~CPGListGen();
-
-	static void InitTransitions(CPGListGen& graph, const IErrorTB* errTB, Real epsErr_deg);
-
-	static bool MergeTransitions(CPGListGen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const IErrorTB* err_tb, Real epsErr, int n_theta_0, int n_theta_1);
-
-	static CPG* GeneratePG(const CPGListGen& graph_src);
-
-	const CPGTheta* Theta() const { return m_theta; }
-
 	void Remove(vertex_descriptor v, const IErrorTB* errTB);
-private:
-	static void EliminateDupTheta(CPGListGen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg);
-private:
-	const CPGTheta* m_theta;
 };
 
 
