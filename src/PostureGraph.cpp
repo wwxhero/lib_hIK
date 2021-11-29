@@ -475,7 +475,12 @@ public:
 	}
 	bool operator()(const edge_descriptor& e_i, const edge_descriptor& e_j)
 	{
-		return (graph)[e_i].deg > (graph)[e_j].deg;
+		auto deg_i = (graph)[e_i].deg;
+		auto deg_j = (graph)[e_j].deg;
+		return (deg_i > deg_j)
+			|| (deg_i == deg_j &&
+				(std::max(boost::source(e_i, graph), boost::target(e_i, graph))
+					> std::max(boost::source(e_j, graph), boost::target(e_j, graph))));
 	}
 private:
 	TGraphGen& graph;
@@ -523,6 +528,9 @@ public:
 		}
 
 		edges_eps.sort(ComEdgeByDeg<TGraphGen, vertex_descriptor, edge_descriptor>(graph_eps));
+#ifdef _DEBUG
+		LOGIKVarErr(LogInfoInt, edges_eps.size());
+#endif
 
 		// tag for vertices removal
 		while (!edges_eps.empty())
@@ -548,7 +556,16 @@ public:
 				}
 			}
 			if (!exists_a_tagged_vertex && !edges_eps.empty())
-				(graph_eps)[boost::source(*edges_eps.begin(), graph_eps)].tag_rm = true;
+			{
+				edge_descriptor e_sym_broker = *edges_eps.begin();
+				vertex_descriptor v_sym_broker = std::max(boost::source(e_sym_broker, graph_eps)
+														, boost::target(e_sym_broker, graph_eps));
+				(graph_eps)[v_sym_broker].tag_rm = true;
+#ifdef _DEBUG
+				LOGIKVarErr(LogInfoInt, v_sym_broker);
+				LOGIKVarErr(LogInfoInt, edges_eps.size());
+#endif
+			}
 
 			for (auto it_e = edges_eps.begin()
 				; it_e != edges_eps.end()
@@ -896,17 +913,3 @@ bool CPGRuntime::LoadThetas(const char* filePath, CArtiBodyNode* body_ref)
 	return loaded;
 }
 
-void CPGMatrixGen::Save(const char* dir, PG_FileType type) const
-{
-	fs::path file_path(dir);
-	std::string file_name(m_theta->GetBody()->GetName_c()); file_name += ".dot";
-	file_path.append(file_name);
-	std::ofstream file(file_path);
-	IKAssert(std::ios_base::failbit != file.rdstate());
-	if (F_DOT)
-		write_graphviz(file, *this);
-	else
-	{
-		IKAssert(0); // does not support serialize for an adjacency matrix
-	}
-}
