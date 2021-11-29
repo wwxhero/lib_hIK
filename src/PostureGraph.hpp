@@ -22,7 +22,7 @@
 #include "IKChain.hpp"
 #include "ErrorTB.hpp"
 
-#define MAX_N_THETA_HOMO 200
+#define MAX_N_THETA_HOMO 20000
 #define MAX_N_THETA_X MAX_N_THETA_HOMO*MAX_N_THETA_HOMO
 
 enum PG_FileType {F_PG = 0, F_DOT};
@@ -470,8 +470,6 @@ public:
 
 	static CPG* GeneratePG(const CPGMatrixGen& graph_src);
 
-	void Save(const char* dir, PG_FileType type = F_PG) const;
-
 	const CPGTheta* Theta() const { return m_theta; }
 
 	void Remove(vertex_descriptor v, const IErrorTB* errTB);
@@ -493,8 +491,6 @@ public:
 	static bool MergeTransitions(CPGListGen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const IErrorTB* err_tb, Real epsErr, int n_theta_0, int n_theta_1);
 
 	static CPG* GeneratePG(const CPGListGen& graph_src);
-
-	void Save(const char* dir, PG_FileType type = F_PG) const;
 
 	const CPGTheta* Theta() const { return m_theta; }
 
