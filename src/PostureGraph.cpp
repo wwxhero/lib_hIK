@@ -467,11 +467,8 @@ class CPGGenHelper
 {
 	typedef TVdesc vertex_descriptor;
 	typedef TEdesc edge_descriptor;
+
 public:
-	
-
-	
-
 	static void EliminateDupTheta(TGraphGen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg)
 	{
 		//tag rm for each vertex
@@ -587,7 +584,6 @@ public:
 					const auto& v_n_property = (graph)[*it_vert_n];
 					neightbors_v.push_back(*it_vert_n);
 				}
-
 				auto edges_range_incident = boost::out_edges(*it_v, graph);
 				for (auto it_edge_incident = edges_range_incident.first
 					; it_edge_incident != edges_range_incident.second
@@ -595,7 +591,6 @@ public:
 				{
 					boost::remove_edge(*it_edge_incident, graph);
 				}
-
 				auto it_v_n = neightbors_v.begin();
 				vertex_descriptor v_star = *it_v_n;
 				for (it_v_n ++; it_v_n != neightbors_v.end(); it_v_n ++)
@@ -603,12 +598,13 @@ public:
 					if (errTB->Get(*it_v, *it_v_n) < errTB->Get(*it_v, v_star))
 						v_star = *it_v_n;
 				}
-
 				for (it_v_n = neightbors_v.begin(); it_v_n != neightbors_v.end(); it_v_n ++)
 				{
 					if (*it_v_n != v_star) // avoid self-pointing edge
 						boost::add_edge(v_star, *it_v_n, graph);
 				}
+				
+				graph.Remove(*it_v);
 			}
 		}
 
@@ -737,6 +733,11 @@ CPGMatrixGen::CPGMatrixGen(const CPGTheta* theta)
 
 CPGMatrixGen::~CPGMatrixGen()
 {
+}
+
+void CPGMatrixGen::Remove(vertex_descriptor v)
+{
+	// for a adjcent matrix graph, it does not remove a vertex
 }
 
 void CPGMatrixGen::EliminateDupTheta(CPGMatrixGen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg)

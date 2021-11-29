@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "ErrorTB.hpp"
 #include "PostureGraph.hpp"
-#define MAX_N_THETA_HOMO 20000
-#define MAX_N_THETA_X MAX_N_THETA_HOMO*MAX_N_THETA_HOMO
 
 class IErrorTBImpl : public IErrorTB
 {
@@ -301,5 +299,3 @@ void IErrorTB::Factory::Release(IErrorTB* etb)
 	delete etb;
 }
 
-#undef MAX_N_THETA_X
-#undef MAX_N_THETA_HOMO

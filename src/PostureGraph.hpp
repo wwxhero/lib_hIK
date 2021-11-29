@@ -22,6 +22,8 @@
 #include "IKChain.hpp"
 #include "ErrorTB.hpp"
 
+#define MAX_N_THETA_HOMO 20000
+#define MAX_N_THETA_X MAX_N_THETA_HOMO*MAX_N_THETA_HOMO
 
 enum PG_FileType {F_PG = 0, F_DOT};
 
@@ -290,9 +292,6 @@ private:
 	CPGTheta m_theta;
 };
 
-
-
-
 class CPGRuntime : public CPGTransition
 {
 public:
@@ -438,7 +437,6 @@ struct EdgeGen
 };
 
 class CPGMatrixGen : public PostureGraphMatrix<VertexGen, EdgeGen>
-
 {
 public:
 	CPGMatrixGen(const CPGTheta* theta);
@@ -454,6 +452,8 @@ public:
 	void Save(const char* dir, PG_FileType type = F_PG) const;
 
 	const CPGTheta* Theta() const { return m_theta; }
+
+	void Remove(vertex_descriptor v);
 private:
 	static void EliminateDupTheta(CPGMatrixGen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg);
 private:

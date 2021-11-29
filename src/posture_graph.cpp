@@ -230,6 +230,16 @@ EXIT:
 	return ok;
 }
 
+template<typename TPGGen>
+CPG* generate_pg_homo(CPGTheta& theta, const std::list<std::string>& joints, Real epsErr)
+{
+	IErrorTB* err_tb = IErrorTB::Factory::CreateHOMO(theta, joints);
+	TPGGen pg_epsilon(&theta);
+	TPGGen::InitTransitions(pg_epsilon, err_tb, epsErr);
+	CPG* pg = TPGGen::GeneratePG(pg_epsilon);
+	IErrorTB::Factory::Release(err_tb);
+	return pg;
+}
 
 bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, const char* dir_out, Real epsErr, int* n_theta_raw, int* n_theta_pg)
 {
@@ -247,14 +257,13 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 			return false;
 		}
 
-		IErrorTB* err_tb = IErrorTB::Factory::CreateHOMO(theta, interests_conf->Joints);
+		CPG* pg = NULL;
+		if (*n_theta_raw < MAX_N_THETA_HOMO)
+			pg = generate_pg_homo<CPGMatrixGen>(theta, interests_conf->Joints, epsErr);
+		else
+			pg = generate_pg_homo<CPGMatrixGen>(theta, interests_conf->Joints, epsErr);
 
 		CONF::CInterestsConf::UnLoad(interests_conf);
-
-		CPGMatrixGen pg_epsilon(&theta);
-		CPGMatrixGen::InitTransitions(pg_epsilon, err_tb, epsErr);
-		IErrorTB::Factory::Release(err_tb);
-		CPG* pg = CPGMatrixGen::GeneratePG(pg_epsilon);
 
 		ok = (NULL != pg);
 		if (ok)
