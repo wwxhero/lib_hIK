@@ -237,7 +237,7 @@ void IErrorTB::Free(_ERROR_TB* err_tb)
 IErrorTB* IErrorTB::Factory::CreateHOMO(const CPGTheta& theta, const std::list<std::string>& joints)
 {
 	unsigned int n_theta = theta.N_Theta();
-	if (n_theta < MAX_N_THETA_HOMO)
+	if (CPGTheta::SmallHomoETB(n_theta))
 	{
 		IErrorTB* errTB = new ETBTriL(n_theta);
 		unsigned int n_theta_m = n_theta - 1;
@@ -268,7 +268,7 @@ IErrorTB* IErrorTB::Factory::CreateX(const CPGTheta& theta, const std::list<std:
 {
 	int n_theta = theta.N_Theta();
 	IKAssert(n_theta == n_theta_0 + n_theta_1);
-	if (n_theta_0*n_theta_1 < MAX_N_THETA_X)
+	if (CPGTheta::SmallXETB(n_theta_0, n_theta_1))
 	{
 		IErrorTB* errTB = new ETBRect(n_theta_0, n_theta_1);
 		auto query = theta.BeginQuery(joints);

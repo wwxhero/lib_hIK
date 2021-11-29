@@ -1,5 +1,33 @@
 #pragma once
 
+template<typename G>
+void Dump(G& g, const char* fileName, int lineNo)
+{
+	auto file_short = [](const char* file_f) -> const char*
+	{
+#ifdef _WIN32
+#define DELIMITER '\\'
+#else
+#define DELIMITER '/'
+#endif
+		const char* p_delim = NULL;
+		for (const char* p = file_f
+			; *p != '\0'
+			; p++)
+		{
+			if (*p == DELIMITER)
+				p_delim = p;
+		}
+		assert(NULL != p_delim);
+		return ++p_delim;
+	};
+	std::stringstream dot_path;
+	dot_path << file_short(fileName) << "_" << lineNo << ".dot";
+	std::ofstream dot_file(dot_path.str());
+	IKAssert(std::ios_base::failbit != dot_file.rdstate());
+	write_graphviz(dot_file, g);
+}
+
 template<typename TGraphGen, typename TVdesc, typename TEdesc>
 class PGGenHelper
 {

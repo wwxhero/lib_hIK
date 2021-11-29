@@ -1,5 +1,9 @@
 #include "pch.h"
 #include "PostureGraph.hpp"
+#include "PostureGraph_helper.hpp"
+
+#define MAX_N_THETA_HOMO 15000
+#define MAX_N_THETA_X ((uint64_t)MAX_N_THETA_HOMO*(uint64_t)MAX_N_THETA_HOMO)
 
 CPGThetaRuntime::CPGThetaRuntime(const char* path, CArtiBodyNode* body_ref)
 {
@@ -275,32 +279,26 @@ void CPGTheta::QueryTheta(CPGTheta::Query* query, int i_theta, TransformArchive&
 	}
 }
 
-template<typename G>
-void Dump(G& g, const char* fileName, int lineNo)
+bool CPGTheta::SmallX(int n_theta_0, int n_theta_1)
 {
-	auto file_short = [](const char* file_f) -> const char*
-	{
-#ifdef _WIN32
-#define DELIMITER '\\'
-#else
-#define DELIMITER '/'
-#endif
-		const char* p_delim = NULL;
-		for (const char* p = file_f
-			; *p != '\0'
-			; p++)
-		{
-			if (*p == DELIMITER)
-				p_delim = p;
-		}
-		assert(NULL != p_delim);
-		return ++p_delim;
-	};
-	std::stringstream dot_path;
-	dot_path << file_short(fileName) << "_" << lineNo << ".dot";
-	std::ofstream dot_file(dot_path.str());
-	IKAssert(std::ios_base::failbit != dot_file.rdstate());
-	write_graphviz(dot_file, g);
+	return ((uint64_t)n_theta_0 * (uint64_t)n_theta_1)
+			< MAX_N_THETA_X;
+}
+
+bool CPGTheta::SmallXETB(int n_theta_0, int n_theta_1)
+{
+	int n_theta_0_half = (n_theta_0 >> 1);
+	return ((uint64_t)n_theta_0_half * (uint64_t)n_theta_1) < (MAX_N_THETA_X);
+}
+
+bool CPGTheta::SmallHomo(int n_theta)
+{
+	return n_theta < MAX_N_THETA_HOMO;
+}
+
+bool CPGTheta::SmallHomoETB(int n_theta)
+{
+	return (n_theta >> 1) < MAX_N_THETA_HOMO;
 }
 
 CPG::CPG(std::size_t n_vs)
@@ -608,3 +606,5 @@ bool CPGRuntime::LoadThetas(const char* filePath, CArtiBodyNode* body_ref)
 	return loaded;
 }
 
+#undef MAX_N_THETA_HOMO
+#undef MAX_N_THETA_X

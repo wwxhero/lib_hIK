@@ -22,9 +22,6 @@
 #include "IKChain.hpp"
 #include "ErrorTB.hpp"
 
-#define MAX_N_THETA_HOMO 20000
-#define MAX_N_THETA_X MAX_N_THETA_HOMO*MAX_N_THETA_HOMO
-
 enum PG_FileType {F_PG = 0, F_DOT};
 
 // it should be optimized to get rid of derivation to avoid unnecessary memory consumption from BvhObject from runtime.
@@ -119,6 +116,10 @@ protected:
 
 public:
 	void Initialize(const CArtiBodyFile& abFile);
+	static bool SmallX(int n_theta_0, int n_theta_1);
+	static bool SmallXETB(int n_theta_0, int n_theta_1);
+	static bool SmallHomo(int n_theta);
+	static bool SmallHomoETB(int n_theta);
 private:
 	CArtiBodyNode* m_rootBody;
 	std::vector<TransformArchive> m_motions;
