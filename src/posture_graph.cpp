@@ -261,7 +261,7 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 		if (*n_theta_raw < MAX_N_THETA_HOMO)
 			pg = generate_pg_homo<CPGMatrixGen>(theta, interests_conf->Joints, epsErr);
 		else
-			pg = generate_pg_homo<CPGMatrixGen>(theta, interests_conf->Joints, epsErr);
+			pg = generate_pg_homo<CPGListGen>(theta, interests_conf->Joints, epsErr);
 
 		CONF::CInterestsConf::UnLoad(interests_conf);
 

@@ -162,6 +162,27 @@ protected:
 
 };
 
+template<typename VertexData, typename EdgeData>
+class PostureGraphDynaList
+	: public boost::adjacency_list< boost::listS
+								, boost::vecS
+								, boost::undirectedS
+								, VertexData
+								, EdgeData >
+{
+protected:
+	PostureGraphDynaList(std::size_t n_vertices)
+		: boost::adjacency_list< boost::listS
+								, boost::vecS
+								, boost::undirectedS
+								, VertexData
+								, EdgeData >(n_vertices)
+	{
+	}
+	~PostureGraphDynaList() {};
+
+};
+
 struct VertexSearch : public boost::no_property
 {
 	Real err;
@@ -453,9 +474,33 @@ public:
 
 	const CPGTheta* Theta() const { return m_theta; }
 
-	void Remove(vertex_descriptor v);
+	void Remove(vertex_descriptor v, const IErrorTB* errTB);
 private:
 	static void EliminateDupTheta(CPGMatrixGen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg);
+private:
+	const CPGTheta* m_theta;
+};
+
+class CPGListGen : public PostureGraphDynaList<VertexGen, EdgeGen>
+{
+public:
+	CPGListGen(const CPGTheta* theta);
+
+	virtual ~CPGListGen();
+
+	static void InitTransitions(CPGListGen& graph, const IErrorTB* errTB, Real epsErr_deg);
+
+	static bool MergeTransitions(CPGListGen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const IErrorTB* err_tb, Real epsErr, int n_theta_0, int n_theta_1);
+
+	static CPG* GeneratePG(const CPGListGen& graph_src);
+
+	void Save(const char* dir, PG_FileType type = F_PG) const;
+
+	const CPGTheta* Theta() const { return m_theta; }
+
+	void Remove(vertex_descriptor v, const IErrorTB* errTB);
+private:
+	static void EliminateDupTheta(CPGListGen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg);
 private:
 	const CPGTheta* m_theta;
 };

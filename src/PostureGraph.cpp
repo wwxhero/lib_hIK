@@ -463,6 +463,25 @@ CPG::~CPG()
 }
 
 template<typename TGraphGen, typename TVdesc, typename TEdesc>
+class ComEdgeByDeg
+{
+	typedef TVdesc vertex_descriptor;
+	typedef TEdesc edge_descriptor;
+public:
+	ComEdgeByDeg(TGraphGen& g)
+		: graph(g)
+	{
+
+	}
+	bool operator()(const edge_descriptor& e_i, const edge_descriptor& e_j)
+	{
+		return (graph)[e_i].deg > (graph)[e_j].deg;
+	}
+private:
+	TGraphGen& graph;
+};
+
+template<typename TGraphGen, typename TVdesc, typename TEdesc>
 class CPGGenHelper
 {
 	typedef TVdesc vertex_descriptor;
@@ -503,22 +522,7 @@ public:
 			e_property.deg = std::max(deg[0], deg[1]);
 		}
 
-		class ComEdgeByDeg
-		{
-		public:
-			ComEdgeByDeg(CPGMatrixGen& g)
-				: graph(g)
-			{
-
-			}
-			bool operator()(const edge_descriptor& e_i, const edge_descriptor& e_j)
-			{
-				return (graph)[e_i].deg > (graph)[e_j].deg;
-			}
-		private:
-			CPGMatrixGen& graph;
-		};
-		edges_eps.sort(ComEdgeByDeg(graph_eps));
+		edges_eps.sort(ComEdgeByDeg<TGraphGen, vertex_descriptor, edge_descriptor>(graph_eps));
 
 		// tag for vertices removal
 		while (!edges_eps.empty())
@@ -564,7 +568,7 @@ public:
 		}
 
 		// remove vertices
-		CPGMatrixGen& graph = graph_eps;
+		TGraphGen& graph = graph_eps;
 
 		for (auto e_0 : transi_0)
 			boost::add_edge(e_0.first, e_0.second, graph);
@@ -575,41 +579,12 @@ public:
 			const auto& v_property = (graph)[*it_v];
 			if (v_property.tag_rm)
 			{
-				std::list<vertex_descriptor> neightbors_v;
-				auto vertices_range_neighbors = boost::adjacent_vertices(*it_v, graph);
-				for (auto it_vert_n = vertices_range_neighbors.first
-					; it_vert_n != vertices_range_neighbors.second
-					; it_vert_n++)
-				{
-					const auto& v_n_property = (graph)[*it_vert_n];
-					neightbors_v.push_back(*it_vert_n);
-				}
-				auto edges_range_incident = boost::out_edges(*it_v, graph);
-				for (auto it_edge_incident = edges_range_incident.first
-					; it_edge_incident != edges_range_incident.second
-					; it_edge_incident++)
-				{
-					boost::remove_edge(*it_edge_incident, graph);
-				}
-				auto it_v_n = neightbors_v.begin();
-				vertex_descriptor v_star = *it_v_n;
-				for (it_v_n ++; it_v_n != neightbors_v.end(); it_v_n ++)
-				{
-					if (errTB->Get(*it_v, *it_v_n) < errTB->Get(*it_v, v_star))
-						v_star = *it_v_n;
-				}
-				for (it_v_n = neightbors_v.begin(); it_v_n != neightbors_v.end(); it_v_n ++)
-				{
-					if (*it_v_n != v_star) // avoid self-pointing edge
-						boost::add_edge(v_star, *it_v_n, graph);
-				}
-				
-				graph.Remove(*it_v);
+				graph.Remove(*it_v, errTB);
 			}
 		}
 
 	}
-	
+
 	static void InitTransitions(TGraphGen& graph, const IErrorTB* errTB, Real epsErr_deg)
 	{
 		// initialize epsilon edges
@@ -654,7 +629,7 @@ public:
 		Dump(graph, __FILE__, __LINE__);
 	#endif
 	}
-	
+
 	static bool MergeTransitions(TGraphGen& graph, const CPGTransition& pg_0, const CPGTransition& pg_1, const IErrorTB* errTB, Real epsErr_deg, int n_theta_0, int n_theta_1)
 	{
 		// initialize not epsilon edges
@@ -735,9 +710,39 @@ CPGMatrixGen::~CPGMatrixGen()
 {
 }
 
-void CPGMatrixGen::Remove(vertex_descriptor v)
+void CPGMatrixGen::Remove(vertex_descriptor v, const IErrorTB* errTB)
 {
+	CPGMatrixGen& graph = *this;
 	// for a adjcent matrix graph, it does not remove a vertex
+	std::list<vertex_descriptor> neightbors_v;
+	auto vertices_range_neighbors = boost::adjacent_vertices(v, graph);
+	for (auto it_vert_n = vertices_range_neighbors.first
+		; it_vert_n != vertices_range_neighbors.second
+		; it_vert_n++)
+	{
+		const auto& v_n_property = (graph)[*it_vert_n];
+		neightbors_v.push_back(*it_vert_n);
+	}
+	auto edges_range_incident = boost::out_edges(v, graph);
+	for (auto it_edge_incident = edges_range_incident.first
+		; it_edge_incident != edges_range_incident.second
+		; it_edge_incident++)
+	{
+		boost::remove_edge(*it_edge_incident, graph);
+	}
+	auto it_v_n = neightbors_v.begin();
+	vertex_descriptor v_star = *it_v_n;
+	for (it_v_n ++; it_v_n != neightbors_v.end(); it_v_n ++)
+	{
+		if (errTB->Get(v, *it_v_n) < errTB->Get(v, v_star))
+			v_star = *it_v_n;
+	}
+	for (it_v_n = neightbors_v.begin(); it_v_n != neightbors_v.end(); it_v_n ++)
+	{
+		if (*it_v_n != v_star) // avoid self-pointing edge
+			boost::add_edge(v_star, *it_v_n, graph);
+	}
+
 }
 
 void CPGMatrixGen::EliminateDupTheta(CPGMatrixGen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg)
@@ -758,6 +763,74 @@ bool CPGMatrixGen::MergeTransitions(CPGMatrixGen& graph, const CPGTransition& pg
 CPG* CPGMatrixGen::GeneratePG(const CPGMatrixGen& graph_src)
 {
 	return CPGGenHelper<CPGMatrixGen, CPGMatrixGen::vertex_descriptor, CPGMatrixGen::edge_descriptor>::GeneratePG(graph_src);
+}
+
+CPGListGen::CPGListGen(const CPGTheta* theta)
+	: PostureGraphDynaList<VertexGen, EdgeGen>((std::size_t)(theta->N_Theta()))
+	, m_theta(theta)
+{
+}
+
+CPGListGen::~CPGListGen()
+{
+}
+
+void CPGListGen::Remove(vertex_descriptor v, const IErrorTB* errTB)
+{
+	// for a adjcent matrix graph, it does not remove a vertex
+	CPGListGen& graph = *this;
+	// for a adjcent matrix graph, it does not remove a vertex
+	std::list<vertex_descriptor> neightbors_v;
+	auto vertices_range_neighbors = boost::adjacent_vertices(v, graph);
+	for (auto it_vert_n = vertices_range_neighbors.first
+		; it_vert_n != vertices_range_neighbors.second
+		; it_vert_n++)
+	{
+		const auto& v_n_property = (graph)[*it_vert_n];
+		neightbors_v.push_back(*it_vert_n);
+	}
+	auto edges_range_incident = boost::out_edges(v, graph);
+	auto it_edge_incident = edges_range_incident.first;
+	for ( auto it_edge_incident_p = it_edge_incident;
+		; it_edge_incident != edges_range_incident.second
+		; it_edge_incident = it_edge_incident_p)
+	{
+		it_edge_incident_p ++;
+		boost::remove_edge(*it_edge_incident, graph);
+	}
+	auto it_v_n = neightbors_v.begin();
+	vertex_descriptor v_star = *it_v_n;
+	for (it_v_n++; it_v_n != neightbors_v.end(); it_v_n++)
+	{
+		if (errTB->Get(v, *it_v_n) < errTB->Get(v, v_star))
+			v_star = *it_v_n;
+	}
+
+	for (it_v_n = neightbors_v.begin(); it_v_n != neightbors_v.end(); it_v_n++)
+	{
+		if (*it_v_n != v_star) // avoid self-pointing edge
+			boost::add_edge(v_star, *it_v_n, graph);
+	}
+}
+
+void CPGListGen::EliminateDupTheta(CPGListGen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const IErrorTB* errTB, Real epsErr_deg)
+{
+	CPGGenHelper<CPGListGen, CPGListGen::vertex_descriptor, CPGListGen::edge_descriptor>::EliminateDupTheta(graph_eps, transi_0, errTB, epsErr_deg);
+}
+
+void CPGListGen::InitTransitions(CPGListGen& graph, const IErrorTB* errTB, Real epsErr_deg)
+{
+	CPGGenHelper<CPGListGen, CPGListGen::vertex_descriptor, CPGListGen::edge_descriptor>::InitTransitions(graph, errTB, epsErr_deg);
+}
+
+bool CPGListGen::MergeTransitions(CPGListGen& graph, const CPGTransition& pg_0, const CPGTransition& pg_1, const IErrorTB* errTB, Real epsErr_deg, int n_theta_0, int n_theta_1)
+{
+	return CPGGenHelper<CPGListGen, CPGListGen::vertex_descriptor, CPGListGen::edge_descriptor>::MergeTransitions(graph, pg_0, pg_1, errTB, epsErr_deg, n_theta_0, n_theta_1);
+}
+
+CPG* CPGListGen::GeneratePG(const CPGListGen& graph_src)
+{
+	return CPGGenHelper<CPGListGen, CPGListGen::vertex_descriptor, CPGListGen::edge_descriptor>::GeneratePG(graph_src);
 }
 
 bool CPGRuntime::Load(const char* dir, CArtiBodyNode* root)
