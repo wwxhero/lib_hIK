@@ -37,9 +37,9 @@ void CPGThetaRuntime::Initialize(const std::string& path, CArtiBodyNode* root_re
 	std::unique_ptr<CArtiBodyNode, void(*)(CArtiBodyNode*)> root_file_gc(
 																root_file
 																, [](CArtiBodyNode* ptr)
-        															{
-        															    CArtiBodyTree::Destroy(ptr);
-        															});
+																	{
+																		CArtiBodyTree::Destroy(ptr);
+																	});
 
 	std::vector<CHANNEL> channels;
 
@@ -149,26 +149,26 @@ void CPGThetaRuntime::Initialize(const std::string& path, CArtiBodyNode* root_re
 	}
 }
 
-CPGThetaClose::CPGThetaClose(const char* path)
+CPGTheta::CPGTheta(const char* path)
 	: m_rootBody(NULL)
 {
 	CArtiBodyFile artiFile(path);
 	Initialize(artiFile);
 }
 
-CPGThetaClose::CPGThetaClose(const std::string& path)
+CPGTheta::CPGTheta(const std::string& path)
 	: m_rootBody(NULL)
 {
 	CArtiBodyFile artiFile(path);
 	Initialize(artiFile);
 }
 
-CPGThetaClose::CPGThetaClose()
+CPGTheta::CPGTheta()
 	: m_rootBody(NULL)
 {
 }
 
-CPGThetaClose::CPGThetaClose(const CPGThetaClose& src)
+CPGTheta::CPGTheta(const CPGTheta& src)
 	: m_rootBody(NULL)
 {
 	if (!CArtiBodyTree::Clone(src.m_rootBody, &m_rootBody))
@@ -184,13 +184,13 @@ CPGThetaClose::CPGThetaClose(const CPGThetaClose& src)
 	}
 }
 
-CPGThetaClose::~CPGThetaClose()
+CPGTheta::~CPGTheta()
 {
 	if (NULL != m_rootBody)
 		CArtiBodyTree::Destroy(m_rootBody);
 }
 
-void CPGThetaClose::Initialize(const CArtiBodyFile& artiFile)
+void CPGTheta::Initialize(const CArtiBodyFile& artiFile)
 {
 	m_rootBody = artiFile.CreateBody();
 
@@ -229,7 +229,7 @@ void CPGThetaClose::Initialize(const CArtiBodyFile& artiFile)
 	CArtiBodyTree::FK_Update<false>(m_rootBody);
 }
 
-bool CPGThetaClose::Merge(const CPGThetaClose& theta_other)
+bool CPGTheta::Merge(const CPGTheta& theta_other)
 {
 	bool body_eq = CArtiBodyTree::Similar(m_rootBody, theta_other.m_rootBody);
 	if (body_eq)
@@ -241,104 +241,38 @@ bool CPGThetaClose::Merge(const CPGThetaClose& theta_other)
 	return body_eq;
 }
 
-void CPGThetaClose::ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints)
+CPGTheta::Query* CPGTheta::BeginQuery(const std::list<std::string>& joints) const
 {
-	unsigned int n_theta = N_Theta();
-	err_out.resize(n_theta, n_theta);
-
-	TransformArchive tm_bk;
-	CArtiBodyTree::Serialize<true>(m_rootBody, tm_bk); // backup the original configuration
-
-	std::list<const CArtiBodyNode*> interest_bodies;
-	int n_bodies = CArtiBodyTree::GetBodies(m_rootBody, joints, interest_bodies);
-	TransformArchive tm_data_i(n_bodies);
-	TransformArchive tm_data_j(n_bodies);
-
-	auto UpdateTransforms = [] (std::list<const CArtiBodyNode*>& interest_bodies, TransformArchive& tm_data)
-		{
-			int i_tm = 0;
-			for (auto body : interest_bodies)
-			{
-				_TRANSFORM& tm_i = tm_data[i_tm ++];
-				body->GetJoint()->GetTransform()->CopyTo(tm_i);
-			}
-		};
-
-	for (unsigned int i_theta = 0; i_theta < n_theta; i_theta++)
+	CPGTheta::Query* query = new CPGTheta::Query;
+	if (CArtiBodyTree::Clone(m_rootBody, &query->rootPose))
 	{
-		PoseBody<false>(i_theta, m_rootBody);
-		UpdateTransforms(interest_bodies, tm_data_i);
-		for (unsigned int j_theta = 0; j_theta < i_theta; j_theta++)
-		{
-			PoseBody<false>(j_theta, m_rootBody);
-			UpdateTransforms(interest_bodies, tm_data_j);
-			auto& vis_scale_ij = err_out(i_theta, j_theta);
-			auto& vis_scale_ji = err_out(j_theta, i_theta);
-			auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
-			vis_scale_ij = err_ij;
-			vis_scale_ji = err_ij;
-		}
-		err_out(i_theta, i_theta) = (Real)0;
+		query->n_interests = CArtiBodyTree::GetBodies(query->rootPose, joints, query->interests);
+		return query;
+	}
+	else
+	{
+		IKAssert(0); // not expect it to happen
+		delete query;
+		return NULL;
 	}
 
-	CArtiBodyTree::Serialize<false>(m_rootBody, tm_bk); // restore the original configuration
-	CArtiBodyTree::FK_Update<false>(m_rootBody);
 }
 
-void CPGThetaClose::ETB_Setup_cross(Eigen::MatrixXr& err_out, const std::list<std::string>& joints, const std::vector<std::pair<int, int>>& segs)
+void CPGTheta::EndQuery(CPGTheta::Query* query) const
 {
-	TransformArchive tm_bk;
-	CArtiBodyTree::Serialize<true>(m_rootBody, tm_bk); // backup the original configuration
-	
-	Real err_max = (Real)tm_bk.Size();
-	unsigned int n_theta = N_Theta();
-	err_out = Eigen::MatrixXr::Constant(n_theta, n_theta, err_max);
+	CArtiBodyTree::Destroy(query->rootPose);
+	delete query;
+}
 
-	std::list<const CArtiBodyNode*> interest_bodies;
-	int n_bodies = CArtiBodyTree::GetBodies(m_rootBody, joints, interest_bodies);
-	TransformArchive tm_data_i(n_bodies);
-	TransformArchive tm_data_j(n_bodies);
-
-	auto UpdateTransforms = [] (std::list<const CArtiBodyNode*>& interest_bodies, TransformArchive& tm_data)
-		{
-			int i_tm = 0;
-			for (auto body : interest_bodies)
-			{
-				_TRANSFORM& tm_i = tm_data[i_tm ++];
-				body->GetJoint()->GetTransform()->CopyTo(tm_i);
-			}
-		};
-
-	const auto& segs_x = segs;
-	const auto& segs_y = segs;
-	int n_segs = (int)segs.size();
-
-	for (int i_seg = 0; i_seg < n_segs; i_seg ++)
+void CPGTheta::QueryTheta(CPGTheta::Query* query, int i_theta, TransformArchive& tm_data) const
+{
+	PoseBody<false>(i_theta, query->rootPose);
+	int i_tm = 0;
+	for (auto body : query->interests)
 	{
-		for (int j_seg = i_seg + 1; j_seg < n_segs; j_seg ++)
-		{
-			const auto& rg_x = segs_x[i_seg];
-			const auto& rg_y = segs_y[j_seg];
-			for (int i_theta = rg_x.first; i_theta < rg_x.second; i_theta++)
-			{
-				PoseBody<false>(i_theta, m_rootBody);
-				UpdateTransforms(interest_bodies, tm_data_i);
-				for (int j_theta = rg_y.first; j_theta < rg_y.second; j_theta++)
-				{
-					PoseBody<false>(j_theta, m_rootBody);
-					UpdateTransforms(interest_bodies, tm_data_j);
-					auto& vis_scale_ij = err_out(i_theta, j_theta);
-					auto& vis_scale_ji = err_out(j_theta, i_theta);
-					auto err_ij = TransformArchive::Error_q(tm_data_i, tm_data_j);
-					vis_scale_ij = err_ij;
-					vis_scale_ji = err_ij;
-				}
-			}
-		}
+		_TRANSFORM& tm_i = tm_data[i_tm ++];
+		body->GetJoint()->GetTransform()->CopyTo(tm_i);
 	}
-
-	CArtiBodyTree::Serialize<false>(m_rootBody, tm_bk); // restore the original configuration
-	CArtiBodyTree::FK_Update<false>(m_rootBody);
 }
 
 template<typename G>
@@ -369,18 +303,18 @@ void Dump(G& g, const char* fileName, int lineNo)
 	write_graphviz(dot_file, g);
 }
 
-CPGClose::CPGClose(std::size_t n_vs)
+CPG::CPG(std::size_t n_vs)
 	: CPGTransition(n_vs)
 {
 }
 
-CPGClose::CPGClose()
+CPG::CPG()
 	: CPGTransition(0)
 {
 
 }
 
-void CPGClose::Initialize(CPGClose& graph, const Registry& reg, const Eigen::MatrixXr& errTB_src, int pid_T_src, const CPGThetaClose& theta_src)
+void CPG::Initialize(CPG& graph, const Registry& reg, const CPGTheta& theta_src)
 {
 	struct V_ERR
 	{
@@ -399,19 +333,25 @@ void CPGClose::Initialize(CPGClose& graph, const Registry& reg, const Eigen::Mat
 
 	std::list<V_ERR> lstV_ERR_T;
 	auto it_reg_v = reg.V.begin();
-	IKAssert(pid_T_src == it_reg_v->v_src
+	IKAssert(0 == it_reg_v->v_src
 			&& 0 == it_reg_v->v_dst); 	// the 'T' posture is supposed to be the first one to be registered
 
 	CArtiBodyRef2File abfile(theta_src.GetBody(), (int)graph.m_vertices.size());
 
-	theta_src.PoseBody<false>(pid_T_src);
+	theta_src.PoseBody<false>(0);
 	abfile.UpdateMotion(0);
+	CArtiBodyNode* body_theta_src = const_cast<CArtiBodyNode*>(theta_src.GetBody());
+	TransformArchive tm_0;
+	CArtiBodyTree::Serialize<true>(body_theta_src, tm_0);
+
+	TransformArchive tm_i;
 	for (it_reg_v ++; it_reg_v != reg.V.end(); it_reg_v ++) // skip the 'T' posture to avoid a self-pointing edge
 	{
 		const auto& reg_v = *it_reg_v;
 		theta_src.PoseBody<false>((int)reg_v.v_src);
 		abfile.UpdateMotion((int)reg_v.v_dst);
-		lstV_ERR_T.push_back({reg_v.v_dst, errTB_src(pid_T_src, reg_v.v_src)});
+		CArtiBodyTree::Serialize<true>(body_theta_src, tm_i);
+		lstV_ERR_T.push_back({reg_v.v_dst, TransformArchive::Error_q(tm_0, tm_i)});
 	}
 	theta_src.ResetPose<false>();
 	graph.m_theta.Initialize(abfile);
@@ -444,7 +384,7 @@ void CPGClose::Initialize(CPGClose& graph, const Registry& reg, const Eigen::Mat
 
 }
 
-void CPGClose::Save(const char* dir) const
+void CPG::Save(const char* dir) const
 {
 	std::string file_name(m_theta.GetBody()->GetName_c());
 
@@ -467,7 +407,7 @@ void CPGClose::Save(const char* dir) const
 	abfile.WriteBvhFile(htr_path.u8string().c_str());
 }
 
-bool CPGClose::Load(const char* dir, const char* pg_name)
+bool CPG::Load(const char* dir, const char* pg_name)
 {
 	fs::path dir_path(dir);
 	std::string filename_transi(pg_name); filename_transi += ".pg";
@@ -503,7 +443,7 @@ bool CPGClose::Load(const char* dir, const char* pg_name)
 	return loaded;
 }
 
-bool CPGClose::LoadThetas(const std::string& path_theta)
+bool CPG::LoadThetas(const std::string& path_theta)
 {
 	try
 	{
@@ -518,272 +458,97 @@ bool CPGClose::LoadThetas(const std::string& path_theta)
 	}
 }
 
-CPGClose::~CPGClose()
+CPG::~CPG()
 {
 }
 
-
-CPGOpen::CPGOpen(const CPGThetaClose* theta)
-	: PostureGraphMatrix< VertexGen, EdgeGen>((std::size_t)(theta->N_Theta()))
-	, m_theta(theta)
+CPGMatrixGen::CPGMatrixGen(const CPGTheta* theta)
+	: Super(theta)
 {
 }
 
-CPGOpen::~CPGOpen()
+void CPGMatrixGen::Remove(vertex_descriptor v, const IErrorTB* errTB)
+{
+	CPGMatrixGen& graph = *this;
+	// for a adjcent matrix graph, it does not remove a vertex
+	std::list<vertex_descriptor> neighbors_v;
+	auto vertices_range_neighbors = boost::adjacent_vertices(v, graph);
+	for (auto it_vert_n = vertices_range_neighbors.first
+		; it_vert_n != vertices_range_neighbors.second
+		; it_vert_n++)
+	{
+		const auto& v_n_property = (graph)[*it_vert_n];
+		neighbors_v.push_back(*it_vert_n);
+	}
+	auto edges_range_incident = boost::out_edges(v, graph);
+	for (auto it_edge_incident = edges_range_incident.first
+		; it_edge_incident != edges_range_incident.second
+		; it_edge_incident++)
+	{
+		boost::remove_edge(*it_edge_incident, graph);
+	}
+	auto it_v_n = neighbors_v.begin();
+	vertex_descriptor v_star = *it_v_n;
+	for (it_v_n ++; it_v_n != neighbors_v.end(); it_v_n ++)
+	{
+		if (errTB->Get(v, *it_v_n) < errTB->Get(v, v_star))
+			v_star = *it_v_n;
+	}
+	for (it_v_n = neighbors_v.begin(); it_v_n != neighbors_v.end(); it_v_n ++)
+	{
+		if (*it_v_n != v_star) // avoid self-pointing edge
+			boost::add_edge(v_star, *it_v_n, graph);
+	}
+
+}
+
+CPGListGen::CPGListGen(const CPGTheta* theta)
+	: Super(theta)
 {
 }
 
-bool CPGOpen::EliminateDupTheta(CPGOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore)
+void CPGListGen::Remove(vertex_descriptor v, const IErrorTB* errTB)
 {
-#if defined _DEBUG
-	Dump(graph_eps, __FILE__, __LINE__);
-#endif
-	int n_theta = graph_eps.m_theta->N_Theta();
-	Real err_epsilon = (1 - cos(deg2rad(epsErr_deg) / (Real)2));
-	IKAssert(errTB.rows() == n_theta);
-	int n_transi_eps = 0;
-	for (int i_theta = 0; i_theta < n_theta; i_theta++)
+	// for a adjcent matrix graph, it does not remove a vertex
+	CPGListGen& graph = *this;
+	// for a adjcent matrix graph, it does not remove a vertex
+	std::list<vertex_descriptor> neighbors_v;
+	auto vertices_range_neighbors = boost::adjacent_vertices(v, graph);
+	for (auto it_vert_n = vertices_range_neighbors.first
+		; it_vert_n != vertices_range_neighbors.second
+		; it_vert_n++)
 	{
-		bool i_ignored = (pids_ignore.end() != pids_ignore.find(i_theta));
-		if (i_ignored)
-			continue;
-		for (int j_theta = i_theta + 1; j_theta < n_theta; j_theta++)
-		{
-			bool j_ignored = (pids_ignore.end() != pids_ignore.find(j_theta));
-			if (j_ignored)
-				continue;
-			if (errTB(i_theta, j_theta) < err_epsilon)
-			{
-				boost::add_edge(i_theta, j_theta, graph_eps);
-				n_transi_eps ++;
-			}
-		}
+		const auto& v_n_property = (graph)[*it_vert_n];
+		neighbors_v.push_back(*it_vert_n);
+	}
+	auto edges_range_incident = boost::out_edges(v, graph);
+	auto it_edge_incident = edges_range_incident.first;
+	for ( auto it_edge_incident_p = it_edge_incident
+		; it_edge_incident != edges_range_incident.second
+		; it_edge_incident = it_edge_incident_p)
+	{
+		it_edge_incident_p ++;
+		boost::remove_edge(*it_edge_incident, graph);
+	}
+	auto it_v_n = neighbors_v.begin();
+	vertex_descriptor v_star = *it_v_n;
+	for (it_v_n++; it_v_n != neighbors_v.end(); it_v_n++)
+	{
+		if (errTB->Get(v, *it_v_n) < errTB->Get(v, v_star))
+			v_star = *it_v_n;
 	}
 
-#if defined _DEBUG
-	LOGIKVar(LogInfoInt, n_transi_eps);
-#endif
-	if (0 == n_transi_eps)
-		return false;
+	auto vertices_range_neighbors_v_star = boost::adjacent_vertices(v_star, graph);
+	std::set<vertex_descriptor> neighbors_v_star(vertices_range_neighbors_v_star.first
+												, vertices_range_neighbors_v_star.second);
 
-#if defined _DEBUG
-	Dump(graph_eps, __FILE__, __LINE__);
-#endif
-
-	//tag rm for each vertex
-	auto v_range = boost::vertices(graph_eps);
-	vertex_iterator it_v_end = v_range.second;
-	for (vertex_iterator it_v = v_range.first; it_v != it_v_end; it_v++)
+	for (it_v_n = neighbors_v.begin(); it_v_n != neighbors_v.end(); it_v_n++)
 	{
-		auto& v_property = (graph_eps)[*it_v];
-		v_property.tag_rm = false;
-		v_property.deg = 0;
+		bool edge_exists = (neighbors_v_star.end() != neighbors_v_star.find(*it_v_n));
+		if (*it_v_n != v_star
+			&& !edge_exists) // avoid self-pointing edge and duplicated edge
+			boost::add_edge(v_star, *it_v_n, graph);
 	}
-
-	// compute degree for the vertex (work around for adjacent matrix)
-	auto e_range = boost::edges(graph_eps);
-	const edge_iterator it_e_end = e_range.second;
-	for (edge_iterator it_e = e_range.first; it_e != it_e_end; it_e++)
-	{
-		auto e = *it_e;
-		vertex_descriptor v[] = { boost::source(e, graph_eps), boost::target(e, graph_eps) };
-		(graph_eps)[v[0]].deg++; (graph_eps)[v[1]].deg++;
-	}
-
-	// tag edge degrees and sort edges by degree
-	std::list<edge_descriptor> edges_eps;
-	for (edge_iterator it_e = e_range.first; it_e != it_e_end; it_e++)
-	{
-		auto e = *it_e;
-		edges_eps.push_back(e);
-		vertex_descriptor v[] = { boost::source(e, graph_eps), boost::target(e, graph_eps) };
-		std::size_t deg[] = { (graph_eps)[v[0]].deg, (graph_eps)[v[1]].deg };
-		auto& e_property = (graph_eps)[e];
-		e_property.deg = std::max(deg[0], deg[1]);
-	}
-
-	class ComEdgeByDeg
-	{
-	public:
-		ComEdgeByDeg(CPGOpen& g)
-			: graph(g)
-		{
-
-		}
-		bool operator()(const edge_descriptor& e_i, const edge_descriptor& e_j)
-		{
-			return (graph)[e_i].deg > (graph)[e_j].deg;
-		}
-	private:
-		CPGOpen& graph;
-	};
-	edges_eps.sort(ComEdgeByDeg(graph_eps));
-
-	// tag for vertices removal
-	while (!edges_eps.empty())
-	{
-		bool exists_a_tagged_vertex = false;
-		for (auto e : edges_eps)
-		{
-			vertex_descriptor v[] = { boost::source(e, graph_eps), boost::target(e, graph_eps) };
-			std::size_t deg[] = { (graph_eps)[v[0]].deg, (graph_eps)[v[1]].deg };
-			bool rm[] = { (graph_eps)[v[0]].tag_rm, (graph_eps)[v[1]].tag_rm };
-			if (!rm[0] && !rm[1])
-			{
-				if (deg[0] < deg[1])
-				{
-					(graph_eps)[v[1]].tag_rm = true;
-					exists_a_tagged_vertex = true;
-				}
-				else if (deg[0] > deg[1])
-				{
-					(graph_eps)[v[0]].tag_rm = true;
-					exists_a_tagged_vertex = true;
-				}
-			}
-		}
-		if (!exists_a_tagged_vertex && !edges_eps.empty())
-			(graph_eps)[boost::source(*edges_eps.begin(), graph_eps)].tag_rm = true;
-
-		for (auto it_e = edges_eps.begin()
-			; it_e != edges_eps.end()
-			; )
-		{
-			auto e = *it_e;
-			vertex_descriptor v[] = { boost::source(e, graph_eps), boost::target(e, graph_eps) };
-			bool rm[] = { (graph_eps)[v[0]].tag_rm, (graph_eps)[v[1]].tag_rm };
-			if (rm[0] || rm[1])
-			{
-				(graph_eps)[v[0]].deg--; (graph_eps)[v[1]].deg--;
-				it_e = edges_eps.erase(it_e);
-			}
-			else
-				it_e++;
-		}
-	}
-
-	// remove vertices
-	CPGOpen& graph = graph_eps;
-
-	for (auto e_0 : transi_0)
-		boost::add_edge(e_0.first, e_0.second, graph);
-
-
-	for (vertex_iterator it_v = v_range.first; it_v != it_v_end; it_v++)
-	{
-		const auto& v_property = (graph)[*it_v];
-		if (v_property.tag_rm)
-		{
-			std::list<vertex_descriptor> neightbors_v;
-			auto vertices_range_neighbors = boost::adjacent_vertices(*it_v, graph);
-			for (auto it_vert_n = vertices_range_neighbors.first
-				; it_vert_n != vertices_range_neighbors.second
-				; it_vert_n++)
-			{
-				const auto& v_n_property = (graph)[*it_vert_n];
-				neightbors_v.push_back(*it_vert_n);
-			}
-
-			auto edges_range_incident = boost::out_edges(*it_v, graph);
-			for (auto it_edge_incident = edges_range_incident.first
-				; it_edge_incident != edges_range_incident.second
-				; it_edge_incident++)
-			{
-				boost::remove_edge(*it_edge_incident, graph);
-			}
-
-			auto it_v_n = neightbors_v.begin();
-			vertex_descriptor v_star = *it_v_n;
-			for (it_v_n ++; it_v_n != neightbors_v.end(); it_v_n ++)
-			{
-				if (errTB(*it_v, *it_v_n) < errTB(*it_v, v_star))
-					v_star = *it_v_n;
-			}
-
-			for (it_v_n = neightbors_v.begin(); it_v_n != neightbors_v.end(); it_v_n ++)
-			{
-				if (*it_v_n != v_star) // avoid self-pointing edge
-					boost::add_edge(v_star, *it_v_n, graph);
-			}
-		}
-	}
-
-#if defined _DEBUG
-	Dump(graph, __FILE__, __LINE__);
-#endif
-	return true;
-}
-
-void CPGOpen::InitTransitions(CPGOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore)
-{
-	std::set<int> pids_ignore(postureids_ignore.begin(), postureids_ignore.end());
-	// initialize epsilon edges
-	int n_theta = graph.m_theta->N_Theta();
-	int i_theta = 0;
-	bool i_theta_ignored = (pids_ignore.end() != pids_ignore.find(i_theta));
-	for (int i_theta_p = i_theta + 1; i_theta_p < n_theta; i_theta ++, i_theta_p ++)
-	{
-		bool i_theta_p_ignored = (pids_ignore.end() != pids_ignore.find(i_theta_p));
-		if (!i_theta_ignored && !i_theta_p_ignored)
-			boost::add_edge(i_theta, i_theta + 1, graph);
-		i_theta_ignored = i_theta_p_ignored;
-	}
-
-	// initialize not epsilon edges
-	std::vector<std::pair<int, int>> transi_0;
-	// E = phi, E_eps = {(i, i+1)| i in THETA}
-	EliminateDupTheta(graph, transi_0, errTB, epsErr_deg, pids_ignore);
-}
-
-bool CPGOpen::MergeTransitions(CPGOpen& graph, const CPGTransition& pg_0, const CPGTransition& pg_1, const Eigen::MatrixXr& errTB, Real epsErr_deg, std::vector<int>& postureids_ignore)
-{
-	std::set<int> pids_ignore(postureids_ignore.begin(), postureids_ignore.end());
-
-	// initialize not epsilon edges
-	const CPGTransition* pgs[] = {&pg_0, &pg_1};
-	int i_v_base[] = {0, (int)boost::num_vertices(pg_0)};
-	std::vector<std::pair<int, int>> transi_0(boost::num_edges(pg_0) + boost::num_edges(pg_1));
-	int n_transi = 0;
-	for (int i_pg = 0; i_pg < 2; i_pg ++)
-	{
-		int i_v_base_i = i_v_base[i_pg];
-		auto pg_i = pgs[i_pg];
-		auto e_range_i = boost::edges(*pgs[i_pg]);
-		for (CPGTransition::edge_iterator it_e = e_range_i.first; it_e != e_range_i.second; it_e++)
-		{
-			auto e = *it_e;
-			int i_theta_0 = boost::source(e, *pg_i) + i_v_base_i;
-			int i_theta_1 = boost::target(e, *pg_i) + i_v_base_i;
-			bool edge_not_ignored = (pids_ignore.end() == pids_ignore.find(i_theta_0)
-									&& pids_ignore.end() == pids_ignore.find(i_theta_1));
-			if (edge_not_ignored)
-				transi_0[n_transi ++] = std::make_pair(i_theta_0, i_theta_1);
-		}
-	}
-	transi_0.resize(n_transi);
-	// E = (E_0 U E_1), E_eps = phi
-	return EliminateDupTheta(graph, transi_0, errTB, epsErr_deg, pids_ignore);
-}
-
-
-CPGClose* CPGOpen::GenerateClosePG(const CPGOpen& graph_src, const Eigen::MatrixXr& errTB, int pid_T_src)
-{
-	CPGClose::Registry regG;
-	regG.Register_v(pid_T_src); // 'T' posture is the first posture registered which has no edges
-	auto e_range_src = boost::edges(graph_src);
-	const edge_iterator it_e_end_src = e_range_src.second;
-	for (auto it_e_src = e_range_src.first
-		; it_e_src != it_e_end_src
-		; it_e_src++)
-	{
-		auto e_src = *it_e_src;
-		vertex_descriptor v_src[] = { boost::source(e_src, graph_src), boost::target(e_src, graph_src) };
-		CPGClose::vertex_descriptor v_dst[] = { regG.Register_v(v_src[0]), regG.Register_v(v_src[1]) };
-		regG.Register_e(v_dst[0], v_dst[1]);
-	}
-	CPGClose* graph_dst = new CPGClose(regG.V.size());
-	CPGClose::Initialize(*graph_dst, regG, errTB, pid_T_src, *graph_src.Theta());
-	return graph_dst;
 }
 
 bool CPGRuntime::Load(const char* dir, CArtiBodyNode* root)
@@ -843,17 +608,3 @@ bool CPGRuntime::LoadThetas(const char* filePath, CArtiBodyNode* body_ref)
 	return loaded;
 }
 
-void CPGOpen::Save(const char* dir, PG_FileType type) const
-{
-	fs::path file_path(dir);
-	std::string file_name(m_theta->GetBody()->GetName_c()); file_name += ".dot";
-	file_path.append(file_name);
-	std::ofstream file(file_path);
-	IKAssert(std::ios_base::failbit != file.rdstate());
-	if (F_DOT)
-		write_graphviz(file, *this);
-	else
-	{
-		IKAssert(0); // does not support serialize for an adjacency matrix
-	}
-}

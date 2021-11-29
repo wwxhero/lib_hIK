@@ -659,7 +659,7 @@ bool convert(const char* src, const char* dst, bool htr2bvh)
 	CArtiBodyNode* bodies[2] = {nullptr};
 	try
 	{
-		CPGThetaClose bvh_src(src);
+		CPGTheta bvh_src(src);
 		if (htr2bvh)
 		{
 			bodies[0] = bvh_src.GetBody();

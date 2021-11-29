@@ -20,7 +20,10 @@
 #include "Math.hpp"
 #include "ArtiBody.hpp"
 #include "IKChain.hpp"
+#include "ErrorTB.hpp"
 
+#define MAX_N_THETA_HOMO 20000
+#define MAX_N_THETA_X MAX_N_THETA_HOMO*MAX_N_THETA_HOMO
 
 enum PG_FileType {F_PG = 0, F_DOT};
 
@@ -56,14 +59,14 @@ private:
 	std::vector<TransformArchive> m_motions;
 };
 
-class CPGThetaClose
+class CPGTheta
 {
 public:
-	CPGThetaClose(const char* path);
-	CPGThetaClose(const std::string& path);
-	CPGThetaClose();
-	CPGThetaClose(const CPGThetaClose& src);
-	virtual ~CPGThetaClose();
+	CPGTheta(const char* path);
+	CPGTheta(const std::string& path);
+	CPGTheta();
+	CPGTheta(const CPGTheta& src);
+	virtual ~CPGTheta();
 public:
 	template<bool G_SPACE>
 	void PoseBody(int i_frame) const
@@ -87,15 +90,23 @@ public:
 		CArtiBodyTree::FK_Update<G_SPACE>(m_rootBody);
 	}
 
-	void ETB_Setup(Eigen::MatrixXr& err_out, const std::list<std::string>& joints);
-	void ETB_Setup_cross(Eigen::MatrixXr& err_out, const std::list<std::string>& joints, const std::vector<std::pair<int, int>>& segs);
+	struct Query
+	{
+		CArtiBodyNode* rootPose;
+		std::list<const CArtiBodyNode*> interests;
+		int n_interests;
+	};
+
+	Query* BeginQuery(const std::list<std::string>& joints) const;
+	void EndQuery(Query* query) const;
+	void QueryTheta(Query* query, int i_theta, TransformArchive& tm_data) const;
 
 	int N_Theta() const {return (int)m_motions.size();}
 
 	const CArtiBodyNode* GetBody() const { return m_rootBody; }
 	CArtiBodyNode* GetBody() { return m_rootBody;  }
 
-	bool Merge(const CPGThetaClose& f2b);
+	bool Merge(const CPGTheta& f2b);
 protected:
 	template<bool G_SPACE>
 	void PoseBody(int i_frame, CArtiBodyNode* body) const
@@ -148,6 +159,27 @@ protected:
 	{
 	}
 	~PostureGraphMatrix() {};
+
+};
+
+template<typename VertexData, typename EdgeData>
+class PostureGraphEDynaList
+	: public boost::adjacency_list< boost::listS
+								, boost::vecS
+								, boost::undirectedS
+								, VertexData
+								, EdgeData >
+{
+protected:
+	PostureGraphEDynaList(std::size_t n_vertices)
+		: boost::adjacency_list< boost::listS
+								, boost::vecS
+								, boost::undirectedS
+								, VertexData
+								, EdgeData >(n_vertices)
+	{
+	}
+	~PostureGraphEDynaList() {};
 
 };
 
@@ -218,9 +250,8 @@ public:
 };
 
 
-class CPGClose : public CPGTransition
+class CPG : public CPGTransition
 {
-	friend class CPGOpen;
 public:
 	struct Registry
 	{
@@ -262,27 +293,24 @@ public:
 		std::list<REGISTER_v> V;
 		std::list<REGISTER_e> E;
 	};
-protected:
-	CPGClose(std::size_t n_vs);
-	static void Initialize(CPGClose& graph_src, const Registry& reg, const Eigen::MatrixXr& errTB_src, int pid_T_src, const CPGThetaClose& theta_src);
+
 public:
-	CPGClose();
-	virtual ~CPGClose();
-	
+	CPG(std::size_t n_vs);
+	CPG();
+	virtual ~CPG();
+
+	static void Initialize(CPG& graph_src, const Registry& reg, const CPGTheta& theta_src);	
 	bool Load(const char* dir, const char* pg_name);
 	void Save(const char* dir) const;
-	const CPGThetaClose& Theta() const
+	const CPGTheta& Theta() const
 	{
 		return m_theta;
 	}
 private:
 	bool LoadThetas(const std::string& path_theta);
 private:
-	CPGThetaClose m_theta;
+	CPGTheta m_theta;
 };
-
-
-
 
 class CPGRuntime : public CPGTransition
 {
@@ -428,27 +456,43 @@ struct EdgeGen
 	std::size_t deg;
 };
 
-class CPGOpen : public PostureGraphMatrix<VertexGen, EdgeGen>
-
+template <typename GenBase>
+class TPGGen : public GenBase
 {
 public:
-	CPGOpen(const CPGThetaClose* theta);
-
-	virtual ~CPGOpen();
-
-	static void InitTransitions(CPGOpen& graph, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::vector<int>& postureids_ignore);
-
-	static bool MergeTransitions(CPGOpen& pg_open, const CPGTransition& pg_0, const CPGTransition& pg_1, const Eigen::MatrixXr& err_tb, Real epsErr, std::vector<int>& postures_ignore);
-
-	static CPGClose* GenerateClosePG(const CPGOpen& graph_src, const Eigen::MatrixXr& errTB, int pid_T_src);
-
-	void Save(const char* dir, PG_FileType type = F_PG) const;
-
-	const CPGThetaClose* Theta() const { return m_theta; }
+	TPGGen(const CPGTheta* theta)
+		: GenBase((std::size_t)(theta->N_Theta()))
+		, m_theta(theta)
+	{
+	}
+	virtual ~TPGGen()
+	{
+	}
+	const CPGTheta* Theta() const { return m_theta; }
 private:
-	static bool EliminateDupTheta(CPGOpen& graph_eps, const std::vector<std::pair<int, int>>& transi_0, const Eigen::MatrixXr& errTB, Real epsErr_deg, const std::set<int>& pids_ignore);
-private:
-	const CPGThetaClose* m_theta;
+	const CPGTheta* m_theta;
+};
+
+class CPGMatrixGen : public TPGGen<PostureGraphMatrix<VertexGen, EdgeGen>>
+{
+	typedef TPGGen<PostureGraphMatrix<VertexGen, EdgeGen>> Super;
+public:
+	typedef PostureGraphMatrix<VertexGen, EdgeGen>::vertex_descriptor vertex_descriptor;
+	typedef PostureGraphMatrix<VertexGen, EdgeGen>::edge_descriptor edge_descriptor;
+public:
+	CPGMatrixGen(const CPGTheta* theta);
+	void Remove(vertex_descriptor v, const IErrorTB* errTB);
+};
+
+class CPGListGen : public TPGGen<PostureGraphEDynaList<VertexGen, EdgeGen>>
+{
+	typedef TPGGen<PostureGraphEDynaList<VertexGen, EdgeGen>> Super;
+public:
+	typedef PostureGraphEDynaList<VertexGen, EdgeGen>::vertex_descriptor vertex_descriptor;
+	typedef PostureGraphEDynaList<VertexGen, EdgeGen>::edge_descriptor edge_descriptor;
+public:
+	CPGListGen(const CPGTheta* theta);
+	void Remove(vertex_descriptor v, const IErrorTB* errTB);
 };
 
 
