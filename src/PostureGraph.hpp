@@ -252,7 +252,6 @@ public:
 
 class CPG : public CPGTransition
 {
-	friend class CPGMatrixGen;
 public:
 	struct Registry
 	{
