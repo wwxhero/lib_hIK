@@ -22,7 +22,7 @@
 #include "IKChain.hpp"
 #include "ErrorTB.hpp"
 
-#define MAX_N_THETA_HOMO 20000
+#define MAX_N_THETA_HOMO 200
 #define MAX_N_THETA_X MAX_N_THETA_HOMO*MAX_N_THETA_HOMO
 
 enum PG_FileType {F_PG = 0, F_DOT};
