@@ -172,8 +172,12 @@ public:
 		// initialize epsilon edges
 		int n_theta = graph.Theta()->N_Theta();
 		int i_theta = 1;
-		for (int i_theta_p = i_theta + 1; i_theta_p < n_theta; i_theta ++, i_theta_p ++)
-			boost::add_edge(i_theta, i_theta + 1, graph);
+		int n_transi_eps = 0;
+		for (int i_theta_p = i_theta + 1; i_theta_p < n_theta; i_theta++, i_theta_p++)
+		{
+			boost::add_edge(i_theta, i_theta_p, graph);
+			n_transi_eps ++;
+		}
 
 	#if defined _DEBUG
 		Dump(graph, __FILE__, __LINE__);
@@ -181,7 +185,6 @@ public:
 
 		Real err_epsilon = (1 - cos(deg2rad(epsErr_deg) / (Real)2));
 		IKAssert(errTB->N_Theta() == n_theta);
-		int n_transi_eps = 0;
 		for (i_theta = 1; i_theta < n_theta; i_theta++)
 		{
 			for (int j_theta = i_theta + 2; j_theta < n_theta; j_theta++) // (i, i+1) is already in epsilon edges
