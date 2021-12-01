@@ -18,7 +18,6 @@ public:
 			}
 		}
 	}
-
 };
 
 // a lower triangular matrix stores posture Error(i, j) for i, j in Theta

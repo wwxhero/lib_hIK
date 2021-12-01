@@ -1,6 +1,8 @@
 #pragma once
 #pragma warning(push)
 #pragma warning(disable: 4522 267)
+#pragma push_macro("new")
+#undef new
 #include <boost/config.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
@@ -9,6 +11,7 @@
 #include <boost/graph/graphviz.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
+#pragma pop_macro("new")
 #pragma warning(pop)
 #include <iostream>
 #include <algorithm>
