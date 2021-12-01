@@ -2,10 +2,10 @@
 #include "PostureGraph.hpp"
 #include "PostureGraph_helper.hpp"
 
-#define MAX_N_THETA_HOMO 8192
-#define MAX_N_THETA_X ((uint64_t)MAX_N_THETA_HOMO*(uint64_t)MAX_N_THETA_HOMO)
+#define MAX_N_THETA_HOMO 40960
+#define MAX_N_THETA_X MAX_N_THETA_HOMO
 
-#define MAX_N_THETA_HOMO_ETB 2048
+#define MAX_N_THETA_HOMO_ETB 20480
 #define MAX_N_THETA_X_ETB ((uint64_t)MAX_N_THETA_HOMO_ETB*(uint64_t)MAX_N_THETA_HOMO_ETB)
 
 CPGThetaRuntime::CPGThetaRuntime(const char* path, CArtiBodyNode* body_ref)
@@ -284,8 +284,7 @@ void CPGTheta::QueryTheta(CPGTheta::Query* query, int i_theta, TransformArchive&
 
 bool CPGTheta::SmallX(int n_theta_0, int n_theta_1)
 {
-	return ((uint64_t)n_theta_0 * (uint64_t)n_theta_1)
-			< MAX_N_THETA_X;
+	return (n_theta_0 + n_theta_1) < MAX_N_THETA_X;
 }
 
 bool CPGTheta::SmallXETB(int n_theta_0, int n_theta_1)
