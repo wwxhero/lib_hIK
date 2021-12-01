@@ -2,8 +2,11 @@
 #include "PostureGraph.hpp"
 #include "PostureGraph_helper.hpp"
 
-#define MAX_N_THETA_HOMO 15000
+#define MAX_N_THETA_HOMO 8192
 #define MAX_N_THETA_X ((uint64_t)MAX_N_THETA_HOMO*(uint64_t)MAX_N_THETA_HOMO)
+
+#define MAX_N_THETA_HOMO_ETB 2048
+#define MAX_N_THETA_X_ETB ((uint64_t)MAX_N_THETA_HOMO_ETB*(uint64_t)MAX_N_THETA_HOMO_ETB)
 
 CPGThetaRuntime::CPGThetaRuntime(const char* path, CArtiBodyNode* body_ref)
 {
@@ -287,8 +290,7 @@ bool CPGTheta::SmallX(int n_theta_0, int n_theta_1)
 
 bool CPGTheta::SmallXETB(int n_theta_0, int n_theta_1)
 {
-	int n_theta_0_half = (n_theta_0 >> 1);
-	return ((uint64_t)n_theta_0_half * (uint64_t)n_theta_1) < (MAX_N_THETA_X);
+	return ((uint64_t)n_theta_0 * (uint64_t)n_theta_1) < (MAX_N_THETA_X_ETB);
 }
 
 bool CPGTheta::SmallHomo(int n_theta)
@@ -298,7 +300,7 @@ bool CPGTheta::SmallHomo(int n_theta)
 
 bool CPGTheta::SmallHomoETB(int n_theta)
 {
-	return (n_theta >> 1) < MAX_N_THETA_HOMO;
+	return n_theta < MAX_N_THETA_HOMO_ETB;
 }
 
 CPG::CPG(std::size_t n_vs)
@@ -605,6 +607,9 @@ bool CPGRuntime::LoadThetas(const char* filePath, CArtiBodyNode* body_ref)
 	}
 	return loaded;
 }
+
+#undef MAX_N_THETA_HOMO_ETB
+#undef MAX_N_THETA_X_ETB
 
 #undef MAX_N_THETA_HOMO
 #undef MAX_N_THETA_X
