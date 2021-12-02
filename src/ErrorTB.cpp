@@ -180,7 +180,7 @@ public:
 	{
 	}
 
-	~ETBNull()
+	virtual ~ETBNull()
 	{
 		IKAssert((NULL == m_refTheta)
 				== (NULL == m_refQuery));
