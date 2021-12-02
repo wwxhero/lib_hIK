@@ -121,13 +121,13 @@ public:
 			}
 		}
 
-		// remove vertices
 		TGraphGen& graph = graph_eps;
 
+		// add E
 		for (auto e_0 : transi_0)
 			boost::add_edge(e_0.first, e_0.second, graph);
 
-
+		// remove vertices
 		for (auto it_v = v_range.first; it_v != it_v_end; it_v++)
 		{
 			const auto& v_property = (graph)[*it_v];
