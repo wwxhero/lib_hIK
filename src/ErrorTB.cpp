@@ -286,7 +286,7 @@ IErrorTB* IErrorTB::Factory::CreateX(const CPGTheta& theta, const std::list<std:
 	IKAssert(n_theta == n_theta_0 + n_theta_1);
 	if (CPGTheta::SmallXETB(n_theta_0, n_theta_1))
 	{
-		auto tick_start = ::GetTickCount64();
+		START_ONCEPROFILER("CPU sequential ETB generations")
 		IErrorTB* errTB = new ETBRect(n_theta_0, n_theta_1);
 		auto query = theta.BeginQuery(joints);
 		TransformArchive tm_data_i(query->n_interests);
@@ -301,14 +301,12 @@ IErrorTB* IErrorTB::Factory::CreateX(const CPGTheta& theta, const std::list<std:
 			}
 		}
 		theta.EndQuery(query);
-		auto tick = ::GetTickCount64() - tick_start;
-		float tick_sec = tick / 1000.0f;
-		LOGIKVarErr(LogInfoReal, tick_sec);
+		STOP_ONCEPROFILER
 		return errTB;
 	}
 	else if (CPGTheta::MedianXETB(n_theta_0, n_theta_1))
 	{
-		auto tick_start = ::GetTickCount64();
+		START_ONCEPROFILER("CPU parallel ETB generations")
 
 		class ThreadXUpdator : public CThread_W32
 		{
@@ -378,9 +376,7 @@ IErrorTB* IErrorTB::Factory::CreateX(const CPGTheta& theta, const std::list<std:
 			thread->Kickoff_main();
 		pool.WaitForAllReadyThreads_main();
 
-		auto tick = ::GetTickCount64() - tick_start;
-		float tick_sec = tick / 1000.0f;
-		LOGIKVarErr(LogInfoReal, tick_sec);
+		STOP_ONCEPROFILER
 		return errTB;
 	}
 	else // big XETB
