@@ -2,7 +2,7 @@
 #include "PostureGraph.hpp"
 #include "PostureGraph_helper.hpp"
 
-#define MAX_N_THETA_HOMO 102400
+#define MAX_N_THETA_HOMO 51200
 #define MAX_N_THETA_X MAX_N_THETA_HOMO
 
 #define MED_N_THETA_X_ETB 1024000
