@@ -5,6 +5,8 @@
 #define MAX_N_THETA_HOMO 102400
 #define MAX_N_THETA_X MAX_N_THETA_HOMO
 
+#define MED_N_THETA_X_ETB 1024000
+
 #define MAX_N_THETA_HOMO_ETB 20480
 #define MAX_N_THETA_X_ETB ((uint64_t)MAX_N_THETA_HOMO_ETB*(uint64_t)MAX_N_THETA_HOMO_ETB)
 
@@ -289,7 +291,14 @@ bool CPGTheta::SmallX(int n_theta_0, int n_theta_1)
 
 bool CPGTheta::SmallXETB(int n_theta_0, int n_theta_1)
 {
-	return ((uint64_t)n_theta_0 * (uint64_t)n_theta_1) < (MAX_N_THETA_X_ETB);
+	return ((uint64_t)n_theta_0 * (uint64_t)n_theta_1) < (MED_N_THETA_X_ETB);
+}
+
+bool CPGTheta::MedianXETB(int n_theta_0, int n_theta_1)
+{
+	uint64_t size = (uint64_t)n_theta_0 * (uint64_t)n_theta_1;
+	return (MED_N_THETA_X_ETB <= size)
+		&& (size < (MAX_N_THETA_X_ETB));
 }
 
 bool CPGTheta::SmallHomo(int n_theta)

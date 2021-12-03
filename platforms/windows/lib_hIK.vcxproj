@@ -405,6 +405,7 @@
     <ClInclude Include="..\..\src\matrix3.h" />
     <ClInclude Include="..\..\src\MoNode.hpp" />
     <ClInclude Include="..\..\src\MotionPipeConf.hpp" />
+    <ClInclude Include="..\..\src\parallel_thread_helper.hpp" />
     <ClInclude Include="..\..\src\PostureGraph.hpp" />
     <ClInclude Include="..\..\src\PostureGraph_helper.hpp" />
     <ClInclude Include="..\..\src\Transform.hpp" />

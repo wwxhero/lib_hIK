@@ -93,8 +93,9 @@ public:
 		, m_nCols(n_cols)
 		, m_nTheta0(m_nRows)
 		, m_nTheta1(m_nCols)
+		, m_nLength(n_rows * n_cols)
 	{
-		m_elements = new Real[m_nRows*m_nCols];
+		m_elements = new Real[m_nLength];
 	}
 
 	virtual ~ETBRect()
@@ -112,6 +113,7 @@ public:
 	virtual Real Get(int i_theta, int j_theta) const
 	{
 		int i_offset = Offset(i_theta, j_theta);
+		IKAssert(i_offset < m_nLength);
 		if (i_offset < 0)
 			return (Real)N_Theta(); // error max: edges from same theta file are supposed no less than epsilon
 		else
@@ -163,10 +165,24 @@ public:
 		return m_nRows + m_nCols;
 	}
 
+	int Length() const
+	{
+		return m_nLength;
+	}
+
+	std::pair<int, int> Theta_ij(int i_offset)
+	{
+		int i_col = i_offset % m_nCols;
+		int i_row = i_offset / m_nCols;
+		i_col += m_nTheta0;
+		return std::make_pair(i_row, i_col);
+	}
+
 
 private:
 	int m_nRows;
 	int m_nCols;
+	int m_nLength;
 	int &m_nTheta0;
 	int &m_nTheta1;
 	Real* m_elements;
@@ -300,23 +316,19 @@ IErrorTB* IErrorTB::Factory::CreateX(const CPGTheta& theta, const std::list<std:
 			ThreadXUpdator()
 				: m_id(0)
 				, m_etb(NULL)
-				, m_thetas(NULL)
-				, m_query(NULL)
+				, m_theta(NULL)
 			{
 			}
 			~ThreadXUpdator()
 			{
-				if (m_query)
-					m_theta.EndQuery(m_query);
-				m_query = NULL;
 			}
-			void Initialize_main(int n_threads, int id, ETBRect* etb, CPGTheta* theta, const std::list<std::string>& joints)
+			void Initialize_main(int n_threads, int id, ETBRect* etb, const CPGTheta& theta, const std::list<std::string>& joints)
 			{
 				m_nthreads = n_threads;
 				m_id = id;
 				m_etb = etb;
-				m_theta = theta;
-				m_query = theta->BeginQuery(joints);
+				m_theta = &theta;
+				m_joints = &joints;
 			}
 			void Kickoff_main()
 			{
@@ -325,34 +337,37 @@ IErrorTB* IErrorTB::Factory::CreateX(const CPGTheta& theta, const std::list<std:
 		private:
 			virtual void Run_worker()
 			{
-				TransformArchive tm_data_i(m_query->n_interests);
-				TransformArchive tm_data_j(m_query->n_interests);
+				CPGTheta::Query* query = m_theta->BeginQuery(*m_joints);
+				TransformArchive tm_data_i(query->n_interests);
+				TransformArchive tm_data_j(query->n_interests);
 				int lenTB = m_etb->Length();
 				for (int i_offset = m_id; i_offset < lenTB; i_offset += m_nthreads)
 				{
 					std::pair<int, int> ij_theta = m_etb->Theta_ij(i_offset);
 					auto& i_theta = ij_theta.first;
 					auto& j_theta = ij_theta.second;
-					theta->QueryTheta(m_query, i_theta, tm_data_i);
-					theta->QueryTheta(m_query, j_theta, tm_data_j);
-					errTB->Set(i_theta, j_theta, TransformArchive::Error_q(tm_data_i, tm_data_j));
+					m_theta->QueryTheta(query, i_theta, tm_data_i);
+					m_theta->QueryTheta(query, j_theta, tm_data_j);
+					m_etb->Set(i_theta, j_theta, TransformArchive::Error_q(tm_data_i, tm_data_j));
 				}
+				m_theta->EndQuery(query);
 			}
+
 			int m_nthreads;
 			int m_id;
 			ETBRect* m_etb;
 			const CPGTheta* m_theta;
-			CPGTheta::Query* m_query;
+			const std::list<std::string>* m_joints;
 		};
 
 		ETBRect* errTB = new ETBRect(n_theta_0, n_theta_1);
 		CThreadPool_W32<ThreadXUpdator> pool;
-		int n_threads = CThreadPool_W32<ThreadXUpdator>::N_CPUCors();
+		int n_threads = CThreadPool_W32<ThreadXUpdator>::N_CPUCores();
 		int i_thread = 0;
 		pool.Initialize_main(n_threads,
 							[&](ThreadXUpdator* thread)
 								{
-									thread->Initialize_main(n_threads
+									thread->Initialize_main(n_threads,
 															i_thread ++,
 															errTB,
 															theta,

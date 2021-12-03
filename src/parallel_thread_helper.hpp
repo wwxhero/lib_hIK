@@ -201,6 +201,14 @@ public:
 		return m_threads;
 	}
 
+	static int N_CPUCores()
+	{
+		SYSTEM_INFO sysinfo;
+		GetSystemInfo(&sysinfo);
+		int numCPU = (int)sysinfo.dwNumberOfProcessors;
+		return numCPU;
+	}
+
 private:
 	std::vector<Thread*> m_threads;
 	std::vector<HANDLE> m_readiness_ref; //semaphores
