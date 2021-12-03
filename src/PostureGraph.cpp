@@ -7,7 +7,7 @@
 
 #define MED_N_THETA_X_ETB 1024000
 
-#define MAX_N_THETA_HOMO_ETB 20480
+#define MAX_N_THETA_HOMO_ETB 40960
 #define MAX_N_THETA_X_ETB ((uint64_t)MAX_N_THETA_HOMO_ETB*(uint64_t)MAX_N_THETA_HOMO_ETB)
 
 CPGThetaRuntime::CPGThetaRuntime(const char* path, CArtiBodyNode* body_ref)
