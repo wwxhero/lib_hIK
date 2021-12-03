@@ -361,7 +361,6 @@ IErrorTB* IErrorTB::Factory::CreateX(const CPGTheta& theta, const std::list<std:
 		ETBRect* errTB = new ETBRect(n_theta_0, n_theta_1);
 		CThreadPool_W32<ThreadXUpdator> pool;
 		int n_threads = std::max(2, (CThreadPool_W32<ThreadXUpdator>::N_CPUCores() / 6));
-		LOGIKVarErr(LogInfoInt, n_threads);
 		int i_thread = 0;
 		pool.Initialize_main(n_threads,
 							[&](ThreadXUpdator* thread)
