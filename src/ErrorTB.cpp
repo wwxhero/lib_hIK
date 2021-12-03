@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "ErrorTB.hpp"
 #include "PostureGraph.hpp"
+#include "parallel_thread_helper.hpp"
 
 class IErrorTBImpl : public IErrorTB
 {
@@ -269,6 +270,7 @@ IErrorTB* IErrorTB::Factory::CreateX(const CPGTheta& theta, const std::list<std:
 	IKAssert(n_theta == n_theta_0 + n_theta_1);
 	if (CPGTheta::SmallXETB(n_theta_0, n_theta_1))
 	{
+		auto tick_start = ::GetTickCount64();
 		IErrorTB* errTB = new ETBRect(n_theta_0, n_theta_1);
 		auto query = theta.BeginQuery(joints);
 		TransformArchive tm_data_i(query->n_interests);
@@ -283,9 +285,90 @@ IErrorTB* IErrorTB::Factory::CreateX(const CPGTheta& theta, const std::list<std:
 			}
 		}
 		theta.EndQuery(query);
+		auto tick = ::GetTickCount64() - tick_start;
+		float tick_sec = tick / 1000.0f;
+		LOGIKVarErr(LogInfoReal, tick_sec);
 		return errTB;
 	}
-	else
+	else if (CPGTheta::MedianXETB(n_theta_0, n_theta_1))
+	{
+		auto tick_start = ::GetTickCount64();
+
+		class ThreadXUpdator : public CThread_W32
+		{
+		public:
+			ThreadXUpdator()
+				: m_id(0)
+				, m_etb(NULL)
+				, m_thetas(NULL)
+				, m_query(NULL)
+			{
+			}
+			~ThreadXUpdator()
+			{
+				if (m_query)
+					m_theta.EndQuery(m_query);
+				m_query = NULL;
+			}
+			void Initialize_main(int n_threads, int id, ETBRect* etb, CPGTheta* theta, const std::list<std::string>& joints)
+			{
+				m_nthreads = n_threads;
+				m_id = id;
+				m_etb = etb;
+				m_theta = theta;
+				m_query = theta->BeginQuery(joints);
+			}
+			void Kickoff_main()
+			{
+				Execute_main();
+			}
+		private:
+			virtual void Run_worker()
+			{
+				TransformArchive tm_data_i(m_query->n_interests);
+				TransformArchive tm_data_j(m_query->n_interests);
+				int lenTB = m_etb->Length();
+				for (int i_offset = m_id; i_offset < lenTB; i_offset += m_nthreads)
+				{
+					std::pair<int, int> ij_theta = m_etb->Theta_ij(i_offset);
+					auto& i_theta = ij_theta.first;
+					auto& j_theta = ij_theta.second;
+					theta->QueryTheta(m_query, i_theta, tm_data_i);
+					theta->QueryTheta(m_query, j_theta, tm_data_j);
+					errTB->Set(i_theta, j_theta, TransformArchive::Error_q(tm_data_i, tm_data_j));
+				}
+			}
+			int m_nthreads;
+			int m_id;
+			ETBRect* m_etb;
+			const CPGTheta* m_theta;
+			CPGTheta::Query* m_query;
+		};
+
+		ETBRect* errTB = new ETBRect(n_theta_0, n_theta_1);
+		CThreadPool_W32<ThreadXUpdator> pool;
+		int n_threads = CThreadPool_W32<ThreadXUpdator>::N_CPUCors();
+		int i_thread = 0;
+		pool.Initialize_main(n_threads,
+							[&](ThreadXUpdator* thread)
+								{
+									thread->Initialize_main(n_threads
+															i_thread ++,
+															errTB,
+															theta,
+															joints);
+								});
+		auto& threads = pool.WaitForAllReadyThreads_main();
+		for (auto thread : threads)
+			thread->Kickoff_main();
+		pool.WaitForAllReadyThreads_main();
+
+		auto tick = ::GetTickCount64() - tick_start;
+		float tick_sec = tick / 1000.0f;
+		LOGIKVarErr(LogInfoReal, tick_sec);
+		return errTB;
+	}
+	else // big XETB
 	{
 		ETBNull* errTB =  new ETBNull();
 		errTB->AttachThetaRef(theta, joints);
