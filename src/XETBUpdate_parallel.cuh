@@ -1,6 +1,8 @@
 #pragma once
 #include "vector_types.h"
 
+void ComputeErr(const Real4* theta0_q, int n_theta0_q, const Real4* theta1_q, int n_theta1_q, Real* err_out, int64_t n_err, int n_joints);
+
 void UpdateXETB_Parallel_GPU(ETBRect* errTB, const CPGTheta& theta, int n_theta0, int n_theta1, const std::list<std::string>& joints)
 {
 	CPGTheta::Query* query = theta.BeginQuery(joints);
@@ -41,7 +43,10 @@ void UpdateXETB_Parallel_GPU(ETBRect* errTB, const CPGTheta& theta, int n_theta0
 
 	int64_t n_err = errTB->Length();
 	IKAssert(n_err == (int64_t)n_theta0 * (int64_t)n_theta1);
-	// ComputeErr(theta_q[0], n_theta0, theta_q[1], n_theta1, errTB->data(), n_err);
+	ComputeErr(theta_q[0], n_theta0,
+				theta_q[1], n_theta1,
+				errTB->Data(), n_err,
+				query->n_interests);
 
 	delete [] theta_q[0];
 	delete [] theta_q[1];

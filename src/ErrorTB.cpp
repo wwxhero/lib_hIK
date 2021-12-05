@@ -177,7 +177,7 @@ public:
 		return std::make_pair(i_row, i_col);
 	}
 
-	Real* data()
+	Real* Data()
 	{
 		return m_elements;
 	}

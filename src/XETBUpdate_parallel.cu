@@ -16,10 +16,11 @@
  * vector addition. It is the same as the sample illustrating Chapter 2
  * of the programming guide with some additions like error checking.
  */
-
+#include "pch.h"
 #include <stdio.h>
 #include <windows.h>
 #include <iostream>
+#include <algorithm>
 
 // For the CUDA runtime routines (prefixed with "cuda_")
 #include <cuda_runtime.h>
@@ -40,6 +41,28 @@ vectorAdd(const float *A, const float *B, float *C, int numElements)
     if (i < numElements)
     {
         C[i] = A[i] + B[i];
+    }
+}
+
+void ComputeErr(const Real4* theta0_q, int n_theta0, const Real4* theta1_q, int n_theta1, Real* err_out, int64_t n_err, int n_joints)
+{
+    for (int i_err = 0; i_err < n_err; i_err ++)
+    {
+        int i_theta0 = i_err / n_theta1;
+        int i_theta1 = i_err % n_theta1;
+        Real sigma_k = 0;
+        for (int i_joint = 0; i_joint < n_joints; i_joint ++)
+        {
+            auto q_0_i = theta0_q[i_theta0 * n_joints + i_joint];
+            auto q_1_i = theta1_q[i_theta1 * n_joints + i_joint];
+            auto err_k_ij = fabs( q_0_i.w * q_1_i.w
+                                + q_0_i.x * q_1_i.x
+                                + q_0_i.y * q_1_i.y
+                                + q_0_i.z * q_1_i.z);
+            sigma_k += std::min((Real)1.0, err_k_ij);
+        }
+        Real err_i = (Real)n_joints - sigma_k;
+        err_out[i_err] = err_i;
     }
 }
 
