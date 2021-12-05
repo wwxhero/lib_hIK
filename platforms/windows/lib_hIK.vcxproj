@@ -118,6 +118,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
     </Link>
+    <CudaCompile>
+      <Include>$(CUDA_SAMPLE_COMMON_INC)</Include>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugGame_Editor|x64'">
     <ClCompile>
@@ -139,7 +142,7 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Include>./;../../common/inc</Include>
+      <Include>$(CUDA_SAMPLE_COMMON_INC)</Include>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">
@@ -167,7 +170,7 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Include>./;../../common/inc</Include>
+      <Include>$(CUDA_SAMPLE_COMMON_INC)</Include>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
@@ -189,6 +192,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
     </Link>
+    <CudaCompile>
+      <Include>$(CUDA_SAMPLE_COMMON_INC)</Include>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Development_Editor|x64'">
     <ClCompile>
@@ -209,6 +215,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
     </Link>
+    <CudaCompile>
+      <Include>$(CUDA_SAMPLE_COMMON_INC)</Include>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\articulated_body.h" />
