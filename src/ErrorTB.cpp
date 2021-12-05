@@ -92,7 +92,7 @@ public:
 		, m_nCols(n_cols)
 		, m_nTheta0(m_nRows)
 		, m_nTheta1(m_nCols)
-		, m_nLength(n_rows * n_cols)
+		, m_nLength((int64_t)n_rows * (int64_t)n_cols)
 	{
 		m_elements = new Real[m_nLength];
 	}
@@ -164,7 +164,7 @@ public:
 		return m_nRows + m_nCols;
 	}
 
-	int Length() const
+	int64_t Length() const
 	{
 		return m_nLength;
 	}
@@ -177,11 +177,16 @@ public:
 		return std::make_pair(i_row, i_col);
 	}
 
+	Real* data()
+	{
+		return m_elements;
+	}
+
 
 private:
 	int m_nRows;
 	int m_nCols;
-	int m_nLength;
+	int64_t m_nLength;
 	int &m_nTheta0;
 	int &m_nTheta1;
 	Real* m_elements;
@@ -314,7 +319,7 @@ IErrorTB* IErrorTB::Factory::CreateX(const CPGTheta& theta, const std::list<std:
 		ETBRect* errTB = new ETBRect(n_theta_0, n_theta_1);
 #ifdef _GPU_PARALLEL
 		START_ONCEPROFILER("GPU parallel ETB generations")
-		UpdateXETB_Parallel_GPU(errTB, theta, joints);
+		UpdateXETB_Parallel_GPU(errTB, theta, n_theta_0, n_theta_1, joints);
 		STOP_ONCEPROFILER		
 #else // CPU PARALLEL
 		START_ONCEPROFILER("CPU parallel ETB generations")

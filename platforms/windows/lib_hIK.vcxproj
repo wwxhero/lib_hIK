@@ -131,7 +131,7 @@
       <PreprocessorDefinitions>_DEBUG;LIB_HIK_EXPORTS;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;WIN32;TIXML_USE_TICPP;TIXML_USE_STL;HARDASSERTION;SMOOTH_LOGGING;_GPU_PARALLEL;LEAK_CHECK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -156,7 +156,7 @@
       <PreprocessorDefinitions>NDEBUG;LIB_HIK_EXPORTS;_CRT_SECURE_NO_WARNINGS;_WINDOWS;_USRDLL;_USE_MATH_DEFINES;WIN32;TIXML_USE_TICPP;TIXML_USE_STL;SMOOTH_LOGGING;_GPU_PARALLEL;PROFILE_PG_GEN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(EIGEN);$(LIB_TICPP_INC);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
