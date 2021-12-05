@@ -111,7 +111,9 @@
     <ClInclude Include="..\..\src\parallel_thread_helper.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\XETBUpdate.cuh" />
+    <ClInclude Include="..\..\src\XETBUpdate_parallel.cuh">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -200,6 +202,8 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="..\..\src\XETBUpdate.cu" />
+    <CudaCompile Include="..\..\src\XETBUpdate_parallel.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>
