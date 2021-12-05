@@ -66,6 +66,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.5.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -280,6 +281,7 @@
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\..\..\boost.1.77.0.0\build\boost.targets" Condition="Exists('..\..\..\boost.1.77.0.0\build\boost.targets')" />
     <Import Project="..\..\..\boost_serialization-vc141.1.77.0.0\build\boost_serialization-vc141.targets" Condition="Exists('..\..\..\boost_serialization-vc141.1.77.0.0\build\boost_serialization-vc141.targets')" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.5.targets" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
