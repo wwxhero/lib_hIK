@@ -134,9 +134,13 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(LIB_TICPP_BIN)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ticppd.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(LIB_TICPP_BIN);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cudart_static.lib;ticppd.lib</AdditionalDependencies>
     </Link>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <Include>./;../../common/inc</Include>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">
     <ClCompile>
@@ -158,9 +162,13 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(LIB_TICPP_BIN);$(LIB_OPENCV_BIN)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ticpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(LIB_TICPP_BIN);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cudart_static.lib;ticpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <Include>./;../../common/inc</Include>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
     <ClCompile>
@@ -235,6 +243,7 @@
     <ClInclude Include="..\..\src\PostureGraph_helper.hpp" />
     <ClInclude Include="..\..\src\Transform.hpp" />
     <ClInclude Include="..\..\src\treebase.hpp" />
+    <ClInclude Include="..\..\src\XETBUpdate.cuh" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\ArtiBody.cpp" />
@@ -276,6 +285,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="..\..\src\XETBUpdate.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
