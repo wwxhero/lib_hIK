@@ -88,7 +88,7 @@ inline Real Error_q(const Eigen::Quaternionr& q_this, const Eigen::Quaternionr& 
 						+ q_this.x() * q_other.x()
 						+ q_this.y() * q_other.y()
 						+ q_this.z() * q_other.z();
-	cos_q_q_prime = std::min(c_err_max, std::max(c_err_min, abs(cos_q_q_prime)));
+	cos_q_q_prime = std::min(c_err_max, abs(cos_q_q_prime));
 	return 1 - cos_q_q_prime;
 }
 

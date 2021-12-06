@@ -72,7 +72,28 @@ void AssertionFail(const char *file, unsigned int line);
 
 #	endif
 
-#	ifdef PROFILE
+#	ifdef PROFILE_PG_GEN
+#		define START_ONCEPROFILER(token) \
+			ULONGLONG ___tick_start = GetTickCount64(); \
+			unsigned int ___line_start = __LINE__; \
+			const char *___token = token;
+
+#		define STOP_ONCEPROFILER \
+			unsigned int ___line_end = __LINE__; \
+			ULONGLONG ___tick = GetTickCount64() - ___tick_start; \
+			LoggerFast_OutFmt("%s, %d:%d, token=, %s, time =, %f sec\n", \
+												file_short(__FILE__), \
+												___line_start, \
+												___line_end, \
+												___token, \
+												(float)___tick/1000.0f);\
+			LOGIKFlush();
+#	else
+#		define START_ONCEPROFILER(token)
+#		define STOP_ONCEPROFILER
+#	endif
+
+#	ifdef PROFILE_RUNTIME
 #		define START_PROFILER(frame_id, token, rounds) \
 			ULONGLONG ___tick_start = GetTickCount64(); \
 			unsigned int ___line_start = __LINE__; \

@@ -9,12 +9,13 @@ public:
 	{
 		etb->n_rows = N_Theta();
 		etb->n_cols = N_Theta();
-		etb->data = (Real*)malloc(etb->n_rows*etb->n_rows * sizeof(Real));
+		etb->data = (Real*)malloc((size_t)etb->n_rows * (size_t)etb->n_cols * sizeof(Real));
 		for (int i_row = 0; i_row < etb->n_rows; i_row++)
 		{
 			for (int i_col = 0; i_col < etb->n_cols; i_col++)
 			{
-				etb->data[i_row*etb->n_cols +i_col] = Get(i_row, i_col);
+				size_t i_offset = (size_t)i_row * (size_t)etb->n_cols + (size_t)i_col;
+				etb->data[i_offset] = Get(i_row, i_col);
 			}
 		}
 	}
@@ -92,8 +93,9 @@ public:
 		, m_nCols(n_cols)
 		, m_nTheta0(m_nRows)
 		, m_nTheta1(m_nCols)
+		, m_nLength((int64_t)n_rows * (int64_t)n_cols)
 	{
-		m_elements = new Real[m_nRows*m_nCols];
+		m_elements = new Real[m_nLength];
 	}
 
 	virtual ~ETBRect()
@@ -103,21 +105,46 @@ public:
 
 	virtual void Set(int i_theta, int j_theta, Real err_ij)
 	{
-		int i_offset = Offset(i_theta, j_theta);
+		int64_t i_offset = Offset(i_theta, j_theta);
 		if (!(i_offset<0))
 			m_elements[i_offset] = err_ij;
 	}
 
 	virtual Real Get(int i_theta, int j_theta) const
 	{
-		int i_offset = Offset(i_theta, j_theta);
+		int64_t i_offset = Offset(i_theta, j_theta);
+		IKAssert(i_offset < m_nLength);
 		if (i_offset < 0)
 			return (Real)N_Theta(); // error max: edges from same theta file are supposed no less than epsilon
 		else
 			return m_elements[i_offset];
 	}
 
-	virtual int Offset(int i_theta, int j_theta) const
+	virtual int N_Theta() const
+	{
+		return m_nRows + m_nCols;
+	}
+
+	int64_t Length() const
+	{
+		return m_nLength;
+	}
+
+	std::pair<int, int> Theta_ij(int64_t i_offset)
+	{
+		int i_col = (int)(i_offset % (int64_t)m_nCols);
+		int i_row = (int)(i_offset / (int64_t)m_nCols);
+		i_col += m_nTheta0;
+		return std::make_pair(i_row, i_col);
+	}
+
+	Real* Data()
+	{
+		return m_elements;
+	}
+
+private:
+	int64_t Offset(int i_theta, int j_theta) const
 	{
 		int nTheta = m_nTheta0 + m_nTheta1;
 
@@ -153,19 +180,15 @@ public:
 				std::swap(i_row, i_col);
 			i_col -= m_nTheta0;
 			IKAssert(i_row < m_nRows && i_col < m_nCols);
-			return i_row * m_nCols + i_col;
+			return (int64_t)i_row * (int64_t)m_nCols + (int64_t)i_col;
 		}
-	}
-
-	virtual int N_Theta() const
-	{
-		return m_nRows + m_nCols;
 	}
 
 
 private:
 	int m_nRows;
 	int m_nCols;
+	int64_t m_nLength;
 	int &m_nTheta0;
 	int &m_nTheta1;
 	Real* m_elements;
@@ -263,12 +286,19 @@ IErrorTB* IErrorTB::Factory::CreateHOMO(const CPGTheta& theta, const std::list<s
 	}
 }
 
+#ifdef _GPU_PARALLEL
+	#include "XETBUpdate_parallel.cuh"
+#else
+	#include "XETBUpdate_parallel.hpp"
+#endif
+
 IErrorTB* IErrorTB::Factory::CreateX(const CPGTheta& theta, const std::list<std::string>& joints, int n_theta_0, int n_theta_1)
 {
 	int n_theta = theta.N_Theta();
 	IKAssert(n_theta == n_theta_0 + n_theta_1);
 	if (CPGTheta::SmallXETB(n_theta_0, n_theta_1))
 	{
+		START_ONCEPROFILER("CPU sequential ETB generations")
 		IErrorTB* errTB = new ETBRect(n_theta_0, n_theta_1);
 		auto query = theta.BeginQuery(joints);
 		TransformArchive tm_data_i(query->n_interests);
@@ -283,9 +313,24 @@ IErrorTB* IErrorTB::Factory::CreateX(const CPGTheta& theta, const std::list<std:
 			}
 		}
 		theta.EndQuery(query);
+		STOP_ONCEPROFILER
 		return errTB;
 	}
-	else
+	else if (CPGTheta::MedianXETB(n_theta_0, n_theta_1))
+	{
+		ETBRect* errTB = new ETBRect(n_theta_0, n_theta_1);
+#ifdef _GPU_PARALLEL
+		START_ONCEPROFILER("GPU parallel ETB generations")
+		UpdateXETB_Parallel_GPU(errTB, theta, n_theta_0, n_theta_1, joints);
+		STOP_ONCEPROFILER		
+#else // CPU PARALLEL
+		START_ONCEPROFILER("CPU parallel ETB generations")
+		UpdateXETB_Parallel_CPU(errTB, theta, joints);
+		STOP_ONCEPROFILER
+#endif
+		return errTB;
+	}
+	else // big XETB
 	{
 		ETBNull* errTB =  new ETBNull();
 		errTB->AttachThetaRef(theta, joints);

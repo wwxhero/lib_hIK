@@ -2,10 +2,12 @@
 #include "PostureGraph.hpp"
 #include "PostureGraph_helper.hpp"
 
-#define MAX_N_THETA_HOMO 102400
+#define MAX_N_THETA_HOMO 51200
 #define MAX_N_THETA_X MAX_N_THETA_HOMO
 
-#define MAX_N_THETA_HOMO_ETB 20480
+#define MED_N_THETA_X_ETB 1024000
+
+#define MAX_N_THETA_HOMO_ETB 40960
 #define MAX_N_THETA_X_ETB ((uint64_t)MAX_N_THETA_HOMO_ETB*(uint64_t)MAX_N_THETA_HOMO_ETB)
 
 CPGThetaRuntime::CPGThetaRuntime(const char* path, CArtiBodyNode* body_ref)
@@ -289,7 +291,14 @@ bool CPGTheta::SmallX(int n_theta_0, int n_theta_1)
 
 bool CPGTheta::SmallXETB(int n_theta_0, int n_theta_1)
 {
-	return ((uint64_t)n_theta_0 * (uint64_t)n_theta_1) < (MAX_N_THETA_X_ETB);
+	return ((uint64_t)n_theta_0 * (uint64_t)n_theta_1) < (MED_N_THETA_X_ETB);
+}
+
+bool CPGTheta::MedianXETB(int n_theta_0, int n_theta_1)
+{
+	uint64_t size = (uint64_t)n_theta_0 * (uint64_t)n_theta_1;
+	return (MED_N_THETA_X_ETB <= size)
+		&& (size < (MAX_N_THETA_X_ETB));
 }
 
 bool CPGTheta::SmallHomo(int n_theta)
@@ -490,13 +499,17 @@ void CPGMatrixGen::Remove(vertex_descriptor v, const IErrorTB* errTB)
 	vertex_descriptor v_star = *it_v_n;
 	for (it_v_n ++; it_v_n != neighbors_v.end(); it_v_n ++)
 	{
-		if (errTB->Get(v, *it_v_n) < errTB->Get(v, v_star))
-			v_star = *it_v_n;
+		auto v_n = *it_v_n;
+		if ( !(graph)[v_n].tag_rm
+			&& errTB->Get(v, v_n) < errTB->Get(v, v_star))
+			v_star = v_n;
 	}
+
 	for (it_v_n = neighbors_v.begin(); it_v_n != neighbors_v.end(); it_v_n ++)
 	{
-		if (*it_v_n != v_star) // avoid self-pointing edge
-			boost::add_edge(v_star, *it_v_n, graph);
+		auto v_n = *it_v_n;
+		if (v_n != v_star)				// avoid self-pointing edge
+			boost::add_edge(v_star, v_n, graph);
 	}
 
 }
@@ -533,8 +546,10 @@ void CPGListGen::Remove(vertex_descriptor v, const IErrorTB* errTB)
 	vertex_descriptor v_star = *it_v_n;
 	for (it_v_n++; it_v_n != neighbors_v.end(); it_v_n++)
 	{
-		if (errTB->Get(v, *it_v_n) < errTB->Get(v, v_star))
-			v_star = *it_v_n;
+		auto v_n = *it_v_n;
+		if ( !(graph)[v_n].tag_rm
+			&& errTB->Get(v, v_n) < errTB->Get(v, v_star))
+			v_star = v_n;
 	}
 
 	auto vertices_range_neighbors_v_star = boost::adjacent_vertices(v_star, graph);
@@ -543,10 +558,12 @@ void CPGListGen::Remove(vertex_descriptor v, const IErrorTB* errTB)
 
 	for (it_v_n = neighbors_v.begin(); it_v_n != neighbors_v.end(); it_v_n++)
 	{
-		bool edge_exists = (neighbors_v_star.end() != neighbors_v_star.find(*it_v_n));
-		if (*it_v_n != v_star
-			&& !edge_exists) // avoid self-pointing edge and duplicated edge
-			boost::add_edge(v_star, *it_v_n, graph);
+		auto v_n = *it_v_n;
+		if (
+			   v_n != v_star 											// avoid self-pointing edge
+			&& (neighbors_v_star.end() == neighbors_v_star.find(v_n)) 	// avoid duplicated edge
+			)
+			boost::add_edge(v_star, v_n, graph);
 	}
 }
 
