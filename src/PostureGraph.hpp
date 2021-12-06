@@ -119,10 +119,10 @@ protected:
 
 public:
 	void Initialize(const CArtiBodyFile& abFile);
-	static bool SmallX(int n_theta_0, int n_theta_1);
+	static bool SmallXPG(int n_theta_0, int n_theta_1);
 	static bool SmallXETB(int n_theta_0, int n_theta_1);
 	static bool MedianXETB(int n_theta_0, int n_theta_1);
-	static bool SmallHomo(int n_theta);
+	static bool SmallHomoPG(int n_theta);
 	static bool SmallHomoETB(int n_theta);
 
 private:
