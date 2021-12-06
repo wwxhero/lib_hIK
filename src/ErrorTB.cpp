@@ -120,6 +120,30 @@ public:
 			return m_elements[i_offset];
 	}
 
+	virtual int N_Theta() const
+	{
+		return m_nRows + m_nCols;
+	}
+
+	int64_t Length() const
+	{
+		return m_nLength;
+	}
+
+	std::pair<int, int> Theta_ij(int64_t i_offset)
+	{
+		int i_col = (int)(i_offset % (int64_t)m_nCols);
+		int i_row = (int)(i_offset / (int64_t)m_nCols);
+		i_col += m_nTheta0;
+		return std::make_pair(i_row, i_col);
+	}
+
+	Real* Data()
+	{
+		return m_elements;
+	}
+
+private:
 	int64_t Offset(int i_theta, int j_theta) const
 	{
 		int nTheta = m_nTheta0 + m_nTheta1;
@@ -158,29 +182,6 @@ public:
 			IKAssert(i_row < m_nRows && i_col < m_nCols);
 			return (int64_t)i_row * (int64_t)m_nCols + (int64_t)i_col;
 		}
-	}
-
-	virtual int N_Theta() const
-	{
-		return m_nRows + m_nCols;
-	}
-
-	int64_t Length() const
-	{
-		return m_nLength;
-	}
-
-	std::pair<int, int> Theta_ij(int64_t i_offset)
-	{
-		int i_col = (int)(i_offset % (int64_t)m_nCols);
-		int i_row = (int)(i_offset / (int64_t)m_nCols);
-		i_col += m_nTheta0;
-		return std::make_pair(i_row, i_col);
-	}
-
-	Real* Data()
-	{
-		return m_elements;
 	}
 
 
