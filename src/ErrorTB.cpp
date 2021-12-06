@@ -9,12 +9,13 @@ public:
 	{
 		etb->n_rows = N_Theta();
 		etb->n_cols = N_Theta();
-		etb->data = (Real*)malloc(etb->n_rows*etb->n_rows * sizeof(Real));
+		etb->data = (Real*)malloc((size_t)etb->n_rows * (size_t)etb->n_cols * sizeof(Real));
 		for (int i_row = 0; i_row < etb->n_rows; i_row++)
 		{
 			for (int i_col = 0; i_col < etb->n_cols; i_col++)
 			{
-				etb->data[i_row*etb->n_cols +i_col] = Get(i_row, i_col);
+				size_t i_offset = (size_t)i_row * (size_t)etb->n_cols + (size_t)i_col;
+				etb->data[i_offset] = Get(i_row, i_col);
 			}
 		}
 	}
@@ -104,14 +105,14 @@ public:
 
 	virtual void Set(int i_theta, int j_theta, Real err_ij)
 	{
-		int i_offset = Offset(i_theta, j_theta);
+		int64_t i_offset = Offset(i_theta, j_theta);
 		if (!(i_offset<0))
 			m_elements[i_offset] = err_ij;
 	}
 
 	virtual Real Get(int i_theta, int j_theta) const
 	{
-		int i_offset = Offset(i_theta, j_theta);
+		int64_t i_offset = Offset(i_theta, j_theta);
 		IKAssert(i_offset < m_nLength);
 		if (i_offset < 0)
 			return (Real)N_Theta(); // error max: edges from same theta file are supposed no less than epsilon
@@ -119,7 +120,7 @@ public:
 			return m_elements[i_offset];
 	}
 
-	virtual int Offset(int i_theta, int j_theta) const
+	int64_t Offset(int i_theta, int j_theta) const
 	{
 		int nTheta = m_nTheta0 + m_nTheta1;
 
@@ -155,7 +156,7 @@ public:
 				std::swap(i_row, i_col);
 			i_col -= m_nTheta0;
 			IKAssert(i_row < m_nRows && i_col < m_nCols);
-			return i_row * m_nCols + i_col;
+			return (int64_t)i_row * (int64_t)m_nCols + (int64_t)i_col;
 		}
 	}
 
@@ -169,10 +170,10 @@ public:
 		return m_nLength;
 	}
 
-	std::pair<int, int> Theta_ij(int i_offset)
+	std::pair<int, int> Theta_ij(int64_t i_offset)
 	{
-		int i_col = i_offset % m_nCols;
-		int i_row = i_offset / m_nCols;
+		int i_col = (int)(i_offset % (int64_t)m_nCols);
+		int i_row = (int)(i_offset / (int64_t)m_nCols);
 		i_col += m_nTheta0;
 		return std::make_pair(i_row, i_col);
 	}

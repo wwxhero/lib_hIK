@@ -34,8 +34,8 @@ void UpdateXETB_Parallel_CPU(ETBRect* errTB, const CPGTheta& theta, const std::l
 			CPGTheta::Query* query = m_theta->BeginQuery(*m_joints);
 			TransformArchive tm_data_i(query->n_interests);
 			TransformArchive tm_data_j(query->n_interests);
-			int lenTB = m_etb->Length();
-			for (int i_offset = m_id; i_offset < lenTB; i_offset += m_nthreads)
+			int64_t lenTB = m_etb->Length();
+			for (int64_t i_offset = m_id; i_offset < lenTB; i_offset += m_nthreads)
 			{
 				std::pair<int, int> ij_theta = m_etb->Theta_ij(i_offset);
 				auto& i_theta = ij_theta.first;
