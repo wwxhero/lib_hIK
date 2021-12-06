@@ -204,14 +204,17 @@ Real TransformArchive::Error_q(const TransformArchive &tms, const TransformArchi
 		return (Real)n_tms;
 	else
 	{
-		Real error_sum = (Real)0;
+		Real sigma_i_tm = (Real)0;
 		for (int i_tm = 0; i_tm < n_tms; i_tm ++)
 		{
 			const _TRANSFORM& tm_i = tms.m_data[i_tm];
 			const _TRANSFORM& tm_prime_i = tms_prime.m_data[i_tm];
-			error_sum += ::Error_q(Eigen::Quaternionr(tm_i.r.w, tm_i.r.x, tm_i.r.y, tm_i.r.z)
-								, Eigen::Quaternionr(tm_prime_i.r.w, tm_prime_i.r.x, tm_prime_i.r.y, tm_prime_i.r.z));
+			sigma_i_tm += std::min((Real)1
+								, fabs(tm_i.r.w * tm_prime_i.r.w
+									 + tm_i.r.x * tm_prime_i.r.x
+									 + tm_i.r.y * tm_prime_i.r.y
+									 + tm_i.r.z * tm_prime_i.r.z));
 		}
-		return error_sum;
+		return (Real)n_tms - sigma_i_tm;
 	}
 }
