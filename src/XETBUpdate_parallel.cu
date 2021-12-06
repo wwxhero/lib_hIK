@@ -10,11 +10,8 @@
  */
 
 /**
- * Vector addition: C = A + B.
+ * It computes the error of quaternions of the two postures, equivalent to TransformArchive::Error_q
  *
- * This sample is a very basic sample that implements element by element
- * vector addition. It is the same as the sample illustrating Chapter 2
- * of the programming guide with some additions like error checking.
  */
 #include "pch.h"
 #include <algorithm>
@@ -38,7 +35,7 @@ ComputeErr_GPU(const Real4* theta0_q, int n_theta0, const Real4* theta1_q, int n
 	{
 		int i_theta0 = i_err / n_theta1;
 		int i_theta1 = i_err % n_theta1;
-		Real sigma_k = 0;
+		Real sigma_i_joint = 0;
 		for (int i_joint = 0; i_joint < n_joints; i_joint ++)
 		{
 			auto q_0_i = theta0_q[i_theta0 * n_joints + i_joint];
@@ -47,9 +44,9 @@ ComputeErr_GPU(const Real4* theta0_q, int n_theta0, const Real4* theta1_q, int n
 								+ q_0_i.x * q_1_i.x
 								+ q_0_i.y * q_1_i.y
 								+ q_0_i.z * q_1_i.z);
-			sigma_k += min((Real)1.0, err_k_ij);
+			sigma_i_joint += min((Real)1.0, err_k_ij);
 		}
-		Real err_i = (Real)n_joints - sigma_k;
+		Real err_i = (Real)n_joints - sigma_i_joint;
 		err_out[i_err] = err_i;
 	}
 }
@@ -65,51 +62,34 @@ void ComputeErr(const Real4* theta0_q, int n_theta0, const Real4* theta1_q, int 
 	Real4* theta1_q_dev = NULL;
 	Real* err_out_dev = NULL;
 	cudaError_t err = cudaSuccess;
-	if (cudaSuccess != (err = cudaMalloc((void **)&theta0_q_dev, size_theta0))
-	 || cudaSuccess != (err = cudaMalloc((void **)&theta1_q_dev, size_theta1))
-	 || cudaSuccess != (err = cudaMalloc((void **)&err_out_dev, size_err)))
-	{
-		const char* errInfo = cudaGetErrorString(err);
-		LOGIKVarErr(LogInfoCharPtr, errInfo);
-		if (theta0_q_dev)
-			cudaFree(theta0_q_dev);
-		if (theta1_q_dev)
-			cudaFree(theta1_q_dev);
-		if (err_out_dev)
-			cudaFree(err_out_dev);
-		return;
+
+#define RETURN_IF_F(condition)\
+	if (condition)\
+	{\
+		const char* errInfo = cudaGetErrorString(err);\
+		LOGIKVarErr(LogInfoCharPtr, errInfo);\
+		if (theta0_q_dev)\
+			cudaFree(theta0_q_dev);\
+		if (theta1_q_dev)\
+			cudaFree(theta1_q_dev);\
+		if (err_out_dev)\
+			cudaFree(err_out_dev);\
+		return;\
 	}
+
+	RETURN_IF_F(cudaSuccess != (err = cudaMalloc((void **)&theta0_q_dev, size_theta0))
+	 			|| cudaSuccess != (err = cudaMalloc((void **)&theta1_q_dev, size_theta1))
+	 			|| cudaSuccess != (err = cudaMalloc((void **)&err_out_dev, size_err)));
 	
-	if (cudaSuccess != (err = cudaMemcpy(theta0_q_dev, theta0_q, size_theta0, cudaMemcpyHostToDevice))
-	 || cudaSuccess != (err = cudaMemcpy(theta1_q_dev, theta1_q, size_theta1, cudaMemcpyHostToDevice)))
-	{
-		const char* errInfo = cudaGetErrorString(err);
-		LOGIKVarErr(LogInfoCharPtr, errInfo);
-		if (theta0_q_dev)
-			cudaFree(theta0_q_dev);
-		if (theta1_q_dev)
-			cudaFree(theta1_q_dev);
-		if (err_out_dev)
-			cudaFree(err_out_dev);		
-		return;
-	}
+	RETURN_IF_F(cudaSuccess != (err = cudaMemcpy(theta0_q_dev, theta0_q, size_theta0, cudaMemcpyHostToDevice))
+	 			|| cudaSuccess != (err = cudaMemcpy(theta1_q_dev, theta1_q, size_theta1, cudaMemcpyHostToDevice)));
+		
 
 	int minGridSize = 0;
 	int blockSize = 0;
-	if (cudaSuccess != (err = cudaOccupancyMaxPotentialBlockSize(&minGridSize
-																, &blockSize
-																, (void*)ComputeErr_GPU)))
-	{
-		const char* errInfo = cudaGetErrorString(err);
-		LOGIKVarErr(LogInfoCharPtr, errInfo);
-		if (theta0_q_dev)
-			cudaFree(theta0_q_dev);
-		if (theta1_q_dev)
-			cudaFree(theta1_q_dev);
-		if (err_out_dev)
-			cudaFree(err_out_dev);		
-		return;
-	}
+	RETURN_IF_F(cudaSuccess != (err = cudaOccupancyMaxPotentialBlockSize(&minGridSize
+																		, &blockSize
+																		, (void*)ComputeErr_GPU)));
 
 	int n_threads = minGridSize * blockSize;
 	// LOGIKVarErr(LogInfoInt, minGridSize);
@@ -120,31 +100,11 @@ void ComputeErr(const Real4* theta0_q, int n_theta0, const Real4* theta1_q, int 
 											 	err_out_dev, n_err,
 											 	n_joints, n_threads);
 	
-	if (cudaSuccess != (err = cudaGetLastError()))
-	{
-		const char* errInfo = cudaGetErrorString(err);
-		LOGIKVarErr(LogInfoCharPtr, errInfo);
-		if (theta0_q_dev)
-			cudaFree(theta0_q_dev);
-		if (theta1_q_dev)
-			cudaFree(theta1_q_dev);
-		if (err_out_dev)
-			cudaFree(err_out_dev);
-		return;		
-	}
+	RETURN_IF_F(cudaSuccess != (err = cudaGetLastError()));
 	
-	if (cudaSuccess != (err = cudaMemcpy(err_out, err_out_dev, size_err, cudaMemcpyDeviceToHost)))
-	{
-		const char* errInfo = cudaGetErrorString(err);
-		LOGIKVarErr(LogInfoCharPtr, errInfo);
-		if (theta0_q_dev)
-			cudaFree(theta0_q_dev);
-		if (theta1_q_dev)
-			cudaFree(theta1_q_dev);
-		if (err_out_dev)
-			cudaFree(err_out_dev);
-		return;
-	}
+	RETURN_IF_F(cudaSuccess != (err = cudaMemcpy(err_out, err_out_dev, size_err, cudaMemcpyDeviceToHost)));
+
+#undef RETURN_IF_F
 
 	if (theta0_q_dev)
 		cudaFree(theta0_q_dev);
