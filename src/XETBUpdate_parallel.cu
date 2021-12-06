@@ -56,7 +56,7 @@ ComputeErr_GPU(const Real4* theta0_q, int n_theta0, const Real4* theta1_q, int n
 
 void ComputeErr(const Real4* theta0_q, int n_theta0, const Real4* theta1_q, int n_theta1, Real* err_out, int64_t n_err, int n_joints)
 {
-#ifdef _GPU_PARALLEL
+#if defined _GPU_PARALLEL
 	size_t size_theta0 = n_theta0 * n_joints * sizeof(Real4);
 	size_t size_theta1 = n_theta1 * n_joints * sizeof(Real4);
 	size_t size_err = n_err * sizeof(Real);
@@ -112,8 +112,8 @@ void ComputeErr(const Real4* theta0_q, int n_theta0, const Real4* theta1_q, int 
 	}
 
 	int n_threads = minGridSize * blockSize;
-	LOGIKVarErr(LogInfoInt, minGridSize);
-	LOGIKVarErr(LogInfoInt, blockSize);
+	// LOGIKVarErr(LogInfoInt, minGridSize);
+	// LOGIKVarErr(LogInfoInt, blockSize);
 
 	ComputeErr_GPU<<<minGridSize, blockSize>>>(theta0_q_dev, n_theta0,
 												theta1_q_dev, n_theta1,
