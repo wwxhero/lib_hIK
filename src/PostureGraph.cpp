@@ -637,6 +637,9 @@ bool CPGRuntime::LoadThetas(const char* filePath, CArtiBodyNode* body_ref)
 	return loaded;
 }
 
+#undef MED_N_THETA_HOMO_ETB
+#undef MED_N_THETA_X_ETB
+
 #undef MAX_N_THETA_HOMO_ETB
 #undef MAX_N_THETA_X_ETB
 

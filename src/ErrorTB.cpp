@@ -266,7 +266,6 @@ void IErrorTB::Free(_ERROR_TB* err_tb)
 }
 
 #include "XETBUpdate_parallel.cuh"
-#include "XETBUpdate_parallel.hpp"
 
 IErrorTB* IErrorTB::Factory::CreateHOMO(const CPGTheta& theta, const std::list<std::string>& joints)
 {
@@ -296,7 +295,7 @@ IErrorTB* IErrorTB::Factory::CreateHOMO(const CPGTheta& theta, const std::list<s
 	{
 		ETBTriL* errTB = new ETBTriL(n_theta);
 		START_ONCEPROFILER("GPU parallel HETB generations")
-		UpdateHETB_Parallel_GPU(errTB, theta, joints);
+		UpdateHETB_Parallel(errTB, theta, joints);
 		STOP_ONCEPROFILER
 		return errTB;
 	}
@@ -335,15 +334,9 @@ IErrorTB* IErrorTB::Factory::CreateX(const CPGTheta& theta, const std::list<std:
 	else if (CPGTheta::MedianXETB(n_theta_0, n_theta_1))
 	{
 		ETBRect* errTB = new ETBRect(n_theta_0, n_theta_1);
-// #ifdef _GPU_PARALLEL
 		START_ONCEPROFILER("GPU parallel XETB generations")
-		UpdateXETB_Parallel_GPU(errTB, theta, n_theta_0, n_theta_1, joints);
+		UpdateXETB_Parallel(errTB, theta, n_theta_0, n_theta_1, joints);
 		STOP_ONCEPROFILER		
-// #else // CPU PARALLEL
-// 		START_ONCEPROFILER("CPU parallel XETB generations")
-// 		UpdateXETB_Parallel_CPU(errTB, theta, joints);
-// 		STOP_ONCEPROFILER
-// #endif
 		return errTB;
 	}
 	else // big XETB
