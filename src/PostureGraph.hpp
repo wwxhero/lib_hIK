@@ -124,6 +124,7 @@ public:
 	static bool MedianXETB(int n_theta_0, int n_theta_1);
 	static bool SmallHomoPG(int n_theta);
 	static bool SmallHomoETB(int n_theta);
+	static bool MedianHomoETB(int n_theta);
 
 private:
 	CArtiBodyNode* m_rootBody;

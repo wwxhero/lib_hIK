@@ -21,13 +21,13 @@ public:
 	}
 };
 
-// a lower triangular matrix stores posture Error(i, j) for i, j in Theta
+// a lower triangular matrix excludes diagnal stores posture Error(i, j) for i, j in Theta
 class ETBTriL : public IErrorTBImpl
 {
 public:
 	ETBTriL(int n_theta)
 		: m_nTheta(n_theta)
-		, m_nEles((n_theta*(n_theta-1)) >> 1)
+		, m_nEles(((int64_t)n_theta*(int64_t)(n_theta-1)) >> 1)
 	{
 		m_elements = (Real*)malloc(m_nEles * sizeof(Real));
 	}
@@ -50,7 +50,7 @@ public:
 
 	virtual Real Get(int i_theta, int j_theta) const
 	{
-		IKAssert(0 != i_theta || 0 != j_theta);
+		// IKAssert(0 != i_theta || 0 != j_theta);
 		if (i_theta == j_theta)
 			return (Real)0;
 		else
@@ -65,6 +65,15 @@ public:
 		return m_nTheta;
 	}
 
+	int64_t Length() const
+	{
+		return m_nEles;
+	}
+
+	Real* Data()
+	{
+		return m_elements;
+	}
 
 private:
 	int Offset(int i_theta, int j_theta) const
@@ -80,7 +89,7 @@ private:
 	}
 private:
 	Real* m_elements;
-	int m_nEles;
+	int64_t m_nEles;
 	int m_nTheta;
 
 };
@@ -256,12 +265,16 @@ void IErrorTB::Free(_ERROR_TB* err_tb)
 	err_tb->n_cols = 0;
 }
 
+#include "XETBUpdate_parallel.cuh"
+#include "XETBUpdate_parallel.hpp"
+
 IErrorTB* IErrorTB::Factory::CreateHOMO(const CPGTheta& theta, const std::list<std::string>& joints)
 {
 	unsigned int n_theta = theta.N_Theta();
 	if (CPGTheta::SmallHomoETB(n_theta))
 	{
 		IErrorTB* errTB = new ETBTriL(n_theta);
+		START_ONCEPROFILER("CPU sequential HETB generations")
 		unsigned int n_theta_m = n_theta - 1;
 		auto query = theta.BeginQuery(joints);
 		TransformArchive tm_data_i(query->n_interests);
@@ -276,6 +289,15 @@ IErrorTB* IErrorTB::Factory::CreateHOMO(const CPGTheta& theta, const std::list<s
 			}
 		}
 		theta.EndQuery(query);
+		STOP_ONCEPROFILER
+		return errTB;
+	}
+	else if(CPGTheta::MedianHomoETB(n_theta))
+	{
+		ETBTriL* errTB = new ETBTriL(n_theta);
+		START_ONCEPROFILER("GPU parallel HETB generations")
+		UpdateHETB_Parallel_GPU(errTB, theta, joints);
+		STOP_ONCEPROFILER
 		return errTB;
 	}
 	else
@@ -286,20 +308,14 @@ IErrorTB* IErrorTB::Factory::CreateHOMO(const CPGTheta& theta, const std::list<s
 	}
 }
 
-#ifdef _GPU_PARALLEL
-	#include "XETBUpdate_parallel.cuh"
-#else
-	#include "XETBUpdate_parallel.hpp"
-#endif
-
 IErrorTB* IErrorTB::Factory::CreateX(const CPGTheta& theta, const std::list<std::string>& joints, int n_theta_0, int n_theta_1)
 {
 	int n_theta = theta.N_Theta();
 	IKAssert(n_theta == n_theta_0 + n_theta_1);
 	if (CPGTheta::SmallXETB(n_theta_0, n_theta_1))
 	{
-		START_ONCEPROFILER("CPU sequential ETB generations")
 		IErrorTB* errTB = new ETBRect(n_theta_0, n_theta_1);
+		START_ONCEPROFILER("CPU sequential XETB generations")
 		auto query = theta.BeginQuery(joints);
 		TransformArchive tm_data_i(query->n_interests);
 		TransformArchive tm_data_j(query->n_interests);
@@ -319,15 +335,15 @@ IErrorTB* IErrorTB::Factory::CreateX(const CPGTheta& theta, const std::list<std:
 	else if (CPGTheta::MedianXETB(n_theta_0, n_theta_1))
 	{
 		ETBRect* errTB = new ETBRect(n_theta_0, n_theta_1);
-#ifdef _GPU_PARALLEL
-		START_ONCEPROFILER("GPU parallel ETB generations")
+// #ifdef _GPU_PARALLEL
+		START_ONCEPROFILER("GPU parallel XETB generations")
 		UpdateXETB_Parallel_GPU(errTB, theta, n_theta_0, n_theta_1, joints);
 		STOP_ONCEPROFILER		
-#else // CPU PARALLEL
-		START_ONCEPROFILER("CPU parallel ETB generations")
-		UpdateXETB_Parallel_CPU(errTB, theta, joints);
-		STOP_ONCEPROFILER
-#endif
+// #else // CPU PARALLEL
+// 		START_ONCEPROFILER("CPU parallel XETB generations")
+// 		UpdateXETB_Parallel_CPU(errTB, theta, joints);
+// 		STOP_ONCEPROFILER
+// #endif
 		return errTB;
 	}
 	else // big XETB

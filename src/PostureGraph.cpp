@@ -2,9 +2,15 @@
 #include "PostureGraph.hpp"
 #include "PostureGraph_helper.hpp"
 
+// [0, MAX_N_THETA_HOMO_PG)	[MAX_N_THETA_HOMO_PG, INFINIT)
+// [0, MAX_N_THETA_X_PG)	[MAX_N_THETA_X_PG, INFINIT)
+//		PG_GEN_AMATRIX			PG_GEN_ALIST
 #define MAX_N_THETA_HOMO_PG 2048
 #define MAX_N_THETA_X_PG MAX_N_THETA_HOMO_PG
 
+// [0, MED_N_THETA_HOMO_ETB)	[MED_N_THETA_HOMO_ETB, MAX_N_THETA_HOMO_ETB)	[MAX_N_THETA_HOMO_ETB, INFINIT)
+// [0, MED_N_THETA_X_ETB)		[MED_N_THETA_X_ETB, MAX_N_THETA_X_ETB)			[MAX_N_THETA_X_ETB, INFINIT)
+//		CPU ETB UPDATE				GPU ETB UPDATE									CPU INSTANCE COMPUTATION (no ETB)
 #define MED_N_THETA_HOMO_ETB 64
 #define MED_N_THETA_X_ETB (MED_N_THETA_HOMO_ETB*MED_N_THETA_HOMO_ETB)
 
@@ -309,7 +315,13 @@ bool CPGTheta::SmallHomoPG(int n_theta)
 
 bool CPGTheta::SmallHomoETB(int n_theta)
 {
-	return n_theta < MAX_N_THETA_HOMO_ETB;
+	return n_theta < MED_N_THETA_HOMO_ETB;
+}
+
+bool CPGTheta::MedianHomoETB(int n_theta)
+{
+	return MED_N_THETA_HOMO_ETB <= n_theta
+		&&  n_theta < MAX_N_THETA_HOMO_ETB;
 }
 
 CPG::CPG(std::size_t n_vs)
