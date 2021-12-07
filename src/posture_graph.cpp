@@ -248,7 +248,7 @@ bool posture_graph_gen(const char* interests_conf_path, const char* path_htr, co
 		}
 
 		CPG* pg = NULL;
-		if (CPGTheta::SmallHomo(*n_theta_raw))
+		if (CPGTheta::SmallHomoPG(*n_theta_raw))
 			pg = generate_pg_homo<CPGMatrixGen, CPGMatrixGenHelper>(theta, interests_conf->Joints, epsErr);
 		else
 			pg = generate_pg_homo<CPGListGen, CPGListGenHelper>(theta, interests_conf->Joints, epsErr);
@@ -312,7 +312,7 @@ HPG posture_graph_merge(HPG hpg_0, HPG hpg_1, const char* interests_conf_path, R
 		}
 
 		CPG* pg = NULL;
-		if (CPGTheta::SmallX(n_theta_0, n_theta_1))
+		if (CPGTheta::SmallXPG(n_theta_0, n_theta_1))
 			pg = generate_pg_cross<CPGMatrixGen, CPGMatrixGenHelper>(pg_0, pg_1, interests_conf->Joints, eps_err);
 		else
 			pg = generate_pg_cross<CPGListGen, CPGListGenHelper>(pg_0, pg_1, interests_conf->Joints, eps_err);

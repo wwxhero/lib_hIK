@@ -2,10 +2,17 @@
 #include "PostureGraph.hpp"
 #include "PostureGraph_helper.hpp"
 
-#define MAX_N_THETA_HOMO 51200
-#define MAX_N_THETA_X MAX_N_THETA_HOMO
+// [0, MAX_N_THETA_HOMO_PG)	[MAX_N_THETA_HOMO_PG, INFINIT)
+// [0, MAX_N_THETA_X_PG)	[MAX_N_THETA_X_PG, INFINIT)
+//		PG_GEN_AMATRIX			PG_GEN_ALIST
+#define MAX_N_THETA_HOMO_PG 51200
+#define MAX_N_THETA_X_PG 12800
 
-#define MED_N_THETA_X_ETB 1024000
+// [0, MED_N_THETA_HOMO_ETB)	[MED_N_THETA_HOMO_ETB, MAX_N_THETA_HOMO_ETB)	[MAX_N_THETA_HOMO_ETB, INFINIT)
+// [0, MED_N_THETA_X_ETB)		[MED_N_THETA_X_ETB, MAX_N_THETA_X_ETB)			[MAX_N_THETA_X_ETB, INFINIT)
+//		CPU ETB UPDATE				GPU ETB UPDATE									CPU INSTANCE COMPUTATION (no ETB)
+#define MED_N_THETA_HOMO_ETB 64
+#define MED_N_THETA_X_ETB (MED_N_THETA_HOMO_ETB*MED_N_THETA_HOMO_ETB)
 
 #define MAX_N_THETA_HOMO_ETB 40960
 #define MAX_N_THETA_X_ETB ((uint64_t)MAX_N_THETA_HOMO_ETB*(uint64_t)MAX_N_THETA_HOMO_ETB)
@@ -284,9 +291,9 @@ void CPGTheta::QueryTheta(CPGTheta::Query* query, int i_theta, TransformArchive&
 	}
 }
 
-bool CPGTheta::SmallX(int n_theta_0, int n_theta_1)
+bool CPGTheta::SmallXPG(int n_theta_0, int n_theta_1)
 {
-	return (n_theta_0 + n_theta_1) < MAX_N_THETA_X;
+	return (n_theta_0 + n_theta_1) < MAX_N_THETA_X_PG;
 }
 
 bool CPGTheta::SmallXETB(int n_theta_0, int n_theta_1)
@@ -301,14 +308,20 @@ bool CPGTheta::MedianXETB(int n_theta_0, int n_theta_1)
 		&& (size < (MAX_N_THETA_X_ETB));
 }
 
-bool CPGTheta::SmallHomo(int n_theta)
+bool CPGTheta::SmallHomoPG(int n_theta)
 {
-	return n_theta < MAX_N_THETA_HOMO;
+	return n_theta < MAX_N_THETA_HOMO_PG;
 }
 
 bool CPGTheta::SmallHomoETB(int n_theta)
 {
-	return n_theta < MAX_N_THETA_HOMO_ETB;
+	return n_theta < MED_N_THETA_HOMO_ETB;
+}
+
+bool CPGTheta::MedianHomoETB(int n_theta)
+{
+	return MED_N_THETA_HOMO_ETB <= n_theta
+		&&  n_theta < MAX_N_THETA_HOMO_ETB;
 }
 
 CPG::CPG(std::size_t n_vs)
@@ -624,8 +637,11 @@ bool CPGRuntime::LoadThetas(const char* filePath, CArtiBodyNode* body_ref)
 	return loaded;
 }
 
+#undef MED_N_THETA_HOMO_ETB
+#undef MED_N_THETA_X_ETB
+
 #undef MAX_N_THETA_HOMO_ETB
 #undef MAX_N_THETA_X_ETB
 
-#undef MAX_N_THETA_HOMO
-#undef MAX_N_THETA_X
+#undef MAX_N_THETA_HOMO_PG
+#undef MAX_N_THETA_X_PG
