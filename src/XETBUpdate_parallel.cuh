@@ -4,7 +4,7 @@
 void ComputeXErr(const Real4* theta0_q, int n_theta0_q, const Real4* theta1_q, int n_theta1_q, Real* err_out, int64_t n_err, int n_joints);
 void ComputeHErr(const Real4* theta, int n_theta, Real* err_out, int64_t n_err, int n_joints);
 
-void UpdateXETB_Parallel_GPU(ETBRect* errTB, const CPGTheta& theta, int n_theta0, int n_theta1, const std::list<std::string>& joints)
+void UpdateXETB_Parallel(ETBRect* errTB, const CPGTheta& theta, int n_theta0, int n_theta1, const std::list<std::string>& joints)
 {
 	CPGTheta::Query* query = theta.BeginQuery(joints);
 
@@ -55,7 +55,7 @@ void UpdateXETB_Parallel_GPU(ETBRect* errTB, const CPGTheta& theta, int n_theta0
 	theta.EndQuery(query);
 }
 
-void UpdateHETB_Parallel_GPU(ETBTriL* errTB, const CPGTheta& theta, const std::list<std::string>& joints)
+void UpdateHETB_Parallel(ETBTriL* errTB, const CPGTheta& theta, const std::list<std::string>& joints)
 {
 	CPGTheta::Query* query = theta.BeginQuery(joints);
 
