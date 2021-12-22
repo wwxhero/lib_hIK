@@ -91,11 +91,11 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugGame_Editor|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(LIB_HIK_BIN)\</OutDir>
+    <OutDir>$(SolutionDir)Binaries\Win64</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(LIB_HIK_BIN)\</OutDir>
+    <OutDir>$(SolutionDir)Binaries\Win64</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
     <LinkIncremental>false</LinkIncremental>
