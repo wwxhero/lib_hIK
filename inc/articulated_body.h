@@ -22,7 +22,7 @@ struct _SCALE
 	Real x, y, z;
 };
 
-struct _ROT
+struct alignas(16) _ROT
 {
 	Real w, x, y, z;
 };
@@ -32,7 +32,7 @@ struct _TRANSLATE
 	Real x, y, z;
 };
 
-struct _TRANSFORM
+struct alignas(16) _TRANSFORM  //ocuppies 40 bytes
 {
 	_SCALE s;
 	_ROT r;
