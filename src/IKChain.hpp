@@ -75,6 +75,18 @@ public:
 			|| (n_dist2root_this == n_dist2root_other && NBodies() < other.NBodies());
 	}
 
+	void Reset()
+	{
+		for (auto ik_node : m_nodes)
+		{
+			ik_node.joint->SetTranslation(Eigen::Vector3r::Zero());
+			ik_node.joint->SetRotation(Eigen::Quaternionr::Identity());
+		}
+		IJoint* eef_j = m_eefSrc->GetJoint();
+		eef_j->SetTranslation(Eigen::Vector3r::Zero());
+		eef_j->SetRotation(Eigen::Quaternionr::Identity());
+	}
+
 public:
 	const Algor c_algor;
 	struct IKNode

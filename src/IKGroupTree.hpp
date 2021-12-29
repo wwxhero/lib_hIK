@@ -35,6 +35,7 @@ public:
 	}
 
 	void IKUpdate();
+	void IKReset();
 
 	void SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
 	void LoadPostureGraph(const char* pgDir);

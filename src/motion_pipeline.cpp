@@ -466,11 +466,29 @@ void ik_update(MotionPipe* mopipe)
 START_PROFILER_AUTOFRAME_IK(100)
 	CIKGroupTree::TraverseDFS(mopipe_internal->root_ik, OnGroupNode, OffGroupNode);
 STOP_PROFILER_IK
-	// CArtiBodyTree::Serialize<false>(root_body, tm_data);
 	const int c_idxSim = 0;
 	motion_sync(mopipe->mo_nodes[c_idxSim]);
 	if (NULL != mopipe_internal->logger)
 		mopipe_internal->logger->LogMotion();
+}
+
+void ik_reset(MotionPipe* mopipe)
+{
+	MotionPipeInternal* mopipe_internal = static_cast<MotionPipeInternal*>(mopipe);
+	IKAssert(MotionPipeInternal::IK == mopipe_internal->type);
+	auto OnGroupNode = [](CIKGroupNode* node_this)
+					{
+						node_this->IKReset();
+					};
+
+	auto OffGroupNode = [&](CIKGroupNode* node_this)
+					{
+					};
+
+	CIKGroupTree::TraverseDFS(mopipe_internal->root_ik, OnGroupNode, OffGroupNode);
+
+	const int c_idxSim = 0;
+	motion_sync(mopipe->mo_nodes[c_idxSim]);
 }
 
 HMOTIONNODE	create_tree_motion_node(HBODY mo_src)

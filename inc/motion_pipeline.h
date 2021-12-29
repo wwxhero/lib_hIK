@@ -34,6 +34,7 @@ HIKLIB(void,			unload_mopipe)(MotionPipe* mopipe);
 HIKLIB(void,			fk_update)(MotionPipe* mopipe, unsigned int i_frame);
 HIKLIB(bool,			ik_task_update)(HBODY body_t, const _TRANSFORM* tm);
 HIKLIB(void,			ik_update)(MotionPipe* mopipe);
+HIKLIB(void,			ik_reset)(MotionPipe* mopipe);
 
 // these APIs are not for game engine usage
 HIKLIB(HMOTIONNODE,		create_tree_motion_node)(HBODY mo_src);

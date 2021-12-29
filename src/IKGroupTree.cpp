@@ -122,8 +122,15 @@ void CIKGroupNode::IKUpdate()
 		m_kChains[i_chain]->EndUpdate();
 	}
 
+	CArtiBodyTree::FK_Update<false>(m_rootBody);
+}
 
-
+void CIKGroupNode::IKReset()
+{
+	if (m_pg)
+		m_pg->SetActivePosture<false>(0, false);
+	for (auto chain_i : m_kChains)
+		chain_i->Reset();
 	CArtiBodyTree::FK_Update<false>(m_rootBody);
 }
 
