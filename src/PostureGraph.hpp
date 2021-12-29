@@ -74,6 +74,8 @@ public:
 		PoseBody<G_SPACE>(i_frame, m_rootBody);
 	}
 
+	void RemoveNoise(const std::list<std::string>& interests);
+
 	template<bool G_SPACE>
 	void ResetPose() const
 	{

@@ -414,3 +414,39 @@ int N_Theta(HPG hpg)
 	CPG* pPG = CAST_2PPG(hpg);
 	return pPG->Theta().N_Theta();
 }
+
+bool RemoveNoise(const char* path_src, const char* path_dst, const char* path_interests_conf)
+{
+	CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(path_interests_conf);
+	if (NULL == interests_conf)
+	{
+		std::stringstream err;
+		err << "loading " << path_interests_conf << " failed";
+		LOGIKVarErr(LogInfoCharPtr, err.str().c_str());
+		return false;
+	}
+	
+	bool ret = true;
+	try
+	{
+		CPGTheta bvh_src(path_src);
+		bvh_src.RemoveNoise(interests_conf->Joints);
+		int n_frames = bvh_src.N_Theta();
+		CArtiBodyRef2File bvh_reset(bvh_src.GetBody(), n_frames);
+		for (int i_frame = 0; i_frame < n_frames; i_frame ++)
+		{
+			bvh_src.PoseBody<false>(i_frame);
+			bvh_reset.UpdateMotion(i_frame);
+		}
+		bvh_reset.WriteBvhFile(path_dst);
+	}
+	catch(std::string &strInfo)
+	{
+		auto err = strInfo.c_str();
+		LOGIKVarErr(LogInfoCharPtr, err);
+		ret = false;
+	}
+
+	CONF::CInterestsConf::UnLoad(interests_conf);
+	return true;
+}

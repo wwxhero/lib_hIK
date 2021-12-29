@@ -257,6 +257,40 @@ bool CPGTheta::Merge(const CPGTheta& theta_other)
 	return body_eq;
 }
 
+void CPGTheta::RemoveNoise(const std::list<std::string>& interests)
+{
+	IKAssert(m_motions.size() > 0);
+	const TransformArchive& tma = m_motions[0];
+	std::vector<bool> is_tm_an_interest(tma.Size(), false);
+	std::set<std::string> set_interests(interests.begin(), interests.end());
+	int n_bodies = 0;
+	auto onEnterBody = [  &is_tm_an_interest
+						, &set_interests = std::as_const(set_interests)
+						, &n_bodies] (CArtiBodyNode* body)
+		{
+			std::string name = body->GetName_c();
+			is_tm_an_interest[n_bodies++] = (set_interests.find(name) != set_interests.end());
+		};
+	auto onLeaveBody = [](CArtiBodyNode* body)
+		{
+		};
+	CArtiBodyTree::TraverseDFS(m_rootBody, onEnterBody, onLeaveBody);
+
+	for (TransformArchive& tma_j : m_motions)
+	{
+		for (int i_body = 0; i_body < n_bodies; i_body ++)
+		{
+			if (!is_tm_an_interest[i_body]) //the corresponding transform is a noise
+			{
+				_TRANSFORM& tm_ji = tma_j[i_body];
+				tm_ji.r = {1, 0, 0, 0};
+				tm_ji.tt = { 0, 0, 0 };
+				IKAssert(NoScale(tm_ji));
+			}
+		}
+	}
+}
+
 CPGTheta::Query* CPGTheta::BeginQuery(const std::list<std::string>& joints) const
 {
 	CPGTheta::Query* query = new CPGTheta::Query;
