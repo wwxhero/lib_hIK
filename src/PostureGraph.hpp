@@ -393,7 +393,7 @@ public:
 		} theta_err_kp = {boost::num_vertices(graph), REAL_MAX};
 		int n_min = 0;
 
-		const int N_CANDIDATES = 20;
+		const int N_CANDIDATES = 5;
 		bool descend_local_min = true;
 		while (!err_known.empty()
 			&& descend_local_min)

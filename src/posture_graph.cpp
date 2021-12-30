@@ -415,7 +415,7 @@ int N_Theta(HPG hpg)
 	return pPG->Theta().N_Theta();
 }
 
-bool RemoveNoise(const char* path_src, const char* path_dst, const char* path_interests_conf)
+bool remove_theta_noise(const char* path_src, const char* path_dst, const char* path_interests_conf)
 {
 	CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(path_interests_conf);
 	if (NULL == interests_conf)
