@@ -450,3 +450,78 @@ bool remove_theta_noise(const char* path_src, const char* path_dst, const char* 
 	CONF::CInterestsConf::UnLoad(interests_conf);
 	return true;
 }
+
+bool extract_joint_rotation(const char* path_interests_conf, const char* path_src, const char* path_dst_rot, const char* path_dst_lim)
+{
+	CONF::CInterestsConf* interests_conf = CONF::CInterestsConf::Load(path_interests_conf);
+	if (NULL == interests_conf)
+	{
+		std::stringstream err;
+		err << "loading " << path_interests_conf << " failed";
+		LOGIKVarErr(LogInfoCharPtr, err.str().c_str());
+		return false;
+	}
+
+	bool ret = true;
+	try
+	{
+		std::ofstream ofs(path_dst_rot);
+		CPGTheta bvh_src(path_src);
+		auto* q = bvh_src.BeginQuery(interests_conf->Joints);
+		IKAssert(NULL != q);
+		const char* header_rots[] = {"_w", "_x", "_y", "_z"};
+		int n_joints = 0;
+		for (auto it_j_interests = q->interests.begin()
+			; it_j_interests != q->interests.end()
+			; it_j_interests ++)
+		{
+			auto body_i = *it_j_interests;
+
+			for (int i_rot = 0
+				; i_rot < sizeof(header_rots)/sizeof(const char*)
+				; i_rot ++)
+			{
+				ofs << body_i->GetName_c() << header_rots[i_rot] << ", ";
+			}
+			n_joints ++;
+		}
+		ofs << std::endl;
+
+		int n_theta = bvh_src.N_Theta();
+		TransformArchive ar(n_joints);
+		for (int i_theta = 0; i_theta < n_theta; i_theta ++)
+		{
+			bvh_src.QueryTheta(q, i_theta, ar);
+			for (int i_joint = 0; i_joint < n_joints; i_joint ++)
+			{
+				auto tm_i = ar[i_joint];
+				ofs << tm_i.r.w << ", "
+					<< tm_i.r.x << ", "
+					<< tm_i.r.y << ", "
+					<< tm_i.r.z << ", ";
+			}
+			ofs << std::endl;
+		}
+
+		bvh_src.EndQuery(q);
+
+		// int n_frames = bvh_src.N_Theta();
+		// CArtiBodyRef2File bvh_reset(bvh_src.GetBody(), n_frames);
+		// for (int i_frame = 0; i_frame < n_frames; i_frame ++)
+		// {
+		// 	bvh_src.PoseBody<false>(i_frame);
+		// 	bvh_reset.UpdateMotion(i_frame);
+		// }
+		// bvh_reset.WriteBvhFile(path_dst);
+	}
+	catch(std::string &strInfo)
+	{
+		auto err = strInfo.c_str();
+		LOGIKVarErr(LogInfoCharPtr, err);
+		ret = false;
+	}
+
+	CONF::CInterestsConf::UnLoad(interests_conf);
+	return true;
+
+}

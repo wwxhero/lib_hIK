@@ -297,14 +297,14 @@ protected:
 				norm = minabsdelta;
 		}
 
-		if (locked == false)
-		{
-			// no locking done, last inner iteration, apply the angles
-			for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
-			{
-				(*seg)->UnLock();
-			}
-		}
+		//if (!locked)
+		//{
+		//	// no locking done, last inner iteration, apply the angles
+		//	for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
+		//	{
+		//		(*seg)->UnLock();
+		//	}
+		//}
 
 		// signal if another inner iteration is needed
 		return locked;
