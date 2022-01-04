@@ -148,6 +148,8 @@ public:
 	virtual void UnLock();
 	virtual void Lock(int dofId, IK_QJacobian &jacobian, Eigen::Vector3r &delta);
 protected:
+	//true: clamp happens
+	bool ClampST(Eigen::Vector3r& delta, bool clamp[3], Eigen::Quaternionr& ori);
 	Real m_weight[3];
 	bool m_locked[3];
 };

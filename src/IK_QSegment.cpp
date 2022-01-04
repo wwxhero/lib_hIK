@@ -91,6 +91,11 @@ void IK_QSegmentSO3::Lock(int dof_l, IK_QJacobian &jacobian, Eigen::Vector3r &de
 	jacobian.Lock(m_DoF_id + dof_l, delta[dof_l]);
 }
 
+bool IK_QSegmentSO3::ClampST(Eigen::Vector3r& delta, bool clamp[3], Eigen::Quaternionr& rotq)
+{
+	return false;
+}
+
 IK_QIxyzSegment::IK_QIxyzSegment(const Real weight[3])
 	: IK_QSegmentSO3(weight)
 {
@@ -122,11 +127,13 @@ bool IK_QIxyzSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r 
 		Eigen::AngleAxisr ry(delta[1], Eigen::Vector3r::UnitY());
 		Eigen::AngleAxisr rx(delta[0], Eigen::Vector3r::UnitX());
 		Eigen::Quaternionr theta_prime = theta*rx*ry*rz;
-
+		bool clamped = ClampST(delta, clamp, theta_prime);
 		m_joints[0]->SetRotation(theta_prime);
+		return clamped;
 	}
+	else
+		return false;
 
-	return false;
 }
 
 IK_QSphericalSegment::IK_QSphericalSegment(const Real weight[3])
@@ -159,10 +166,12 @@ bool IK_QSphericalSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vect
 								, sin_theta_half * delta_u.z());
 		Eigen::Quaternionr theta = m_joints[0]->GetRotation();
 		Eigen::Quaternionr theta_prime = theta * delta_q;
+		bool clamped = ClampST(delta, clamp, theta_prime);
 		m_joints[0]->SetRotation(theta_prime);
+		return clamped;
 	}
-
-	return false;
+	else
+		return false;
 }
 
 #undef STIFFNESS_EPS

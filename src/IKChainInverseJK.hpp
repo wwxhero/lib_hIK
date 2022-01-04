@@ -269,6 +269,7 @@ protected:
 		bool locked_dofs[6] = { false };
 		for (auto qseg : m_segments)
 		{
+			delta.x() = 0; delta.y() = 0; delta.z() = 0;
 			if (qseg->UpdateAngle(m_jacobian, delta, clamp))
 			{
 				int n_dofs = qseg->Locked(locked_dofs);
