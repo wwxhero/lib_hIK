@@ -471,19 +471,26 @@ bool extract_joint_rotation(const char* path_interests_conf, const char* path_sr
 		IKAssert(NULL != q);
 		const char* header_rots[] = {"_w", "_x", "_y", "_z"};
 		int n_joints = 0;
-		for (auto it_j_interests = q->interests.begin()
-			; it_j_interests != q->interests.end()
-			; it_j_interests ++)
+		auto it_j_interests = q->interests.begin();
+		if (it_j_interests != q->interests.end())
 		{
 			auto body_i = *it_j_interests;
+			ofs <<		   body_i->GetName_c() << header_rots[0]
+				<< ", " << body_i->GetName_c() << header_rots[1]
+				<< ", " << body_i->GetName_c() << header_rots[2]
+				<< ", " << body_i->GetName_c() << header_rots[3];
+			it_j_interests++; n_joints++;
+		}
+		for (
+			; it_j_interests != q->interests.end()
+			; it_j_interests ++, n_joints++)
+		{
+			auto body_i = *it_j_interests;
+			ofs << ", " << body_i->GetName_c() << header_rots[0]
+				<< ", " << body_i->GetName_c() << header_rots[1]
+				<< ", " << body_i->GetName_c() << header_rots[2]
+				<< ", " << body_i->GetName_c() << header_rots[3];
 
-			for (int i_rot = 0
-				; i_rot < sizeof(header_rots)/sizeof(const char*)
-				; i_rot ++)
-			{
-				ofs << body_i->GetName_c() << header_rots[i_rot] << ", ";
-			}
-			n_joints ++;
 		}
 		ofs << std::endl;
 
@@ -492,13 +499,23 @@ bool extract_joint_rotation(const char* path_interests_conf, const char* path_sr
 		for (int i_theta = 0; i_theta < n_theta; i_theta ++)
 		{
 			bvh_src.QueryTheta(q, i_theta, ar);
-			for (int i_joint = 0; i_joint < n_joints; i_joint ++)
+			int i_joint = 0;
+			if (i_joint < n_joints)
 			{
 				auto tm_i = ar[i_joint];
-				ofs << tm_i.r.w << ", "
-					<< tm_i.r.x << ", "
-					<< tm_i.r.y << ", "
-					<< tm_i.r.z << ", ";
+				ofs << 		   tm_i.r.w
+					<< ", " << tm_i.r.x
+					<< ", " << tm_i.r.y
+					<< ", " << tm_i.r.z;
+				i_joint ++;
+			}
+			for (; i_joint < n_joints; i_joint ++)
+			{
+				auto tm_i = ar[i_joint];
+				ofs << ", " << tm_i.r.w
+					<< ", " << tm_i.r.x
+					<< ", " << tm_i.r.y
+					<< ", " << tm_i.r.z;
 			}
 			ofs << std::endl;
 		}
