@@ -137,10 +137,10 @@ public:
 	const int c_idxTo;
 };
 
-class IK_QSegmentDOF3 : public IK_QSegment
+class IK_QSegmentSO3 : public IK_QSegment
 {
 public:
-	IK_QSegmentDOF3(const Real weight[3]);
+	IK_QSegmentSO3(const Real weight[3]);
 	virtual void SetWeight(int dof_l, Real w);
 	virtual int Weight(Real w[6]) const;
 	virtual int Axis(Eigen::Vector3r axis[6]) const;
@@ -152,14 +152,14 @@ protected:
 	bool m_locked[3];
 };
 
-class IK_QIxyzSegment : public IK_QSegmentDOF3
+class IK_QIxyzSegment : public IK_QSegmentSO3
 {
 public:
 	IK_QIxyzSegment(const Real weight[3]);
 	virtual bool UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp);
 };
 
-class IK_QSphericalSegment : public IK_QSegmentDOF3
+class IK_QSphericalSegment : public IK_QSegmentSO3
 {
 public:
 	IK_QSphericalSegment(const Real weight[3]);

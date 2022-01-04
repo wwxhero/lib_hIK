@@ -175,28 +175,33 @@ public:
 
 			Real norm = 0.0;
 
-			do
+			// invert jacobian
+			try
 			{
-				// invert jacobian
-				try
-				{
-					m_jacobian.Invert();
-					if (m_secondary_enabled)
-						m_jacobian.SubTask(m_jacobian_sub);
-				}
-				catch (...)
-				{
-					const char* err = "IK Exception\n";
-					LOGIKVarErr(LogInfoCharPtr, err);
-					return false;
-				}
-				// update angles and check limits
-			} while (UpdateAngles(norm));
+				m_jacobian.Invert();
+				if (m_secondary_enabled)
+					m_jacobian.SubTask(m_jacobian_sub);
+			}
+			catch (...)
+			{
+				const char* err = "IK Exception\n";
+				LOGIKVarErr(LogInfoCharPtr, err);
+				return false;
+			}
+			// update angles and check limits
+			UpdateAngles(norm);
+			CArtiBodyTree::FK_Update<true>(m_rootG);
 
-			// unlock segments again after locking in clamping loop
-			std::vector<IK_QSegment*>::iterator seg;
-			for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
-				(*seg)->UnLock();
+			bool all_locked = true;
+			bool locked_dofs[6] = { false };
+			for (auto it_seg = m_segments.begin()
+				; all_locked && it_seg != m_segments.end()
+				; it_seg ++)
+			{
+				int n_dofs = (*it_seg)->Locked(locked_dofs);
+				for (int i_dof = 0; all_locked && i_dof < n_dofs; i_dof ++)
+					all_locked = locked_dofs[i_dof];
+			}
 
 			// compute angle update norm
 			Real maxnorm = m_jacobian.AngleUpdateNorm();
@@ -204,17 +209,19 @@ public:
 				norm = maxnorm;
 
 			// check for convergence
-			CArtiBodyTree::FK_Update<true>(m_rootG);
 			err = Error();
 			LOGIKVar(LogInfoReal, err);
 
-			updating = (norm > 1e-3 || i_iter < 10);
+			updating = ((norm > 1e-3 || i_iter < 10) && !all_locked);
 			solved = true;
 			for (task = m_tasksReg.begin()
 				; task != m_tasksReg.end() && solved
 				; task++)
 				solved = (*task)->Completed();
 		}
+
+		for (auto seg : m_segments)
+			seg->UnLock();
 
 		auto it_eef_seg = m_segments.end();
 		it_eef_seg --;
@@ -244,8 +251,8 @@ public:
 	}
 
 protected:
-	// true: exists a segment that is locked.
-	// false: no segment is locked.
+	// true: lock a segment or segments.
+	// false: lock no segment.
 	bool UpdateAngles(Real &norm)
 	{
 		// assing each segment a unique id for the jacobian
