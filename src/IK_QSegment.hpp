@@ -60,7 +60,7 @@ public:
 public:
 	IK_QSegment(Type type, int n_dof);
 	virtual ~IK_QSegment();
-	bool Initialize(CArtiBodyNode* from, CArtiBodyNode* to);
+	virtual bool Initialize(CArtiBodyNode* from, CArtiBodyNode* to);
 
 	const char* GetName_c(int side = 0) const
 	{
@@ -157,6 +157,7 @@ class IK_QSegmentSO3 : public IK_QSegment
 {
 public:
 	IK_QSegmentSO3();
+	virtual bool Initialize(CArtiBodyNode* from, CArtiBodyNode* to) override;
 	virtual void SetWeight(int dof_l, Real w);
 	virtual int Weight(Real w[6]) const;
 	virtual void SetLimit(DOFLim dof_l, const Real lims[2]);

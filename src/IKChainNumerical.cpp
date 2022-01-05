@@ -74,13 +74,13 @@ bool CIKChainNumerical::Init(const CArtiBodyNode* eef, int len, const std::vecto
 				break;
 		}
 		IKAssert(NULL != seg);
-		if (seg->Initialize(seg_from[i_node], seg_to[i_node]))
-			m_segments[n_segs ++] = seg;
 		for (int i_dof = 0; i_dof < n_dofs; i_dof ++)
 		{
 			seg->SetWeight(i_dof, (*p_dex)[i_dof]);
 			seg->SetLimit((IK_QSegment::DOFLim)i_dof, (*p_lim)[i_dof]);
 		}
+		if (seg->Initialize(seg_from[i_node], seg_to[i_node]))
+			m_segments[n_segs ++] = seg;
 	}
 	m_segments.resize(n_segs);
 	return n_segs > 0;

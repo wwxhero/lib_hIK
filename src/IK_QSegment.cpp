@@ -63,11 +63,19 @@ IK_QSegmentSO3::IK_QSegmentSO3()
 	, m_limited {false, false, false}
 	, m_limRange {0}
 {
+
+}
+
+bool IK_QSegmentSO3::Initialize(CArtiBodyNode* from, CArtiBodyNode* to)
+{
+	if (!IK_QSegment::Initialize(from, to))
+		return false;
 	const Real b = 1 - STIFFNESS_EPS;
 	const Real k = 2 * STIFFNESS_EPS - 1;
 	const Real one_third = (Real)1/(Real)3;
 	Real dex = one_third * (m_weight[0] + m_weight[1] + m_weight[2]); // sigma(w) / 3
 	m_stiffness = dex * k + b;
+	return true;
 }
 
 int IK_QSegmentSO3::Weight(Real w[6]) const
