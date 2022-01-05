@@ -61,6 +61,7 @@ IK_QSegmentSO3::IK_QSegmentSO3()
 	, m_weight{1, 1, 1}
 	, m_locked {false, false, false}
 	, m_limited {false, false, false}
+	, m_lims {0}
 {
 	const Real b = 1 - STIFFNESS_EPS;
 	const Real k = 2 * STIFFNESS_EPS - 1;
@@ -84,9 +85,8 @@ void IK_QSegmentSO3::SetWeight(int dof_l, Real w)
 void IK_QSegmentSO3::SetLimit(DOFLim dof_l, const Real lims[2])
 {
 	IKAssert(-1 < dof_l && dof_l < 3);
-	LIM* dofLims[] = { &m_limTheta, &m_limTau, &m_limPhi };
-	dofLims[dof_l]->first = lims[0];
-	dofLims[dof_l]->second = lims[1];
+	m_lims[dof_l][0] = lims[0];
+	m_lims[dof_l][1] = lims[1];
 
 	const Real validRange[3][2] = {
 		{IK_QSegment::MIN_THETA, IK_QSegment::MAX_THETA},
@@ -129,14 +129,14 @@ bool IK_QSegmentSO3::ClampST(Eigen::Vector3r& delta, bool clamp[3], Eigen::Quate
 {
 	LOGIKVarErr(LogInfoCharPtr, m_joints[c_idxFrom]->GetName_c());
 	LOGIKVarErr(LogInfoBool, m_limited[R_theta]);
-	LOGIKVarErr(LogInfoReal, m_limTheta.first);
-	LOGIKVarErr(LogInfoReal, m_limTheta.second);
+	LOGIKVarErr(LogInfoReal, m_lims[R_theta][0]);
+	LOGIKVarErr(LogInfoReal, m_lims[R_theta][1]);
 	LOGIKVarErr(LogInfoBool, m_limited[R_tau]);
-	LOGIKVarErr(LogInfoReal, m_limTau.first);
-	LOGIKVarErr(LogInfoReal, m_limTau.second);
+	LOGIKVarErr(LogInfoReal, m_lims[R_tau][0]);
+	LOGIKVarErr(LogInfoReal, m_lims[R_tau][1]);
 	LOGIKVarErr(LogInfoBool, m_limited[R_phi]);
-	LOGIKVarErr(LogInfoReal, m_limPhi.first);
-	LOGIKVarErr(LogInfoReal, m_limPhi.second);
+	LOGIKVarErr(LogInfoReal, m_lims[R_phi][0]);
+	LOGIKVarErr(LogInfoReal, m_lims[R_phi][1]);
 	return false;
 }
 

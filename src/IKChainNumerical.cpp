@@ -79,7 +79,7 @@ bool CIKChainNumerical::Init(const CArtiBodyNode* eef, int len, const std::vecto
 		for (int i_dof = 0; i_dof < n_dofs; i_dof ++)
 		{
 			seg->SetWeight(i_dof, (*p_dex)[i_dof]);
-			seg->SetLimit(i_dof, (*p_lim)[i_dof]);
+			seg->SetLimit((IK_QSegment::DOFLim)i_dof, (*p_lim)[i_dof]);
 		}
 	}
 	m_segments.resize(n_segs);

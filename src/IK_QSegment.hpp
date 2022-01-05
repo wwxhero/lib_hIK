@@ -170,10 +170,7 @@ protected:
 	Real m_weight[3];
 	bool m_locked[3];
 	bool m_limited[3];
-	typedef std::pair<Real, Real> LIM;
-	LIM m_limTheta;
-	LIM m_limTau;
-	LIM m_limPhi;
+	Real m_lims[3][2];
 };
 
 class IK_QIxyzSegment : public IK_QSegmentSO3
