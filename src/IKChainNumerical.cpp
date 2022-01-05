@@ -36,28 +36,39 @@ bool CIKChainNumerical::Init(const CArtiBodyNode* eef, int len, const std::vecto
 		auto it_conf_j = name2confJoint.find(seg_from[i_node]->GetName_c());
 		const auto type_default = IK_QSegment::R_xyz;
 		const Real dex_default[3] = { (Real)1, (Real)1, (Real)1 };
+		const Real lim_default[3][2] = {
+											  {IK_QSegment::MIN_THETA-1, IK_QSegment::MAX_THETA+1}
+											, {IK_QSegment::MIN_TAU-1, IK_QSegment::MAX_TAU+1}
+											, {IK_QSegment::MIN_PHI-1, IK_QSegment::MAX_PHI+1}
+										};
 
 		IK_QSegment::Type type;
-		const Real(*p_dex)[3] = NULL;
+		const Real (*p_dex)[3] = NULL;
+		const Real (*p_lim)[3][2] = NULL;
 		if (name2confJoint.end() != it_conf_j)
 		{
 			type = it_conf_j->second->type;
 			p_dex = &it_conf_j->second->dexterity;
+			p_lim = &it_conf_j->second->lim;
 		}
 		else
 		{
 			type = IK_QSegment::R_xyz;
 			p_dex = &dex_default;
+			p_lim = &lim_default;
 		}
+		int n_dofs = 0;
 
 		IK_QSegment* seg = NULL;
 		switch (type)
 		{
 			case IK_QSegment::R_xyz:
-				seg = new IK_QIxyzSegment(*p_dex);
+				seg = new IK_QIxyzSegment();
+				n_dofs = 3;
 				break;
 			case IK_QSegment::R_Spherical:
-				seg = new IK_QSphericalSegment(*p_dex);
+				seg = new IK_QSphericalSegment();
+				n_dofs = 3;
 				break;
 			default:
 				break;
@@ -65,6 +76,11 @@ bool CIKChainNumerical::Init(const CArtiBodyNode* eef, int len, const std::vecto
 		IKAssert(NULL != seg);
 		if (seg->Initialize(seg_from[i_node], seg_to[i_node]))
 			m_segments[n_segs ++] = seg;
+		for (int i_dof = 0; i_dof < n_dofs; i_dof ++)
+		{
+			seg->SetWeight(i_dof, (*p_dex)[i_dof]);
+			seg->SetLimit(i_dof, (*p_lim)[i_dof]);
+		}
 	}
 	m_segments.resize(n_segs);
 	return n_segs > 0;

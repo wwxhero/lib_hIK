@@ -13,5 +13,6 @@ namespace CONF
 		std::string name;
 		IK_QSegment::Type type;
 		Real dexterity[3];
+		Real lim[3][2];
 	};
 };
