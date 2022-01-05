@@ -22,6 +22,7 @@ public:
 	virtual bool Update_AnyThread() = 0;
 	virtual Real Error() const;
 protected:
+	Real ErrorCCD() const;
 	std::vector<IK_QSegment*> m_segments; //the corresponds to CIKChain::m_segments
 	const Real c_taskW_r, c_taskW_t;
 };

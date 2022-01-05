@@ -53,7 +53,7 @@ bool CIKChainNumerical::Init(const CArtiBodyNode* eef, int len, const std::vecto
 		}
 		else
 		{
-			type = IK_QSegment::R_xyz;
+			type = IK_QSegment::R_Spherical;
 			p_dex = &dex_default;
 			p_lim = &lim_default;
 		}
@@ -134,7 +134,20 @@ bool CIKChainNumerical::Update()
 	return Update_AnyThread();
 }
 
+// posture graph IK only cares position
 Real CIKChainNumerical::Error() const
+{
+	_TRANSFORM tm_t;
+	m_eefSrc->GetGoal(tm_t);
+	const Transform* tm_eef = m_eefSrc->GetTransformLocal2World();
+	Eigen::Vector3r tt_eef = tm_eef->getTranslation();
+	Real dx = tm_t.tt.x - tt_eef.x();
+	Real dy = tm_t.tt.y - tt_eef.y();
+	Real dz = tm_t.tt.z - tt_eef.z();
+	return dx*dx + dy*dy + dz*dz;
+}
+
+Real CIKChainNumerical::ErrorCCD() const
 {
 	_TRANSFORM tm_t;
 	m_eefSrc->GetGoal(tm_t);
