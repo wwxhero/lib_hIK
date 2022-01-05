@@ -39,6 +39,24 @@ public:
 
 	DECLARE_ENUM_STR(Type)
 
+	enum DOFLim
+	{
+		R_theta = 0,
+		R_tau,
+		R_phi
+	};
+
+	DECLARE_ENUM_STR(DOFLim)
+
+	static Real MIN_THETA;
+	static Real MAX_THETA;
+	static Real MIN_TAU;
+	static Real MAX_TAU;
+	static Real MIN_PHI;
+	static Real MAX_PHI;
+
+	// angle in [min, max]
+
 public:
 	IK_QSegment(Type type, int n_dof);
 	virtual ~IK_QSegment();
@@ -112,9 +130,7 @@ public:
 	virtual void Lock(int dofId, IK_QJacobian &jacobian, Eigen::Vector3r &delta) = 0;
 
   	// set joint limits
-	virtual void SetLimit(int, double, double)
-	{
-	}
+	virtual void SetLimit(DOFLim, const Real lims[2]) = 0;
 	// set joint weights (per axis)
 	virtual void SetWeight(int dof_l, Real w) = 0;
 
@@ -140,9 +156,10 @@ public:
 class IK_QSegmentSO3 : public IK_QSegment
 {
 public:
-	IK_QSegmentSO3(const Real weight[3]);
+	IK_QSegmentSO3();
 	virtual void SetWeight(int dof_l, Real w);
 	virtual int Weight(Real w[6]) const;
+	virtual void SetLimit(DOFLim dof_l, const Real lims[2]);
 	virtual int Axis(Eigen::Vector3r axis[6]) const;
 	virtual int Locked(bool lock[6]) const;
 	virtual void UnLock();
@@ -152,19 +169,24 @@ protected:
 	bool ClampST(Eigen::Vector3r& delta, bool clamp[3], Eigen::Quaternionr& ori);
 	Real m_weight[3];
 	bool m_locked[3];
+	bool m_limited[3];
+	typedef std::pair<Real, Real> LIM;
+	LIM m_limTheta;
+	LIM m_limTau;
+	LIM m_limPhi;
 };
 
 class IK_QIxyzSegment : public IK_QSegmentSO3
 {
 public:
-	IK_QIxyzSegment(const Real weight[3]);
+	IK_QIxyzSegment();
 	virtual bool UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp);
 };
 
 class IK_QSphericalSegment : public IK_QSegmentSO3
 {
 public:
-	IK_QSphericalSegment(const Real weight[3]);
+	IK_QSphericalSegment();
 	virtual bool UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp);
 };
 
