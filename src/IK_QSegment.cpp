@@ -94,8 +94,7 @@ void IK_QSegmentSO3::SetLimit(DOFLim dof_l, const Real lims[2])
 		{IK_QSegment::MIN_PHI, IK_QSegment::MAX_PHI},
 	};
 
-	m_limited[dof_l] = (validRange[dof_l][0]>=lims[0]
-					&& lims[1] <= validRange[dof_l][1]);
+	m_limited[dof_l] = (validRange[dof_l][0]<=lims[0] && lims[1] <= validRange[dof_l][1]);
 }
 
 int IK_QSegmentSO3::Axis(Eigen::Vector3r axis[6]) const

@@ -523,8 +523,8 @@ namespace CONF
 					{
 						const TiXmlElement* child_ele = child->ToElement();
 						IK_QSegment::DOFLim dof_lim = IK_QSegment::to_DOFLim(child_ele->Attribute("name"));
-						Real min = (Real)atof(child_ele->Attribute("min"));
-						Real max = (Real)atof(child_ele->Attribute("max"));
+						Real min = deg2rad((Real)atof(child_ele->Attribute("min")));
+						Real max = deg2rad((Real)atof(child_ele->Attribute("max")));
 						j_conf.lim[dof_lim][0] = min;
 						j_conf.lim[dof_lim][1] = max;
 					}
