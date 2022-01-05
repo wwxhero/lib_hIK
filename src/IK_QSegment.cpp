@@ -61,7 +61,7 @@ IK_QSegmentSO3::IK_QSegmentSO3()
 	, m_weight{1, 1, 1}
 	, m_locked {false, false, false}
 	, m_limited {false, false, false}
-	, m_lims {0}
+	, m_limRange {0}
 {
 	const Real b = 1 - STIFFNESS_EPS;
 	const Real k = 2 * STIFFNESS_EPS - 1;
@@ -85,8 +85,8 @@ void IK_QSegmentSO3::SetWeight(int dof_l, Real w)
 void IK_QSegmentSO3::SetLimit(DOFLim dof_l, const Real lims[2])
 {
 	IKAssert(-1 < dof_l && dof_l < 3);
-	m_lims[dof_l][0] = lims[0];
-	m_lims[dof_l][1] = lims[1];
+	m_limRange[dof_l][0] = lims[0];
+	m_limRange[dof_l][1] = lims[1];
 
 	const Real validRange[3][2] = {
 		{IK_QSegment::MIN_THETA, IK_QSegment::MAX_THETA},
@@ -124,19 +124,76 @@ void IK_QSegmentSO3::Lock(int dof_l, IK_QJacobian &jacobian, Eigen::Vector3r &de
 	jacobian.Lock(m_DoF_id + dof_l, delta[dof_l]);
 }
 
-bool IK_QSegmentSO3::ClampST(Eigen::Vector3r& delta, bool clamp[3], Eigen::Quaternionr& rotq)
+bool IK_QSegmentSO3::ClampST(bool clamped[3], Eigen::Quaternionr& rotq)
 {
-	LOGIKVarErr(LogInfoCharPtr, m_joints[c_idxFrom]->GetName_c());
-	LOGIKVarErr(LogInfoBool, m_limited[R_theta]);
-	LOGIKVarErr(LogInfoReal, m_lims[R_theta][0]);
-	LOGIKVarErr(LogInfoReal, m_lims[R_theta][1]);
-	LOGIKVarErr(LogInfoBool, m_limited[R_tau]);
-	LOGIKVarErr(LogInfoReal, m_lims[R_tau][0]);
-	LOGIKVarErr(LogInfoReal, m_lims[R_tau][1]);
-	LOGIKVarErr(LogInfoBool, m_limited[R_phi]);
-	LOGIKVarErr(LogInfoReal, m_lims[R_phi][0]);
-	LOGIKVarErr(LogInfoReal, m_lims[R_phi][1]);
-	return false;
+	memset(clamped, false, sizeof(bool)*3);
+	bool exist_a_lim = (m_limited[R_theta]
+					|| m_limited[R_tau]
+					|| m_limited[R_phi]);
+	if (!exist_a_lim)
+		return false;
+
+	// const Eigen::Quaternionr& rotq0 = rotq;
+	Real w = rotq.w();
+	Real x = rotq.x();
+	Real y = rotq.y();
+	Real z = rotq.z();
+	Real w_s = sqrt(w*w + y*y), x_s, z_s;	//swing: [w_s, x_s, 0, z_s]
+	Real w_t, y_t; 								//twist: [w_t, 0, y_t, 0]
+	if (abs(w_s) > c_epsilon)
+	{
+		w_t = w/w_s; y_t = y/w_s;
+		x_s = (w*x + y*z)/w_s;
+		z_s = (w*z - x*y)/w_s;
+	}
+	else
+	{
+		w_t = 1; y_t = 0;
+		x_s = x; z_s = z;
+	}
+
+	Real tau = wrap_pi(2*atan2(y_t, w_t));
+	Real theta = atan2(w_s, x_s);
+	Real phi = acos(z_s);
+
+	Real v[3] = {theta, tau, phi};
+
+	Real v_clamp[3] = {0};
+	bool clampedST[3] = {false};
+	for (int i_dof = 0; i_dof < c_num_DoFs; i_dof ++)
+	{
+		v_clamp[i_dof] = std::max(m_limRange[i_dof][0], std::min(m_limRange[i_dof][1], v[i_dof]));
+		clampedST[i_dof] = (v_clamp[i_dof] != v[i_dof]);
+	}
+
+	bool clamped_on_swing = (clampedST[R_theta] || clampedST[R_phi]);
+	bool clamped_on_twist = (clampedST[R_tau]);
+	bool exists_a_clamped = (clamped_on_swing
+							|| clamped_on_twist);
+	if (!exists_a_clamped)
+		return false;
+	else
+	{
+		Eigen::Quaternionr s_q(w_s, x_s, 0, z_s);
+		Eigen::Quaternionr t_q(w_t, 0, y_t, 0);
+		if (clamped_on_swing)
+		{
+			s_q.w() = sin(v_clamp[R_phi])*sin(v_clamp[R_theta]);
+			s_q.x() = sin(v_clamp[R_phi])*cos(v_clamp[R_theta]);
+			s_q.z() = cos(v_clamp[R_phi]);
+			clamped[0] = true;
+			clamped[2] = true;
+		}
+		if (clamped_on_twist)
+		{
+			Real tau_half = clamped[R_tau]*(Real)0.5;
+			t_q.w() = cos(tau_half);
+			t_q.y() = sin(tau_half);
+			clamped[1] = true;
+		}
+		rotq = s_q * t_q;
+		return true;
+	}
 }
 
 IK_QIxyzSegment::IK_QIxyzSegment()
@@ -170,7 +227,13 @@ bool IK_QIxyzSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r 
 		Eigen::AngleAxisr ry(delta[1], Eigen::Vector3r::UnitY());
 		Eigen::AngleAxisr rx(delta[0], Eigen::Vector3r::UnitX());
 		Eigen::Quaternionr theta_prime = theta*rx*ry*rz;
-		bool clamped = ClampST(delta, clamp, theta_prime);
+		bool clamped = ClampST(clamp, theta_prime);
+		LOGIKVarErr(LogInfoBool, clamped);
+		delta = 2 * Eigen::Vector3r(
+					theta_prime.x() - theta.x(),
+					theta_prime.y() - theta.y(),
+					theta_prime.z() - theta.z()
+				);
 		m_joints[0]->SetRotation(theta_prime);
 		return clamped;
 	}
@@ -209,7 +272,13 @@ bool IK_QSphericalSegment::UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vect
 								, sin_theta_half * delta_u.z());
 		Eigen::Quaternionr theta = m_joints[0]->GetRotation();
 		Eigen::Quaternionr theta_prime = theta * delta_q;
-		bool clamped = ClampST(delta, clamp, theta_prime);
+		bool clamped = ClampST(clamp, theta_prime);
+		LOGIKVarErr(LogInfoBool, clamped);
+		delta = 2 * Eigen::Vector3r(
+					theta_prime.x() - theta.x(),
+					theta_prime.y() - theta.y(),
+					theta_prime.z() - theta.z()
+				);
 		m_joints[0]->SetRotation(theta_prime);
 		return clamped;
 	}

@@ -166,11 +166,11 @@ public:
 	virtual void Lock(int dofId, IK_QJacobian &jacobian, Eigen::Vector3r &delta);
 protected:
 	//true: clamp happens
-	bool ClampST(Eigen::Vector3r& delta, bool clamp[3], Eigen::Quaternionr& ori);
+	bool ClampST(bool clamp[3], Eigen::Quaternionr& ori);
 	Real m_weight[3];
 	bool m_locked[3];
 	bool m_limited[3];
-	Real m_lims[3][2];
+	Real m_limRange[3][2];
 };
 
 class IK_QIxyzSegment : public IK_QSegmentSO3
