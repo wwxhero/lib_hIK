@@ -43,6 +43,7 @@ bool CIKChainNumerical::Init(const CArtiBodyNode* eef, int len, const std::vecto
 										};
 
 		IK_QSegment::Type type;
+		IK_QSegment::TypeClamp type_clamp;
 		const Real (*p_dex)[3] = NULL;
 		const Real (*p_lim)[3][2] = NULL;
 		if (name2confJoint.end() != it_conf_j)
@@ -50,29 +51,49 @@ bool CIKChainNumerical::Init(const CArtiBodyNode* eef, int len, const std::vecto
 			type = it_conf_j->second->type;
 			p_dex = &it_conf_j->second->dexterity;
 			p_lim = &it_conf_j->second->lim;
+			type_clamp = it_conf_j->second->clamp;
 		}
 		else
 		{
 			type = IK_QSegment::R_Spherical;
 			p_dex = &dex_default;
 			p_lim = &lim_default;
+			type_clamp = IK_QSegment::C_None;
 		}
 		int n_dofs = 0;
 
 		IK_QSegment* seg = NULL;
-		switch (type)
+		if (IK_QSegment::R_xyz == type && IK_QSegment::C_None == type_clamp)
 		{
-			case IK_QSegment::R_xyz:
-				seg = new IK_QIxyzSegment();
-				n_dofs = 3;
-				break;
-			case IK_QSegment::R_Spherical:
-				seg = new IK_QSphericalSegment();
-				n_dofs = 3;
-				break;
-			default:
-				break;
+			seg = new IK_QIxyzSegment();
+			n_dofs = 3;
 		}
+		else if(IK_QSegment::R_xyz == type && IK_QSegment::C_Spherical == type_clamp)
+		{
+			seg = new TIK_SegClampSpheri<IK_QIxyzSegment>();
+			n_dofs = 3;
+		}
+		else if(IK_QSegment::R_xyz == type && IK_QSegment::C_Direct == type_clamp)
+		{
+			seg = new TIK_SegClampDirect<IK_QIxyzSegment>();
+			n_dofs = 3;
+		}
+		else if (IK_QSegment::R_Spherical == type && IK_QSegment::C_None == type_clamp)
+		{
+			seg = new IK_QSphericalSegment();
+			n_dofs = 3;
+		}
+		else if(IK_QSegment::R_Spherical == type && IK_QSegment::C_Spherical == type_clamp)
+		{
+			seg = new TIK_SegClampSpheri<IK_QSphericalSegment>();
+			n_dofs = 3;
+		}
+		else if(IK_QSegment::R_Spherical == type && IK_QSegment::C_Direct == type_clamp)
+		{
+			seg = new TIK_SegClampDirect<IK_QSphericalSegment>();
+			n_dofs = 3;
+		}
+
 		IKAssert(NULL != seg);
 		for (int i_dof = 0; i_dof < n_dofs; i_dof ++)
 		{

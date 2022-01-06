@@ -3,7 +3,10 @@
 
 namespace CONF
 {
-	CJointConf::CJointConf(const char* a_name, IK_QSegment::Type a_type, const Real a_dexterity[3])
+	CJointConf::CJointConf(const char* a_name
+						, IK_QSegment::Type a_type
+						, const Real a_dexterity[3]
+						, IK_QSegment::TypeClamp a_ctype)
 		: name(a_name)
 		, type(a_type)
 		, dexterity{a_dexterity[0], a_dexterity[1], a_dexterity[2]}
@@ -12,6 +15,7 @@ namespace CONF
 				, {IK_QSegment::MIN_TAU-1, IK_QSegment::MAX_TAU+1}
 				, {IK_QSegment::MIN_PHI-1, IK_QSegment::MAX_PHI+1}
 			}
+		, clamp(a_ctype)
 	{
 	}
 
