@@ -263,7 +263,7 @@ private:
 			}
 			if (clamped_on_twist)
 			{
-				Real tau_half = clamped[TSegmentSO3::R_tau]*(Real)0.5;
+				Real tau_half = v_clamp[TSegmentSO3::R_tau]*(Real)0.5;
 				t_q.w() = cos(tau_half);
 				t_q.y() = sin(tau_half);
 				clamped[1] = true;
@@ -287,13 +287,12 @@ private:
 		if (!exist_a_lim)
 			return false;
 
-		// const Eigen::Quaternionr& rotq0 = rotq;
 		Real w = rotq.w();
 		Real x = rotq.x();
 		Real y = rotq.y();
 		Real z = rotq.z();
 		Real w_s = sqrt(w*w + y*y), x_s, z_s;	//swing: [w_s, x_s, 0, z_s]
-		Real w_t, y_t; 								//twist: [w_t, 0, y_t, 0]
+		Real w_t, y_t; 							//twist: [w_t, 0, y_t, 0]
 		if (abs(w_s) > c_epsilon)
 		{
 			w_t = w/w_s; y_t = y/w_s;
@@ -307,8 +306,8 @@ private:
 		}
 
 		Real tau = wrap_pi(2*atan2(y_t, w_t));
-		Real theta = atan2(w_s, x_s);
-		Real phi = acos(z_s);
+		Real theta = 2*asin(x_s);
+		Real phi = 2*asin(z_s);
 
 		Real v[3] = {theta, tau, phi};
 
@@ -332,15 +331,17 @@ private:
 			Eigen::Quaternionr t_q(w_t, 0, y_t, 0);
 			if (clamped_on_swing)
 			{
-				s_q.w() = sin(v_clamp[TSegmentSO3::R_phi])*sin(v_clamp[TSegmentSO3::R_theta]);
-				s_q.x() = sin(v_clamp[TSegmentSO3::R_phi])*cos(v_clamp[TSegmentSO3::R_theta]);
-				s_q.z() = cos(v_clamp[TSegmentSO3::R_phi]);
-				clamped[0] = true;
-				clamped[2] = true;
+				Real x = (Real)sin(v_clamp[TSegmentSO3::R_theta]*0.5);
+				Real y = 0;
+				Real z = (Real)sin(v_clamp[TSegmentSO3::R_phi]*0.5);
+				Real w = sqrt(1-x*x-z*z);
+				s_q.w() = w; s_q.x() = x; s_q.y() = y; s_q.z() = z;
+				clamped[0] = clampedST[TSegmentSO3::R_theta];
+				clamped[2] = clampedST[TSegmentSO3::R_phi];
 			}
 			if (clamped_on_twist)
 			{
-				Real tau_half = clamped[TSegmentSO3::R_tau]*(Real)0.5;
+				Real tau_half = v_clamp[TSegmentSO3::R_tau]*(Real)0.5;
 				t_q.w() = cos(tau_half);
 				t_q.y() = sin(tau_half);
 				clamped[1] = true;
