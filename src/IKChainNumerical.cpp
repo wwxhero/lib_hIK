@@ -37,9 +37,9 @@ bool CIKChainNumerical::Init(const CArtiBodyNode* eef, int len, const std::vecto
 		const auto type_default = IK_QSegment::R_xyz;
 		const Real dex_default[3] = { (Real)1, (Real)1, (Real)1 };
 		const Real lim_default[3][2] = {
-											  {IK_QSegment::MIN_THETA-1, IK_QSegment::MAX_THETA+1}
-											, {IK_QSegment::MIN_TAU-1, IK_QSegment::MAX_TAU+1}
-											, {IK_QSegment::MIN_PHI-1, IK_QSegment::MAX_PHI+1}
+											  {std::numeric_limits<Real>::lowest(), std::numeric_limits<Real>::max()}
+											, {std::numeric_limits<Real>::lowest(), std::numeric_limits<Real>::max()}
+											, {std::numeric_limits<Real>::lowest(), std::numeric_limits<Real>::max()}
 										};
 
 		IK_QSegment::Type type;

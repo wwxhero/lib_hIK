@@ -11,9 +11,9 @@ namespace CONF
 		, type(a_type)
 		, dexterity{a_dexterity[0], a_dexterity[1], a_dexterity[2]}
 		, lim {
-				  {IK_QSegment::MIN_THETA-1, IK_QSegment::MAX_THETA+1}
-				, {IK_QSegment::MIN_TAU-1, IK_QSegment::MAX_TAU+1}
-				, {IK_QSegment::MIN_PHI-1, IK_QSegment::MAX_PHI+1}
+				  {std::numeric_limits<Real>::lowest(), std::numeric_limits<Real>::max()}
+				, {std::numeric_limits<Real>::lowest(), std::numeric_limits<Real>::max()}
+				, {std::numeric_limits<Real>::lowest(), std::numeric_limits<Real>::max()}
 			}
 		, clamp(a_ctype)
 	{

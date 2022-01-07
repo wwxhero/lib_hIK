@@ -28,8 +28,7 @@
 #include "IK_QJacobian.h"
 #include "ArtiBody.hpp"
 #include "macro_helper.h"
-#include "IK_SegClampSpheri.hpp"
-#include "IK_SegClampDirect.hpp"
+
 class IK_QSegment
 {
 public:
@@ -58,15 +57,6 @@ public:
 	};
 
 	DECLARE_ENUM_STR(TypeClamp)
-
-	static Real MIN_THETA;
-	static Real MAX_THETA;
-	static Real MIN_TAU;
-	static Real MAX_TAU;
-	static Real MIN_PHI;
-	static Real MAX_PHI;
-
-	// angle in [min, max]
 
 public:
 	IK_QSegment(Type type, int n_dof);
@@ -181,8 +171,6 @@ protected:
 	virtual bool ClampST(bool clamp[3], Eigen::Quaternionr& ori) { return false; };
 	Real m_weight[3];
 	bool m_locked[3];
-	bool m_limited[3];
-	Real m_limRange[3][2];
 };
 
 class IK_QIxyzSegment : public IK_QSegmentSO3
@@ -198,6 +186,9 @@ public:
 	IK_QSphericalSegment();
 	virtual bool UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp);
 };
+
+#include "IK_SegClampSpheri.hpp"
+#include "IK_SegClampDirect.hpp"
 
 typedef TIK_SegClampSpheri<IK_QIxyzSegment> IK_QIxyzSegmentCS;
 typedef TIK_SegClampDirect<IK_QIxyzSegment> IK_QIxyzSegmentCD;

@@ -3,27 +3,73 @@
 template <typename TSegmentSO3>
 class TIK_SegClampDirect : public TIK_SegClampBase<TSegmentSO3>
 {
-	
+	typedef TIK_SegClampBase<TSegmentSO3> Super;
+public:
+	TIK_SegClampDirect()
+		: MIN_THETA(-(Real)M_PI)
+		, MAX_THETA(+(Real)M_PI)
+		, MIN_TAU(-(Real)M_PI)
+		, MAX_TAU(+(Real)M_PI)
+		, MIN_PHI(-(Real)M_PI)
+		, MAX_PHI(+(Real)M_PI)
+		, m_sin_half_theta_min(-1)
+		, m_sin_half_theta_max(+1)
+		, m_sin_half_phi_min(-1)
+		, m_sin_half_phi_max(-1)
+	{
+		Super::m_limRange[TSegmentSO3::R_theta][0] = MIN_THETA;
+		Super::m_limRange[TSegmentSO3::R_theta][1] = MAX_THETA;
+
+		Super::m_limRange[TSegmentSO3::R_tau][0] = MIN_TAU;
+		Super::m_limRange[TSegmentSO3::R_tau][1] = MAX_TAU;
+
+		Super::m_limRange[TSegmentSO3::R_phi][0] = MIN_PHI;
+		Super::m_limRange[TSegmentSO3::R_phi][1] = MAX_PHI;
+	}
+
 private:
 	virtual bool Initialize(CArtiBodyNode* from, CArtiBodyNode* to) override
 	{
 		if (!TSegmentSO3::Initialize(from, to))
 			return false;
 
-		m_sin_half_theta_min = (Real)sin((Real)0.5 * TSegmentSO3::m_limRange[TSegmentSO3::R_theta][0]);
-		m_sin_half_theta_max = (Real)sin((Real)0.5 * TSegmentSO3::m_limRange[TSegmentSO3::R_theta][1]);
+		m_sin_half_theta_min = (Real)sin((Real)0.5 * Super::m_limRange[TSegmentSO3::R_theta][0]);
+		m_sin_half_theta_max = (Real)sin((Real)0.5 * Super::m_limRange[TSegmentSO3::R_theta][1]);
 
-		m_sin_half_phi_min = (Real)sin((Real)0.5 * TSegmentSO3::m_limRange[TSegmentSO3::R_phi][0]);
-		m_sin_half_phi_max = (Real)sin((Real)0.5 * TSegmentSO3::m_limRange[TSegmentSO3::R_phi][1]);
+		m_sin_half_phi_min = (Real)sin((Real)0.5 * Super::m_limRange[TSegmentSO3::R_phi][0]);
+		m_sin_half_phi_max = (Real)sin((Real)0.5 * Super::m_limRange[TSegmentSO3::R_phi][1]);
 		return true;
+	}
+
+	virtual void SetLimit(IK_QSegment::DOFLim dof_l, const Real lims[2]) override
+	{
+		IKAssert(-1 < dof_l && dof_l < 3);
+
+		const Real validRange[3][2] = {
+			{MIN_THETA, MAX_THETA},
+			{MIN_TAU, MAX_TAU},
+			{MIN_PHI, MAX_PHI},
+		};
+
+		if (Super::m_limited[dof_l]
+			= (validRange[dof_l][0]<=lims[0] && lims[1] <= validRange[dof_l][1]))
+		{
+			Super::m_limRange[dof_l][0] = lims[0];
+			Super::m_limRange[dof_l][1] = lims[1];
+		}
 	}
 
 	virtual bool ClampST(bool clamped[3], Eigen::Quaternionr& rotq) override
 	{
 		memset(clamped, false, sizeof(bool) * 3);
-		bool exist_a_lim = (TSegmentSO3::m_limited[TSegmentSO3::R_theta]
-			|| TSegmentSO3::m_limited[TSegmentSO3::R_tau]
-			|| TSegmentSO3::m_limited[TSegmentSO3::R_phi]);
+		bool clampping[3] = {
+			Super::m_limited[TSegmentSO3::R_theta],
+			Super::m_limited[TSegmentSO3::R_tau],
+			Super::m_limited[TSegmentSO3::R_phi]
+		};
+		bool exist_a_lim = ( clampping[0]
+							|| clampping[1]
+							|| clampping[2] )  ;
 		if (!exist_a_lim)
 			return false;
 
@@ -47,21 +93,26 @@ private:
 
 		Real sin_half_theta = x_s;
 		Real sin_half_phi = z_s;
-		Real sin_half_theta_clamp = std::max(m_sin_half_theta_min
+		Real sin_half_theta_clamp = clampping[TSegmentSO3::R_theta]
+									? std::max(m_sin_half_theta_min
 											, std::min(m_sin_half_theta_max
-														, sin_half_theta));
+														, sin_half_theta))
+									: sin_half_theta;
 
-		Real sin_half_phi_clamp = std::max(m_sin_half_phi_min
+
+		Real sin_half_phi_clamp =  clampping[TSegmentSO3::R_phi]
+									? std::max(m_sin_half_phi_min
 											, std::min(m_sin_half_phi_max
-														, sin_half_phi));
+														, sin_half_phi))
+									: sin_half_phi;
 
 		Real sin_half_tau_clamp = y_t;
 		Real cos_half_tau_clamp = w_t;
 
 		bool clampedST[3] = {
-						sin_half_theta != sin_half_theta_clamp,
-						TIK_SegClampBase<TSegmentSO3>::ClampT(y_t, w_t, sin_half_tau_clamp, cos_half_tau_clamp),
-						sin_half_phi != sin_half_phi_clamp
+						clampping[TSegmentSO3::R_theta] && (sin_half_theta != sin_half_theta_clamp),
+						clampping[TSegmentSO3::R_tau] && (TIK_SegClampBase<TSegmentSO3>::ClampT(y_t, w_t, sin_half_tau_clamp, cos_half_tau_clamp)),
+						clampping[TSegmentSO3::R_phi] && (sin_half_phi != sin_half_phi_clamp)
 					};
 
 		bool clamped_on_swing = (clampedST[TSegmentSO3::R_theta] || clampedST[TSegmentSO3::R_phi]);
@@ -87,7 +138,9 @@ private:
 			if (clamped_on_twist)
 			{
 				t_q.w() = cos_half_tau_clamp;
+				t_q.x() = 0;
 				t_q.y() = sin_half_tau_clamp;
+				t_q.z() = 0;
 				clamped[1] = true;
 			}
 			rotq = s_q * t_q;
@@ -95,7 +148,15 @@ private:
 		}
 	}
 private:
+	const Real MIN_THETA;
+	const Real MAX_THETA;
+	const Real MIN_TAU;
+	const Real MAX_TAU;
+	const Real MIN_PHI;
+	const Real MAX_PHI;
+	// angle in [min, max]
+
 	Real m_sin_half_theta_min, m_sin_half_theta_max;
 	Real m_sin_half_phi_min, m_sin_half_phi_max;
-
 };
+
