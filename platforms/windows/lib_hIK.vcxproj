@@ -239,6 +239,7 @@
     <ClInclude Include="..\..\src\IK_QJacobian.h" />
     <ClInclude Include="..\..\src\IK_QSegment.hpp" />
     <ClInclude Include="..\..\src\IK_QTask.h" />
+    <ClInclude Include="..\..\src\IK_SegClampBase.hpp" />
     <ClInclude Include="..\..\src\IK_SegClampDirect.hpp" />
     <ClInclude Include="..\..\src\IK_SegClampSpheri.hpp" />
     <ClInclude Include="..\..\src\Joint.hpp" />

@@ -1,32 +1,14 @@
 #pragma once
-
+#include "IK_SegClampBase.hpp"
 template <typename TSegmentSO3>
-class TIK_SegClampDirect : public TSegmentSO3
+class TIK_SegClampDirect : public TIK_SegClampBase<TSegmentSO3>
 {
+	
 private:
-	bool ClampT(const Real &half_s, const Real& half_c
-				, Real& half_s_clamp, Real& half_c_clamp)
-	{
-		half_s_clamp = std::max(m_sin_half_tau_min
-						, std::min(m_sin_half_tau_max,
-									half_s));
-		if (half_s < 0)
-			half_c_clamp = std::max(m_cos_half_tau_min, half_c);
-		else
-			half_c_clamp = std::max(m_cos_half_tau_max, half_c);
-		return half_s_clamp != half_s
-			|| half_c_clamp != half_c;		
-	}
-
 	virtual bool Initialize(CArtiBodyNode* from, CArtiBodyNode* to) override
 	{
 		if (!TSegmentSO3::Initialize(from, to))
 			return false;
-
-		m_sin_half_tau_min = (Real)sin((Real)0.5 * TSegmentSO3::m_limRange[TSegmentSO3::R_tau][0]);
-		m_cos_half_tau_min = (Real)cos((Real)0.5 * TSegmentSO3::m_limRange[TSegmentSO3::R_tau][0]);
-		m_sin_half_tau_max = (Real)sin((Real)0.5 * TSegmentSO3::m_limRange[TSegmentSO3::R_tau][1]);
-		m_cos_half_tau_max = (Real)cos((Real)0.5 * TSegmentSO3::m_limRange[TSegmentSO3::R_tau][1]);
 
 		m_sin_half_theta_min = (Real)sin((Real)0.5 * TSegmentSO3::m_limRange[TSegmentSO3::R_theta][0]);
 		m_sin_half_theta_max = (Real)sin((Real)0.5 * TSegmentSO3::m_limRange[TSegmentSO3::R_theta][1]);
@@ -78,7 +60,7 @@ private:
 
 		bool clampedST[3] = {
 						sin_half_theta != sin_half_theta_clamp,
-						ClampT(y_t, w_t, sin_half_tau_clamp, cos_half_tau_clamp),
+						TIK_SegClampBase<TSegmentSO3>::ClampT(y_t, w_t, sin_half_tau_clamp, cos_half_tau_clamp),
 						sin_half_phi != sin_half_phi_clamp
 					};
 
@@ -116,6 +98,4 @@ private:
 	Real m_sin_half_theta_min, m_sin_half_theta_max;
 	Real m_sin_half_phi_min, m_sin_half_phi_max;
 
-	Real m_sin_half_tau_min, m_sin_half_tau_max;
-	Real m_cos_half_tau_min, m_cos_half_tau_max;
 };
