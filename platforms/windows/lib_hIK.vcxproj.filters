@@ -114,6 +114,12 @@
     <ClInclude Include="..\..\src\XETBUpdate_parallel.cuh">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\IK_SegClampDirect.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\IK_SegClampSpheri.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

@@ -70,12 +70,12 @@ bool CIKChainNumerical::Init(const CArtiBodyNode* eef, int len, const std::vecto
 		}
 		else if(IK_QSegment::R_xyz == type && IK_QSegment::C_Spherical == type_clamp)
 		{
-			seg = new TIK_SegClampSpheri<IK_QIxyzSegment>();
+			seg = new IK_QIxyzSegmentCS();
 			n_dofs = 3;
 		}
 		else if(IK_QSegment::R_xyz == type && IK_QSegment::C_Direct == type_clamp)
 		{
-			seg = new TIK_SegClampDirect<IK_QIxyzSegment>();
+			seg = new IK_QIxyzSegmentCD();
 			n_dofs = 3;
 		}
 		else if (IK_QSegment::R_Spherical == type && IK_QSegment::C_None == type_clamp)
@@ -85,12 +85,12 @@ bool CIKChainNumerical::Init(const CArtiBodyNode* eef, int len, const std::vecto
 		}
 		else if(IK_QSegment::R_Spherical == type && IK_QSegment::C_Spherical == type_clamp)
 		{
-			seg = new TIK_SegClampSpheri<IK_QSphericalSegment>();
+			seg = new IK_QSphericalSegmentCS();
 			n_dofs = 3;
 		}
 		else if(IK_QSegment::R_Spherical == type && IK_QSegment::C_Direct == type_clamp)
 		{
-			seg = new TIK_SegClampDirect<IK_QSphericalSegment>();
+			seg = new IK_QSphericalSegmentCD();
 			n_dofs = 3;
 		}
 
