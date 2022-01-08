@@ -145,12 +145,11 @@ public:
 	// this is a quick IK update solution
 	virtual bool Update_AnyThread()
 	{
-		// iterate
 		auto it_eef_seg = m_segments.end();
 		it_eef_seg --;
-		LOGIKVarErr(LogInfoCharPtr, (*it_eef_seg)->GetName_c(1));
+		LOGIKVarNJK(LogInfoCharPtr, (*it_eef_seg)->GetName_c(1));
 		Real err = Error();
-		LOGIKVarErr(LogInfoReal, err);
+		LOGIKVarNJK(LogInfoReal, err);
 		const Real sigma_d_alpha_sqr_min = (Real)0.0000761544202225; // deg2rad(0.5)^2
 		bool updating = true;
 		int i_iter = 0;
@@ -162,7 +161,7 @@ public:
 			std::vector<IK_QTask *>::iterator task;
 
 			// compute jacobian
-			for (task = m_tasksReg.begin(); task != m_tasksReg.end(); task++)
+			for (auto task = m_tasksReg.begin(); task != m_tasksReg.end(); task++)
 			{
 				bool primary_tsk = (*task)->Primary();
 				if (primary_tsk)
@@ -188,11 +187,11 @@ public:
 			}
 			// update angles and check limits
 			UpdateAngles(sigma_d_alpha_sqr);
-			LOGIKVarErr(LogInfoReal, sigma_d_alpha_sqr);
+			LOGIKVarNJK(LogInfoReal, sigma_d_alpha_sqr);
 
-			// check for convergence
+			// inspect for convergence
 			err = Error();
-			LOGIKVarErr(LogInfoReal, err);
+			LOGIKVarNJK(LogInfoReal, err);
 
 			updating = (sigma_d_alpha_sqr_min < sigma_d_alpha_sqr);
 			if (updating)
@@ -204,12 +203,12 @@ public:
 			seg->UnLock();
 
 		bool solved = true;
-		for (task = m_tasksReg.begin()
+		for (auto task = m_tasksReg.begin()
 			; task != m_tasksReg.end() && solved
 			; task++)
 			solved = (*task)->Completed();
-		LOGIKVarErr(LogInfoBool, solved);
-		LOGIKVarErr(LogInfoInt, i_iter);
+		LOGIKVarNJK(LogInfoBool, solved);
+		LOGIKVarNJK(LogInfoInt, i_iter);
 		return solved;
 	}
 
@@ -283,7 +282,7 @@ protected:
 					n_clamp ++;
 		}
 
-		LOGIKVarErr(LogInfoInt, n_clamp);
+		LOGIKVarNJK(LogInfoInt, n_clamp);
 
 		// lock most violating angle
 		if (minseg)

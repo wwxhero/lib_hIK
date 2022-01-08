@@ -163,7 +163,11 @@ void AssertionFail(const char *file, unsigned int line);
 #		define STOP_PROFILER_IK
 #	endif
 
-
+#if defined IK_INSPECTION
+#	define LOGIKVarNJK LOGIKVarErr
+#else
+#	define LOGIKVarNJK(func, var)
+#endif
 
 int __cdecl LoggerFast_OutFmt(const char *fmt, ...);
 
