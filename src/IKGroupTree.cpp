@@ -75,54 +75,56 @@ void CIKGroupNode::IKUpdate()
 
 	if (!exist_an_update)
 		return;
-	if (NULL != g_parent) //for root of the three FK_Update<G_SPACE=true> has no effect but waist computational resource
+
+	if (m_pg)
+		m_pg->ApplyActivePosture<true>();  // apply active posture
+	else if (NULL != g_parent) //for root of the three FK_Update<G_SPACE=true> has no effect but waist computational resource
 		CArtiBodyTree::FK_Update<true>(m_rootBody);
 
 
-	if (m_pg)
-	{
-		auto Err = [&]() -> Real
-		{
-			Real err = 0;
-			for (auto chain : m_kChains)
-				err += chain->Error();
-			return err;
-		};
-
-		int theta_min = CPGRuntime::LocalMin(*m_pg, Err);
-		m_pg->SetActivePosture<true>(theta_min, true);
-	}
-
 	bool solved_all = false;
-	// if (!m_pg)
-	{
-		if (1 == n_chains)
-		{
-			solved_all = m_kChains[0]->Update();
-		}
-		else
-		{
-			for (int i_update = 0; i_update < n_chains && !solved_all; i_update ++)
-			{
-				for (auto& chain_i : m_kChains)
-					chain_i->Update();
 
-				solved_all = true;
-				for (auto chain_i = m_kChains.begin()
-					; solved_all && chain_i != m_kChains.end()
-					; chain_i ++)
-					solved_all = (*chain_i)->UpdateCompleted();
-			}
-		}
-		LOGIKVar(LogInfoBool, solved_all);
+	if (1 == n_chains)
+	{
+		solved_all = m_kChains[0]->Update();
 	}
+	else
+	{
+		for (int i_update = 0; i_update < n_chains && !solved_all; i_update ++)
+		{
+			for (auto& chain_i : m_kChains)
+				chain_i->Update();
+
+			solved_all = true;
+			for (auto chain_i = m_kChains.begin()
+				; solved_all && chain_i != m_kChains.end()
+				; chain_i ++)
+				solved_all = (*chain_i)->UpdateCompleted();
+		}
+	}
+	LOGIKVar(LogInfoBool, solved_all);
 
 	for (int i_chain = 0; i_chain < n_chains; i_chain++)
 	{
 		m_kChains[i_chain]->EndUpdate();
 	}
 
+	if (m_pg)
+	{
+		TransformArchive artm_0;
+		m_pg->GetRefBodyTheta(artm_0);
+		auto FK_Err = [&](int pose_id) -> Real
+			{
+				const TransformArchive& artm_i = m_pg->GetTheta(pose_id);
+				return TransformArchive::Error_q(artm_0, artm_i);
+			};
+
+		int theta_min = CPGRuntime::LocalMin(*m_pg, FK_Err);
+		m_pg->SetActivePosture<true>(theta_min, false);
+	}
+
 	CArtiBodyTree::FK_Update<false>(m_rootBody);
+
 }
 
 void CIKGroupNode::IKReset()
