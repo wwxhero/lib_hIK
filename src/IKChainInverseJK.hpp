@@ -146,34 +146,32 @@ public:
 	virtual bool Update_AnyThread()
 	{
 		// iterate
+		auto it_eef_seg = m_segments.end();
+		it_eef_seg --;
+		LOGIKVarErr(LogInfoCharPtr, (*it_eef_seg)->GetName_c(1));
 		Real err = Error();
-		LOGIKVar(LogInfoReal, err);
-
-
-		bool solved = false;
+		LOGIKVarErr(LogInfoReal, err);
+		const Real sigma_d_alpha_sqr_min = (Real)0.0000761544202225; // deg2rad(0.5)^2
 		bool updating = true;
 		int i_iter = 0;
 		for (
 			; i_iter < m_nIters
-				&& !solved
 				&& updating
 			; i_iter++)
 		{
-			// root->UpdateTransform(Eigen::Affine3d::Identity());
 			std::vector<IK_QTask *>::iterator task;
 
 			// compute jacobian
 			for (task = m_tasksReg.begin(); task != m_tasksReg.end(); task++)
 			{
 				bool primary_tsk = (*task)->Primary();
-				// LOGIKVar(LogInfoBool, primary_tsk);
 				if (primary_tsk)
 					(*task)->ComputeJacobian(m_jacobian);
 				else
 					(*task)->ComputeJacobian(m_jacobian_sub);
 			}
 
-			Real norm = 0.0;
+			Real sigma_d_alpha_sqr = 0.0;
 
 			// invert jacobian
 			try
@@ -189,45 +187,29 @@ public:
 				return false;
 			}
 			// update angles and check limits
-			UpdateAngles(norm);
-			CArtiBodyTree::FK_Update<true>(m_rootG);
-
-			bool all_locked = true;
-			bool locked_dofs[6] = { false };
-			for (auto it_seg = m_segments.begin()
-				; all_locked && it_seg != m_segments.end()
-				; it_seg ++)
-			{
-				int n_dofs = (*it_seg)->Locked(locked_dofs);
-				for (int i_dof = 0; all_locked && i_dof < n_dofs; i_dof ++)
-					all_locked = locked_dofs[i_dof];
-			}
-
-			// compute angle update norm
-			Real maxnorm = m_jacobian.AngleUpdateNorm();
-			if (maxnorm > norm)
-				norm = maxnorm;
+			UpdateAngles(sigma_d_alpha_sqr);
+			LOGIKVarErr(LogInfoReal, sigma_d_alpha_sqr);
 
 			// check for convergence
 			err = Error();
-			LOGIKVar(LogInfoReal, err);
+			LOGIKVarErr(LogInfoReal, err);
 
-			updating = ((norm > 1e-3 || i_iter < 10) && !all_locked);
-			solved = true;
-			for (task = m_tasksReg.begin()
-				; task != m_tasksReg.end() && solved
-				; task++)
-				solved = (*task)->Completed();
+			updating = (sigma_d_alpha_sqr_min < sigma_d_alpha_sqr);
+			if (updating)
+				CArtiBodyTree::FK_Update<true>(m_rootG);
+
 		}
 
 		for (auto seg : m_segments)
 			seg->UnLock();
 
-		auto it_eef_seg = m_segments.end();
-		it_eef_seg --;
-		LOGIKVar(LogInfoCharPtr, (*it_eef_seg)->GetName_c(1));
-		LOGIKVar(LogInfoBool, solved);
-		LOGIKVar(LogInfoInt, i_iter);
+		bool solved = true;
+		for (task = m_tasksReg.begin()
+			; task != m_tasksReg.end() && solved
+			; task++)
+			solved = (*task)->Completed();
+		LOGIKVarErr(LogInfoBool, solved);
+		LOGIKVarErr(LogInfoInt, i_iter);
 		return solved;
 	}
 
@@ -253,12 +235,12 @@ public:
 protected:
 	// true: lock a segment or segments.
 	// false: lock no segment.
-	bool UpdateAngles(Real &norm)
+	bool UpdateAngles(Real &sigma_d_alpha_sqr)
 	{
 		// assing each segment a unique id for the jacobian
 		std::vector<IK_QSegment *>::iterator seg;
 		IK_QSegment *minseg = NULL;
-		Real minabsdelta = 1e10, absdelta;
+		Real minabsdelta = std::numeric_limits<Real>::max();
 		Eigen::Vector3r delta, mindelta;
 		bool locked = false, clamp[3];
 		int mindof = 0;
@@ -266,7 +248,9 @@ protected:
 		// here we check if any angle limits were violated. angles whose clamped
 		// position is the same as it was before, are locked immediate. of the
 		// other violation angles the most violating angle is rememberd
+		sigma_d_alpha_sqr = 0;
 		bool locked_dofs[6] = { false };
+		int n_clamp = 0;
 		for (auto qseg : m_segments)
 		{
 			delta.x() = 0; delta.y() = 0; delta.z() = 0;
@@ -277,7 +261,7 @@ protected:
 				{
 					if (clamp[i_dof] && !locked_dofs[i_dof])
 					{
-						absdelta = fabs(delta[i_dof]);
+						Real absdelta = fabs(delta[i_dof]);
 						if (absdelta < c_epsilon)
 						{
 							qseg->Lock(i_dof, m_jacobian, delta);
@@ -293,16 +277,19 @@ protected:
 					}
 				}
 			}
+			sigma_d_alpha_sqr += delta.squaredNorm();
+			for (int i_clamp = 0; i_clamp < 3; i_clamp ++)
+				if (clamp[i_clamp])
+					n_clamp ++;
 		}
+
+		LOGIKVarErr(LogInfoInt, n_clamp);
 
 		// lock most violating angle
 		if (minseg)
 		{
 			minseg->Lock(mindof, m_jacobian, mindelta);
 			locked = true;
-
-			if (minabsdelta > norm)
-				norm = minabsdelta;
 		}
 
 		//if (!locked)
