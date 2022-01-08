@@ -28,6 +28,7 @@
 #include "IK_QJacobian.h"
 #include "ArtiBody.hpp"
 #include "macro_helper.h"
+
 class IK_QSegment
 {
 public:
@@ -39,10 +40,28 @@ public:
 
 	DECLARE_ENUM_STR(Type)
 
+	enum DOFLim
+	{
+		R_theta = 0,
+		R_tau,
+		R_phi
+	};
+
+	DECLARE_ENUM_STR(DOFLim)
+
+	enum TypeClamp
+	{
+		C_None = 0,
+		C_Spherical,
+		C_Direct
+	};
+
+	DECLARE_ENUM_STR(TypeClamp)
+
 public:
 	IK_QSegment(Type type, int n_dof);
 	virtual ~IK_QSegment();
-	bool Initialize(CArtiBodyNode* from, CArtiBodyNode* to);
+	virtual bool Initialize(CArtiBodyNode* from, CArtiBodyNode* to);
 
 	const char* GetName_c(int side = 0) const
 	{
@@ -112,9 +131,7 @@ public:
 	virtual void Lock(int dofId, IK_QJacobian &jacobian, Eigen::Vector3r &delta) = 0;
 
   	// set joint limits
-	virtual void SetLimit(int, double, double)
-	{
-	}
+	virtual void SetLimit(DOFLim, const Real lims[2]) = 0;
 	// set joint weights (per axis)
 	virtual void SetWeight(int dof_l, Real w) = 0;
 
@@ -137,33 +154,43 @@ public:
 	const int c_idxTo;
 };
 
-class IK_QSegmentDOF3 : public IK_QSegment
+class IK_QSegmentSO3 : public IK_QSegment
 {
 public:
-	IK_QSegmentDOF3(const Real weight[3]);
+	IK_QSegmentSO3();
+	virtual bool Initialize(CArtiBodyNode* from, CArtiBodyNode* to) override;
 	virtual void SetWeight(int dof_l, Real w);
 	virtual int Weight(Real w[6]) const;
+	virtual void SetLimit(DOFLim dof_l, const Real lims[2]);
 	virtual int Axis(Eigen::Vector3r axis[6]) const;
 	virtual int Locked(bool lock[6]) const;
 	virtual void UnLock();
 	virtual void Lock(int dofId, IK_QJacobian &jacobian, Eigen::Vector3r &delta);
 protected:
+	//true: clamp happens
+	virtual bool ClampST(bool clamp[3], Eigen::Quaternionr& ori) { return false; };
 	Real m_weight[3];
 	bool m_locked[3];
 };
 
-class IK_QIxyzSegment : public IK_QSegmentDOF3
+class IK_QIxyzSegment : public IK_QSegmentSO3
 {
 public:
-	IK_QIxyzSegment(const Real weight[3]);
+	IK_QIxyzSegment();
 	virtual bool UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp);
 };
 
-class IK_QSphericalSegment : public IK_QSegmentDOF3
+class IK_QSphericalSegment : public IK_QSegmentSO3
 {
 public:
-	IK_QSphericalSegment(const Real weight[3]);
+	IK_QSphericalSegment();
 	virtual bool UpdateAngle(const IK_QJacobian &jacobian, Eigen::Vector3r &delta, bool *clamp);
 };
 
+#include "IK_SegClampSpheri.hpp"
+#include "IK_SegClampDirect.hpp"
 
+typedef TIK_SegClampSpheri<IK_QIxyzSegment> IK_QIxyzSegmentCS;
+typedef TIK_SegClampDirect<IK_QIxyzSegment> IK_QIxyzSegmentCD;
+typedef TIK_SegClampSpheri<IK_QSphericalSegment> IK_QSphericalSegmentCS;
+typedef TIK_SegClampDirect<IK_QSphericalSegment> IK_QSphericalSegmentCD;

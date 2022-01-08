@@ -98,7 +98,7 @@ namespace CONF
 	{
 	}
 
-	void CIKChainConf::AddJoint(const char* attri_values[5])
+	CJointConf& CIKChainConf::AddJoint(const char* attri_values[6])
 	{
 		const char* name = attri_values[0];
 		IK_QSegment::Type type = (NULL == attri_values[1])
@@ -109,8 +109,14 @@ namespace CONF
 			(NULL == attri_values[3]) ? 1 : (Real)atof(attri_values[3]),
 			(NULL == attri_values[4]) ? 1 : (Real)atof(attri_values[4]),
 		};
-		CJointConf joint_conf(name, type, dexterity);
+
+		IK_QSegment::TypeClamp type_clamp = (NULL == attri_values[5])
+										? IK_QSegment::C_None
+										: IK_QSegment::to_TypeClamp(attri_values[5]);
+		CJointConf joint_conf(name, type, dexterity, type_clamp);
+		int i_joint = (int)Joints.size();
 		Joints.push_back(joint_conf);
+		return Joints[i_joint];
 	}
 
 #ifdef _DEBUG
@@ -495,6 +501,7 @@ namespace CONF
 						, { "Dexterity_x",	true }		// 2
 						, { "Dexterity_y",	true }		// 3
 						, { "Dexterity_z",	true }		// 4
+						, { "clamp", 		true }		// 5
 					};
 					const char* value_attri[] = {
 						  ele->Attribute(names_attri[0].str)
@@ -502,6 +509,7 @@ namespace CONF
 						, ele->Attribute(names_attri[2].str)
 						, ele->Attribute(names_attri[3].str)
 						, ele->Attribute(names_attri[4].str)
+						, ele->Attribute(names_attri[5].str)
 					};
 
 					bool value_valid = true;
@@ -515,7 +523,17 @@ namespace CONF
 
 					CIKChainConf* chain_conf = P_Chain(node);
 					IKAssert(NULL != chain_conf);
-					chain_conf->AddJoint(value_attri);
+					CJointConf& j_conf = chain_conf->AddJoint(value_attri);
+
+					for(auto child = node->FirstChild("Limit"); child; child = child->NextSibling("Limit") )
+					{
+						const TiXmlElement* child_ele = child->ToElement();
+						IK_QSegment::DOFLim dof_lim = IK_QSegment::to_DOFLim(child_ele->Attribute("name"));
+						Real min = deg2rad((Real)atof(child_ele->Attribute("min")));
+						Real max = deg2rad((Real)atof(child_ele->Attribute("max")));
+						j_conf.lim[dof_lim][0] = min;
+						j_conf.lim[dof_lim][1] = max;
+					}
 				}
 			}
 			return ret;

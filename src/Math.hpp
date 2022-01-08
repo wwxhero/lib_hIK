@@ -22,7 +22,7 @@ const Real c_tt_epsilon_sqr = (Real)0.25;
 const Real c_rotq_epsilon = (Real)0.5/(Real)180.0;	//err_dot: [1, 0] -> err_deg [0, 180]
 const Real c_rotq_epsilon_sqrnorm = (Real)0.001;
 
-const Real c_err_q_epsilon = (Real)1 - (Real)cos((Real)5/(Real)180 * 0.5 * 3.1416);
+const Real c_err_q_epsilon = ((Real)1 - (Real)cos((Real)2.5/(Real)180 * 0.5 * 3.1416));
 
 #pragma push_macro("new")
 #undef new

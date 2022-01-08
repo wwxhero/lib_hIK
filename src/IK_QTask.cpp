@@ -85,11 +85,12 @@ bool IK_QPositionTask::Completed() const
 	const Transform* l2w = m_eef->GetTransformLocal2World();
 	Eigen::Vector3r tt_eef = l2w->getTranslation();
 	Real dist_sqr = (tt_eef - m_goal).squaredNorm();
-#if defined _DEBUG
-	LOGIKVar(LogInfoCharPtr, m_eef->GetName_c());
-	LOGIKVar(LogInfoReal, dist_sqr);
-#endif
-	return dist_sqr < c_tt_epsilon_sqr;
+
+	LOGIKVarNJK(LogInfoCharPtr, m_eef->GetName_c());
+	LOGIKVarNJK(LogInfoReal, dist_sqr);
+
+	const Real c_errMaxSqr = 4; // err < 2 cm
+	return dist_sqr < c_errMaxSqr;
 }
 
 Eigen::Vector3r IK_QPositionTask::Beta() const
@@ -179,11 +180,12 @@ bool IK_QOrientationTask::Completed() const
 {
 	Eigen::Quaternionr rot_eef = Transform::getRotation_q(m_eef->GetTransformLocal2World());
 	Real err = Error_q(rot_eef, m_goalQ);
-#if defined _DEBUG
-	LOGIKVar(LogInfoCharPtr, m_eef->GetName_c());
-	LOGIKVar(LogInfoReal, err);
-#endif
-	return err < c_err_q_epsilon;
+
+	LOGIKVarNJK(LogInfoCharPtr, m_eef->GetName_c());
+	LOGIKVarNJK(LogInfoReal, err);
+
+	const Real c_errMax = (Real)0.0152; // (Real)(1 - cos(deg2rad(20*0.5)));
+	return err < c_errMax;
 }
 
 

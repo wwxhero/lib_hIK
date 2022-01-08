@@ -95,7 +95,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(LIB_HIK_BIN)\</OutDir>
+    <OutDir>$(SolutionDir)Binaries\Win64\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -137,7 +137,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(LIB_TICPP_BIN);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
       <AdditionalDependencies>cudart_static.lib;ticppd.lib</AdditionalDependencies>
     </Link>
     <CudaCompile>
@@ -165,7 +165,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(LIB_TICPP_BIN);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
       <AdditionalDependencies>cudart_static.lib;ticpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CudaCompile>
@@ -239,6 +239,9 @@
     <ClInclude Include="..\..\src\IK_QJacobian.h" />
     <ClInclude Include="..\..\src\IK_QSegment.hpp" />
     <ClInclude Include="..\..\src\IK_QTask.h" />
+    <ClInclude Include="..\..\src\IK_SegClampBase.hpp" />
+    <ClInclude Include="..\..\src\IK_SegClampDirect.hpp" />
+    <ClInclude Include="..\..\src\IK_SegClampSpheri.hpp" />
     <ClInclude Include="..\..\src\Joint.hpp" />
     <ClInclude Include="..\..\src\ik_logger.h" />
     <ClInclude Include="..\..\src\JointConf.hpp" />

@@ -145,82 +145,70 @@ public:
 	// this is a quick IK update solution
 	virtual bool Update_AnyThread()
 	{
-		// iterate
+		auto it_eef_seg = m_segments.end();
+		it_eef_seg --;
+		LOGIKVarNJK(LogInfoCharPtr, (*it_eef_seg)->GetName_c(1));
 		Real err = Error();
-		LOGIKVar(LogInfoReal, err);
-
-
-		bool solved = false;
+		LOGIKVarNJK(LogInfoReal, err);
+		const Real sigma_d_alpha_sqr_min = (Real)0.0000761544202225; // deg2rad(0.5)^2
 		bool updating = true;
 		int i_iter = 0;
 		for (
 			; i_iter < m_nIters
-				&& !solved
 				&& updating
 			; i_iter++)
 		{
-			// root->UpdateTransform(Eigen::Affine3d::Identity());
 			std::vector<IK_QTask *>::iterator task;
 
 			// compute jacobian
-			for (task = m_tasksReg.begin(); task != m_tasksReg.end(); task++)
+			for (auto task = m_tasksReg.begin(); task != m_tasksReg.end(); task++)
 			{
 				bool primary_tsk = (*task)->Primary();
-				// LOGIKVar(LogInfoBool, primary_tsk);
 				if (primary_tsk)
 					(*task)->ComputeJacobian(m_jacobian);
 				else
 					(*task)->ComputeJacobian(m_jacobian_sub);
 			}
 
-			Real norm = 0.0;
+			Real sigma_d_alpha_sqr = 0.0;
 
-			do
+			// invert jacobian
+			try
 			{
-				// invert jacobian
-				try
-				{
-					m_jacobian.Invert();
-					if (m_secondary_enabled)
-						m_jacobian.SubTask(m_jacobian_sub);
-				}
-				catch (...)
-				{
-					const char* err = "IK Exception\n";
-					LOGIKVarErr(LogInfoCharPtr, err);
-					return false;
-				}
-				// update angles and check limits
-			} while (UpdateAngles(norm));
+				m_jacobian.Invert();
+				if (m_secondary_enabled)
+					m_jacobian.SubTask(m_jacobian_sub);
+			}
+			catch (...)
+			{
+				const char* err = "IK Exception\n";
+				LOGIKVarErr(LogInfoCharPtr, err);
+				return false;
+			}
+			// update angles and check limits
+			UpdateAngles(sigma_d_alpha_sqr);
+			LOGIKVarNJK(LogInfoReal, sigma_d_alpha_sqr);
 
-			// unlock segments again after locking in clamping loop
-			std::vector<IK_QSegment*>::iterator seg;
-			for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
-				(*seg)->UnLock();
-
-			// compute angle update norm
-			Real maxnorm = m_jacobian.AngleUpdateNorm();
-			if (maxnorm > norm)
-				norm = maxnorm;
-
-			// check for convergence
-			CArtiBodyTree::FK_Update<true>(m_rootG);
+			// inspect for convergence
 			err = Error();
-			LOGIKVar(LogInfoReal, err);
+			LOGIKVarNJK(LogInfoReal, err);
 
-			updating = (norm > 1e-3 || i_iter < 10);
-			solved = true;
-			for (task = m_tasksReg.begin()
-				; task != m_tasksReg.end() && solved
-				; task++)
-				solved = (*task)->Completed();
+			updating = (sigma_d_alpha_sqr_min < sigma_d_alpha_sqr);
+			if (updating)
+				CArtiBodyTree::FK_Update<true>(m_rootG);
+
 		}
 
-		auto it_eef_seg = m_segments.end();
-		it_eef_seg --;
-		LOGIKVar(LogInfoCharPtr, (*it_eef_seg)->GetName_c(1));
-		LOGIKVar(LogInfoBool, solved);
-		LOGIKVar(LogInfoInt, i_iter);
+		for (auto seg : m_segments)
+			seg->UnLock();
+
+		bool solved = true;
+		for (auto task = m_tasksReg.begin()
+			; task != m_tasksReg.end() && solved
+			; task++)
+			solved = (*task)->Completed();
+		LOGIKVarNJK(LogInfoBool, solved);
+		LOGIKVarNJK(LogInfoInt, i_iter);
 		return solved;
 	}
 
@@ -244,14 +232,14 @@ public:
 	}
 
 protected:
-	// true: exists a segment that is locked.
-	// false: no segment is locked.
-	bool UpdateAngles(Real &norm)
+	// true: lock a segment or segments.
+	// false: lock no segment.
+	bool UpdateAngles(Real &sigma_d_alpha_sqr)
 	{
 		// assing each segment a unique id for the jacobian
 		std::vector<IK_QSegment *>::iterator seg;
 		IK_QSegment *minseg = NULL;
-		Real minabsdelta = 1e10, absdelta;
+		Real minabsdelta = std::numeric_limits<Real>::max();
 		Eigen::Vector3r delta, mindelta;
 		bool locked = false, clamp[3];
 		int mindof = 0;
@@ -259,9 +247,12 @@ protected:
 		// here we check if any angle limits were violated. angles whose clamped
 		// position is the same as it was before, are locked immediate. of the
 		// other violation angles the most violating angle is rememberd
+		sigma_d_alpha_sqr = 0;
 		bool locked_dofs[6] = { false };
+		int n_clamp = 0;
 		for (auto qseg : m_segments)
 		{
+			delta.x() = 0; delta.y() = 0; delta.z() = 0;
 			if (qseg->UpdateAngle(m_jacobian, delta, clamp))
 			{
 				int n_dofs = qseg->Locked(locked_dofs);
@@ -269,7 +260,7 @@ protected:
 				{
 					if (clamp[i_dof] && !locked_dofs[i_dof])
 					{
-						absdelta = fabs(delta[i_dof]);
+						Real absdelta = fabs(delta[i_dof]);
 						if (absdelta < c_epsilon)
 						{
 							qseg->Lock(i_dof, m_jacobian, delta);
@@ -285,26 +276,29 @@ protected:
 					}
 				}
 			}
+			sigma_d_alpha_sqr += delta.squaredNorm();
+			for (int i_clamp = 0; i_clamp < 3; i_clamp ++)
+				if (clamp[i_clamp])
+					n_clamp ++;
 		}
+
+		LOGIKVarNJK(LogInfoInt, n_clamp);
 
 		// lock most violating angle
 		if (minseg)
 		{
 			minseg->Lock(mindof, m_jacobian, mindelta);
 			locked = true;
-
-			if (minabsdelta > norm)
-				norm = minabsdelta;
 		}
 
-		if (locked == false)
-		{
-			// no locking done, last inner iteration, apply the angles
-			for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
-			{
-				(*seg)->UnLock();
-			}
-		}
+		//if (!locked)
+		//{
+		//	// no locking done, last inner iteration, apply the angles
+		//	for (seg = m_segments.begin(); seg != m_segments.end(); seg++)
+		//	{
+		//		(*seg)->UnLock();
+		//	}
+		//}
 
 		// signal if another inner iteration is needed
 		return locked;

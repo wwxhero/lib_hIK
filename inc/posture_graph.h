@@ -25,6 +25,8 @@ HIKLIB(bool, posture_graph_save)(HPG hpg, const char* dir_out);
 HIKLIB(bool, convert_pg2dot)(const char* path_src, const char* path_dst);
 HIKLIB(int, N_Theta)(HPG pg);
 HIKLIB(bool, remove_theta_noise)(const char* path_src, const char* path_dst, const char* path_interests_conf);
+HIKLIB(bool, extract_joint_rotation)(const char* path_interests_conf, const char* path_src, const char* path_dst_rot, const char* path_dst_lim);
+
 
 #ifdef __cplusplus
 };
