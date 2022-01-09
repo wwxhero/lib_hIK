@@ -1,8 +1,10 @@
 #include "pch.h"
 #include "IKGroupTree.hpp"
 #include "IKChainInverseJK.hpp"
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKGroupNode:
+#define MAX_N_FK_SEARCH 500
 
 CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
 	: m_rootBody(root)
@@ -113,14 +115,19 @@ void CIKGroupNode::IKUpdate()
 	{
 		TransformArchive artm_0;
 		m_pg->GetRefBodyTheta(artm_0);
-		auto FK_Err = [&](int pose_id) -> Real
+		int n_errs = 0;
+		auto FK_Err = [&](int pose_id, bool* failed) -> Real
 			{
 				const TransformArchive& artm_i = m_pg->GetTheta(pose_id);
+				*failed = (n_errs > MAX_N_FK_SEARCH);
+				n_errs ++;
 				return TransformArchive::Error_q(artm_0, artm_i);
 			};
 
 		int theta_min = CPGRuntime::LocalMin(*m_pg, FK_Err);
+		// LOGIKVarErr(LogInfoInt, theta_min);
 		m_pg->SetActivePosture<true>(theta_min, false);
+		// LOGIKVarErr(LogInfoInt, n_errs);
 	}
 
 	CArtiBodyTree::FK_Update<false>(m_rootBody);
@@ -162,6 +169,7 @@ void CIKGroupNode::Dump(int n_indents, std::ostream& logInfo) const
 	logInfo << "}";
 }
 
+#undef MAX_N_FK_SEARCH
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CArtiBodyClrNode

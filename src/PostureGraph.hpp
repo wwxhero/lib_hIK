@@ -417,7 +417,8 @@ public:
 		std::priority_queue<vertex_descriptor, std::vector<vertex_descriptor>, GreatorThetaErr> err_known (greator_thetaErr);
 		// std::queue<vertex_descriptor> err_known;
 		std::list<vertex_descriptor> tagged;
-		graph[theta_star_k].err = kineErr(theta_star_k);
+		bool compute_err_failed = false;
+		graph[theta_star_k].err = kineErr(theta_star_k, &compute_err_failed);
 		tagged.push_back(theta_star_k);
 		err_known.push(theta_star_k);
 
@@ -426,12 +427,9 @@ public:
 			vertex_descriptor theta;
 			Real err;
 		} theta_err_kp = {boost::num_vertices(graph), REAL_MAX};
-		int n_min = 0;
 
-		const int N_CANDIDATES = 5;
-		bool descend_local_min = true;
 		while (!err_known.empty()
-			&& descend_local_min)
+			&& !compute_err_failed)
 		{
 			vertex_descriptor theta = err_known.top();
 			err_known.pop();
@@ -440,14 +438,14 @@ public:
 			bool local_min = true;
 			auto vertices_range_neighbors = boost::adjacent_vertices(theta, graph);
 			for (auto it_v_n = vertices_range_neighbors.first
-				; it_v_n != vertices_range_neighbors.second
+				; it_v_n != vertices_range_neighbors.second && !compute_err_failed
 				; it_v_n ++)
 			{
 				vertex_descriptor theta_n = *it_v_n;
 				Real& err_n = graph[theta_n].err;
 				if (!ErrorTagged(err_n))
 				{
-					err_n = kineErr(theta_n);
+					err_n = kineErr(theta_n, &compute_err_failed);
 					tagged.push_back(theta_n);
 					err_known.push(theta_n);
 					LOGIKVar(LogInfoInt, theta_n);
@@ -458,19 +456,14 @@ public:
 
 			LOGIKVar(LogInfoInt, theta);
 
-			if (local_min)
+			if (err < theta_err_kp.err)
 			{
-				descend_local_min = (err < theta_err_kp.err);
-				if (descend_local_min)
-				{
-					theta_err_kp.theta = theta;
-					theta_err_kp.err = err;
-				}
-				descend_local_min = (descend_local_min || n_min < N_CANDIDATES);
-				n_min ++;
-				LOGIKVar(LogInfoInt, theta);
-				LOGIKVar(LogInfoReal, err);
+				theta_err_kp.theta = theta;
+				theta_err_kp.err = err;
 			}
+			LOGIKVar(LogInfoInt, theta);
+			LOGIKVar(LogInfoReal, err);
+
 		}
 
 		for (auto theta_tagged : tagged)
