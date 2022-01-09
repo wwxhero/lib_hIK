@@ -132,6 +132,7 @@ private:
 				Real z = sin_half_phi_clamp;
 				Real w = sqrt(1 - x * x - z * z);
 				s_q.w() = w; s_q.x() = x; s_q.y() = y; s_q.z() = z;
+				s_q.normalize();
 				clamped[0] = clampedST[TSegmentSO3::R_theta];
 				clamped[2] = clampedST[TSegmentSO3::R_phi];
 			}

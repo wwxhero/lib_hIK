@@ -36,8 +36,15 @@ protected:
 			half_c_clamp = std::max(m_cos_half_tau_min, half_c);
 		else
 			half_c_clamp = std::max(m_cos_half_tau_max, half_c);
-		return half_s_clamp != half_s
-			|| half_c_clamp != half_c;
+		bool clamped = (half_s_clamp != half_s
+						|| half_c_clamp != half_c);
+		if (clamped)
+		{
+			Real norm = sqrt(half_c_clamp*half_c_clamp + half_s_clamp*half_s_clamp);
+			half_c_clamp = (half_c_clamp/norm);
+			half_s_clamp = (half_s_clamp/norm);
+		}
+		return clamped;
 	}
 
 protected:
