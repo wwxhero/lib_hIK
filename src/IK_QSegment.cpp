@@ -64,6 +64,12 @@ bool IK_QSegmentSO3::Initialize(CArtiBodyNode* from, CArtiBodyNode* to)
 {
 	if (!IK_QSegment::Initialize(from, to))
 		return false;
+	Real sigma_weight = 0;
+	for (int i_dof = 0; i_dof < c_num_DoFs; i_dof ++)
+		sigma_weight += m_weight[i_dof];
+	if (sigma_weight < c_epsilon)
+		return false;
+
 	const Real b = 1 - STIFFNESS_EPS;
 	const Real k = 2 * STIFFNESS_EPS - 1;
 	const Real one_third = (Real)1/(Real)3;

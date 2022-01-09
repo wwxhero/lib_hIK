@@ -102,6 +102,8 @@ bool CIKChainNumerical::Init(const CArtiBodyNode* eef, int len, const std::vecto
 		}
 		if (seg->Initialize(seg_from[i_node], seg_to[i_node]))
 			m_segments[n_segs ++] = seg;
+		else
+			delete seg;
 	}
 	m_segments.resize(n_segs);
 	return n_segs > 0;
