@@ -43,8 +43,8 @@ void CIKGroupNode::LoadPostureGraph(const char* pgDir, int radius)
 {
 	if (m_kChains.size() > 0)
 	{
-		m_pg = new CPGRuntime();
-		if (!m_pg->Load(pgDir, m_rootBody))
+		m_pg = new CPGRuntimeParallel();
+		if (!m_pg->Load(pgDir, m_rootBody, radius))
 		{
 			delete m_pg;
 			m_pg = NULL;
@@ -114,25 +114,7 @@ void CIKGroupNode::IKUpdate()
 
 	if (m_pg)
 	{
-		TransformArchive artm_0;
-		m_pg->GetRefBodyTheta(artm_0);
-		int n_errs = 0;
-		auto FK_Err = [&](int pose_id, bool* failed) -> Real
-			{
-				const TransformArchive& artm_i = m_pg->GetTheta(pose_id);
-				Real err = TransformArchive::Error_q(artm_0, artm_i);
-				n_errs ++;
-				*failed = (n_errs > m_pgRadius);
-				return err;
-			};
-
-		int theta_min = CPGRuntime::LocalMin(*m_pg, FK_Err);
-		// LOGIKVarErr(LogInfoInt, theta_min);
-		if (std::string("LowerBack") == std::string(m_rootBody->GetName_c()))
-			m_pg->SetActivePosture<true>(theta_min, false);
-		else
-			m_pg->SetActivePosture<true>(theta_min, true);
-		// LOGIKVarErr(LogInfoInt, n_errs);
+		m_pg->UpdateFKProj();
 	}
 
 	CArtiBodyTree::FK_Update<false>(m_rootBody);

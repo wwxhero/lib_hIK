@@ -2,7 +2,7 @@
 #include <ostream>
 #include "IKChain.hpp"
 #include "MotionPipeConf.hpp"
-#include "PostureGraph.hpp"
+#include "PGRuntimeParallel.hpp"
 
 class CIKGroupNode : public TreeNode<CIKGroupNode>
 {
@@ -55,7 +55,7 @@ protected:
 	CArtiBodyNode* m_rootBody;
 	std::vector<CIKChain*> m_kChains;
 	int m_nSpecMax;
-	CPGRuntime* m_pg;
+	CPGRuntimeParallel* m_pg;
 	int m_pgRadius;
 };
 
