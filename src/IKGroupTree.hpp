@@ -38,7 +38,7 @@ public:
 	void IKReset();
 
 	void SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
-	void LoadPostureGraph(const char* pgDir);
+	void LoadPostureGraph(const char* pgDir, int radius);
 	virtual void Dump(int indent) const override;
 	void Dump(int indent, std::ostream& out) const;
 
@@ -56,6 +56,7 @@ protected:
 	std::vector<CIKChain*> m_kChains;
 	int m_nSpecMax;
 	CPGRuntime* m_pg;
+	int m_pgRadius;
 };
 
 class CIKGroupTree : public Tree<CIKGroupNode>
@@ -63,7 +64,7 @@ class CIKGroupTree : public Tree<CIKGroupNode>
 public:
 	static CIKGroupNode* Generate(const CArtiBodyNode* root, const CONF::CBodyConf& ikChainConf);
 	static void SetupTargets(CIKGroupNode* root_ik, const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
-	static void LoadPG(CIKGroupNode* root_ik, const char* dirPath);
+	static void LoadPG(CIKGroupNode* root_ik, const char* dirPath, int radius);
 };
 
 

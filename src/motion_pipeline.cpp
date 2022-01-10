@@ -163,7 +163,9 @@ bool InitBody_Internal_ik(HBODY bodySrc
 		fullPath.append(relpath);
 		try
 		{
-			CIKGroupTree::LoadPG(root_ikGroup, fullPath.generic_u8string().c_str());
+			CIKGroupTree::LoadPG(root_ikGroup
+								, fullPath.generic_u8string().c_str()
+								, body_conf_i->PG_radius());
 		}
 		catch(std::string &exp)
 		{

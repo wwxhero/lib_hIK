@@ -4,12 +4,12 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKGroupNode:
-#define MAX_N_FK_SEARCH 500
 
 CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
 	: m_rootBody(root)
 	, m_nSpecMax(0)
 	, m_pg(NULL)
+	, m_pgRadius(500)
 {
 
 }
@@ -39,7 +39,7 @@ void CIKGroupNode::SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& na
 		chain->SetupTarget(nameSrc2bodyDst, src2dst_w, dst2src_w);
 }
 
-void CIKGroupNode::LoadPostureGraph(const char* pgDir)
+void CIKGroupNode::LoadPostureGraph(const char* pgDir, int radius)
 {
 	if (m_kChains.size() > 0)
 	{
@@ -52,6 +52,7 @@ void CIKGroupNode::LoadPostureGraph(const char* pgDir)
 		else
 			m_pg->SetActivePosture<false>(0, true);
 	}
+	m_pgRadius = radius;
 }
 
 void CIKGroupNode::IKUpdate()
@@ -119,14 +120,18 @@ void CIKGroupNode::IKUpdate()
 		auto FK_Err = [&](int pose_id, bool* failed) -> Real
 			{
 				const TransformArchive& artm_i = m_pg->GetTheta(pose_id);
-				*failed = (n_errs > MAX_N_FK_SEARCH);
+				Real err = TransformArchive::Error_q(artm_0, artm_i);
 				n_errs ++;
-				return TransformArchive::Error_q(artm_0, artm_i);
+				*failed = (n_errs > m_pgRadius);
+				return err;
 			};
 
 		int theta_min = CPGRuntime::LocalMin(*m_pg, FK_Err);
 		// LOGIKVarErr(LogInfoInt, theta_min);
-		m_pg->SetActivePosture<true>(theta_min, false);
+		if (std::string("LowerBack") == std::string(m_rootBody->GetName_c()))
+			m_pg->SetActivePosture<true>(theta_min, false);
+		else
+			m_pg->SetActivePosture<true>(theta_min, true);
 		// LOGIKVarErr(LogInfoInt, n_errs);
 	}
 
@@ -168,8 +173,6 @@ void CIKGroupNode::Dump(int n_indents, std::ostream& logInfo) const
 	}
 	logInfo << "}";
 }
-
-#undef MAX_N_FK_SEARCH
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CArtiBodyClrNode
@@ -553,11 +556,11 @@ void CIKGroupTree::SetupTargets(CIKGroupNode* root_ik
 	CIKGroupTree::TraverseDFS(root_ik, OnIKGroupNode, OffIKGroupNode);
 }
 
-void CIKGroupTree::LoadPG(CIKGroupNode* root_ik, const char* dirPath)
+void CIKGroupTree::LoadPG(CIKGroupNode* root_ik, const char* dirPath, int radius)
 {
-	auto OnIKGroupNode = [dirPath](CIKGroupNode* gNode)
+	auto OnIKGroupNode = [dirPath, radius](CIKGroupNode* gNode)
 		{
-			gNode->LoadPostureGraph(dirPath);
+			gNode->LoadPostureGraph(dirPath, radius);
 		};
 
 	auto OffIKGroupNode = [](CIKGroupNode* gNode)
