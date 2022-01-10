@@ -17,8 +17,8 @@ const Real c_10epsilon = 1e-4f;
 const Real c_100epsilon = 1e-3f;
 const Real c_epsilonsqrt = 3e-3f;
 const Real c_rotm_epsilon = (Real)0.005;
-const Real c_tt_epsilon = (Real)0.5; 				//in centimeter
-const Real c_tt_epsilon_sqr = (Real)0.25;
+const Real c_tt_epsilon = (Real)0.25; 				//in centimeter
+const Real c_tt_epsilon_sqr = (Real)0.125;
 const Real c_rotq_epsilon = (Real)0.5/(Real)180.0;	//err_dot: [1, 0] -> err_deg [0, 180]
 const Real c_rotq_epsilon_sqrnorm = (Real)0.001;
 

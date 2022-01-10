@@ -7,6 +7,8 @@ public:
 	virtual bool Create_main(unsigned int stk_size = 0) = 0;
 	virtual void Run_worker() = 0;
 	virtual void Execute_main() = 0;
+	// this function must be called after WaitForX being called for a thread not assigned a work
+	virtual void HoldReadyOn_main() = 0;
 	virtual unsigned int Dur_main() const = 0;
 };
 
@@ -79,7 +81,7 @@ public:
 	}
 
 protected:
-	void Execute_main()
+	virtual void Execute_main()
 	{
 		if (!SetEvent(m_cmdExe_evt))
     	{
@@ -88,6 +90,14 @@ protected:
    		}
 	}
 
+public:
+	virtual void HoldReadyOn_main()
+	{
+		BOOL released = ReleaseSemaphore(m_readiness_sema, 1, NULL);
+		IKAssert(released); //this funciton is called after a WaitForX function call
+	}
+
+private:
 	unsigned int Dur_main() const
 	{
 		return (unsigned int)m_durMilli;

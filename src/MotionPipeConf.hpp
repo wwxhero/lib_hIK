@@ -187,12 +187,14 @@ namespace CONF
 		const char* record_c() const;
 		const wchar_t* PG_dir_w() const;
 		const char* PG_dir_c() const;
+		int PG_radius() const;
 
 		void AddScale(const char* name, Real x, Real y, Real z);
 		void AddTarget(const char* name);
 		void SetFileName(const char* fileName);
 		void SetRecord(const char* rc_file);
 		void SetPGDir(const char* pg_dir);
+		void SetPGRadius(int radius);
 
 		BODY_TYPE type() const;
 
@@ -222,6 +224,7 @@ namespace CONF
 		std::string m_record_c;
 		std::wstring m_pgDir_w;
 		std::string m_pgDir_c;
+		int m_pgRadius;
 	public:
 		std::vector<CIKChainConf> IK_Chains;
 	private:

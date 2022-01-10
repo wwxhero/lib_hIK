@@ -141,6 +141,7 @@ namespace CONF
 	//CBodyConf:
 
 	CBodyConf::CBodyConf()
+		: m_pgRadius(500)
 	{
 	}
 
@@ -241,6 +242,12 @@ namespace CONF
 			return NULL;
 	}
 
+	int CBodyConf::PG_radius() const
+	{
+		return m_pgRadius;
+	}
+
+
 	void CBodyConf::SetFileName(const char* filename)
 	{
 		m_fileName_c = filename;
@@ -260,6 +267,11 @@ namespace CONF
 		m_pgDir_c = dir;
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 		m_pgDir_w = converter.from_bytes(m_pgDir_c);
+	}
+
+	void CBodyConf::SetPGRadius(int radius)
+	{
+		m_pgRadius = radius;
 	}
 
 #ifdef _DEBUG
@@ -444,6 +456,9 @@ namespace CONF
 					const char* pg_dir = ele->Attribute("PG_dir");
 					if (NULL != pg_dir)
 						SetPGDir(pg_dir);
+					int radius;
+					if (TIXML_SUCCESS == ele->QueryIntAttribute("PG_radius", &radius))
+						SetPGRadius(radius);
 				}
 				else if("IK_Chain" == name)
 				{

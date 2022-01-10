@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "IKGroupTree.hpp"
 #include "IKChainInverseJK.hpp"
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKGroupNode:
 
@@ -8,6 +9,7 @@ CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
 	: m_rootBody(root)
 	, m_nSpecMax(0)
 	, m_pg(NULL)
+	, m_pgRadius(500)
 {
 
 }
@@ -37,12 +39,12 @@ void CIKGroupNode::SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& na
 		chain->SetupTarget(nameSrc2bodyDst, src2dst_w, dst2src_w);
 }
 
-void CIKGroupNode::LoadPostureGraph(const char* pgDir)
+void CIKGroupNode::LoadPostureGraph(const char* pgDir, int radius)
 {
 	if (m_kChains.size() > 0)
 	{
-		m_pg = new CPGRuntime();
-		if (!m_pg->Load(pgDir, m_rootBody))
+		m_pg = new CPGRuntimeParallel();
+		if (!m_pg->Load(pgDir, m_rootBody, radius))
 		{
 			delete m_pg;
 			m_pg = NULL;
@@ -50,6 +52,7 @@ void CIKGroupNode::LoadPostureGraph(const char* pgDir)
 		else
 			m_pg->SetActivePosture<false>(0, true);
 	}
+	m_pgRadius = radius;
 }
 
 void CIKGroupNode::IKUpdate()
@@ -75,54 +78,47 @@ void CIKGroupNode::IKUpdate()
 
 	if (!exist_an_update)
 		return;
-	if (NULL != g_parent) //for root of the three FK_Update<G_SPACE=true> has no effect but waist computational resource
+
+	if (m_pg)
+		m_pg->ApplyActivePosture<true>();  // apply active posture
+	else if (NULL != g_parent) //for root of the three FK_Update<G_SPACE=true> has no effect but waist computational resource
 		CArtiBodyTree::FK_Update<true>(m_rootBody);
 
 
-	if (m_pg)
-	{
-		auto Err = [&]() -> Real
-		{
-			Real err = 0;
-			for (auto chain : m_kChains)
-				err += chain->Error();
-			return err;
-		};
-
-		int theta_min = CPGRuntime::LocalMin(*m_pg, Err);
-		m_pg->SetActivePosture<true>(theta_min, true);
-	}
-
 	bool solved_all = false;
-	// if (!m_pg)
-	{
-		if (1 == n_chains)
-		{
-			solved_all = m_kChains[0]->Update();
-		}
-		else
-		{
-			for (int i_update = 0; i_update < n_chains && !solved_all; i_update ++)
-			{
-				for (auto& chain_i : m_kChains)
-					chain_i->Update();
 
-				solved_all = true;
-				for (auto chain_i = m_kChains.begin()
-					; solved_all && chain_i != m_kChains.end()
-					; chain_i ++)
-					solved_all = (*chain_i)->UpdateCompleted();
-			}
-		}
-		LOGIKVar(LogInfoBool, solved_all);
+	if (1 == n_chains)
+	{
+		solved_all = m_kChains[0]->Update();
 	}
+	else
+	{
+		for (int i_update = 0; i_update < n_chains && !solved_all; i_update ++)
+		{
+			for (auto& chain_i : m_kChains)
+				chain_i->Update();
+
+			solved_all = true;
+			for (auto chain_i = m_kChains.begin()
+				; solved_all && chain_i != m_kChains.end()
+				; chain_i ++)
+				solved_all = (*chain_i)->UpdateCompleted();
+		}
+	}
+	LOGIKVar(LogInfoBool, solved_all);
 
 	for (int i_chain = 0; i_chain < n_chains; i_chain++)
 	{
 		m_kChains[i_chain]->EndUpdate();
 	}
 
+	if (m_pg)
+	{
+		m_pg->UpdateFKProj();
+	}
+
 	CArtiBodyTree::FK_Update<false>(m_rootBody);
+
 }
 
 void CIKGroupNode::IKReset()
@@ -159,7 +155,6 @@ void CIKGroupNode::Dump(int n_indents, std::ostream& logInfo) const
 	}
 	logInfo << "}";
 }
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CArtiBodyClrNode
@@ -543,11 +538,11 @@ void CIKGroupTree::SetupTargets(CIKGroupNode* root_ik
 	CIKGroupTree::TraverseDFS(root_ik, OnIKGroupNode, OffIKGroupNode);
 }
 
-void CIKGroupTree::LoadPG(CIKGroupNode* root_ik, const char* dirPath)
+void CIKGroupTree::LoadPG(CIKGroupNode* root_ik, const char* dirPath, int radius)
 {
-	auto OnIKGroupNode = [dirPath](CIKGroupNode* gNode)
+	auto OnIKGroupNode = [dirPath, radius](CIKGroupNode* gNode)
 		{
-			gNode->LoadPostureGraph(dirPath);
+			gNode->LoadPostureGraph(dirPath, radius);
 		};
 
 	auto OffIKGroupNode = [](CIKGroupNode* gNode)
