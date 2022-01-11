@@ -1,8 +1,9 @@
 #pragma once
 #include <ostream>
-#include "IKChain.hpp"
+
 #include "MotionPipeConf.hpp"
 #include "PGRuntimeParallel.hpp"
+#include "IKGroup.hpp"
 
 class CIKGroupNode : public TreeNode<CIKGroupNode>
 {
@@ -13,25 +14,9 @@ public:
 
 	void Join(CIKChain* chain)
 	{
-		auto it_chain = m_kChains.begin();
-		for (
-			; it_chain != m_kChains.end()
-				&& (*it_chain) < chain
-			; it_chain ++);
-		m_kChains.insert(it_chain, chain);
-
-		// insertion sort with predicate: len(chain_i) <= len(chain_i+1)
-		int n_steps_i = chain->NIters();
+		int n_steps_i = m_primary.Join(chain);
 		if (m_nSpecMax < n_steps_i)
 			m_nSpecMax = n_steps_i;
-
-		bool multiple_chain = (m_kChains.size() > 1);
-		if (multiple_chain)
-		{
-			const char* warning = "Grouping multiple chain undermines the IK performance!!!";
-			LOGIKVarWarning(LogInfoCharPtr, warning);
-		}
-		chain->SetGRoot(m_rootBody);
 	}
 
 	void IKUpdate();
@@ -44,19 +29,17 @@ public:
 
 	bool Empty() const
 	{
-		return m_kChains.empty();
+		return m_primary.Empty();
 	}
 
 	CArtiBodyNode* RootBody() const
 	{
-		return m_rootBody;
+		return m_primary.RootBody();
 	}
 protected:
-	CArtiBodyNode* m_rootBody;
-	std::vector<CIKChain*> m_kChains;
+	CIKGroup m_primary;
 	int m_nSpecMax;
 	CPGRuntimeParallel* m_pg;
-	int m_pgRadius;
 };
 
 class CIKGroupTree : public Tree<CIKGroupNode>
