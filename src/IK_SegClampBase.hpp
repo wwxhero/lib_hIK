@@ -10,6 +10,10 @@ protected:
 						, {std::numeric_limits<Real>::lowest(), std::numeric_limits<Real>::max()}
 						, {std::numeric_limits<Real>::lowest(), std::numeric_limits<Real>::max()}
 					}
+		, m_sin_half_tau_min(-2)
+		, m_sin_half_tau_max(+2)
+		, m_cos_half_tau_min(-1)
+		, m_cos_half_tau_max(-1)
 		, m_limited {false, false, false}
 	{
 	}
@@ -29,6 +33,8 @@ protected:
 				, Real& half_s_clamp, Real& half_c_clamp)
 	{
 		IKAssert(m_limited[TSegmentSO3::R_tau]);
+		IKAssert(-1 <= m_sin_half_tau_min && m_sin_half_tau_min <= 1
+				&& 0 <= m_cos_half_tau_min && m_cos_half_tau_min <= 1);
 		half_s_clamp = std::max(m_sin_half_tau_min
 						, std::min(m_sin_half_tau_max,
 									half_s));

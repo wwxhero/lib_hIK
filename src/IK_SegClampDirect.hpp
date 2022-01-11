@@ -30,7 +30,7 @@ public:
 private:
 	virtual bool Initialize(CArtiBodyNode* from, CArtiBodyNode* to) override
 	{
-		if (!TSegmentSO3::Initialize(from, to))
+		if (!Super::Initialize(from, to))
 			return false;
 
 		m_sin_half_theta_min = (Real)sin((Real)0.5 * Super::m_limRange[TSegmentSO3::R_theta][0]);
