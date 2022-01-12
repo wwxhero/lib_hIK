@@ -15,7 +15,6 @@ public:
 	void Join(CIKChain* chain)
 	{
 		m_primary.Join(chain);
-		m_secondary.Joint(chain);
 	}
 
 	void IKUpdate();

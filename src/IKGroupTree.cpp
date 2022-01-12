@@ -4,10 +4,12 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKGroupNode:
+#define N_CONCURRENCY_SECONDARY 6
+#define N_SEEDS_SECONDARY 12
+
 
 CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
 	: m_primary(root)
-	, m_secondary(root)
 	, m_pg(NULL)
 {
 
@@ -44,13 +46,20 @@ void CIKGroupNode::LoadPostureGraph(const char* pgDir, int radius)
 			m_pg = NULL;
 		}
 		else
+		{
 			m_pg->SetActivePosture<false>(0, true);
+			m_secondary.Initialize(m_primary, N_CONCURRENCY_SECONDARY);
+		}
 	}
 }
 
 void CIKGroupNode::IKUpdate()
 {
-	if (!m_primary.BeginUpdate())
+	if (m_primary.Empty())
+		return;
+
+	Transform_TR w2g;
+	if (!m_primary.BeginUpdate(&w2g))
 		return;
 
 	if (m_pg)
@@ -75,46 +84,43 @@ void CIKGroupNode::IKUpdate()
 			// 			err += chain->Error();
 			// 		return err;
 			// 	};
-			auto pg = m_pg->Lock();
+			CPGRuntimeParallel::Locker locker;
+			auto pg_seq = m_pg->Lock(&locker);
 			auto root_body = m_primary.RootBody();
 			int n_errs = 0;
 			int n_localMinima = 0;
 			TransformArchive tm_star;
-			CArtiBodyTree::Serialize<true>(root_body, tm_star);
-			m_secondary.BeginUpdate(tm_star);
 
 			auto IKErr = [&](int pose_id, bool* stop_searching) -> Real
 				{
 					n_errs ++;
-					if (m_secondary.Solved()
-						|| n_errs > m_radius
-						|| n_localMinima > 10)
-					{
-						*stop_searching = true;
-						m_secondary.EndUpdate(tm_star);
+					bool solved = m_secondary.Solution(&tm_star);
+					if (solved)
 						CArtiBodyTree::Serialize<false>(root_body, tm_star);
-						return std::numeric_limits<Real>::Max();
+					*stop_searching = (solved || n_errs > m_pg->Radius() || n_localMinima > N_SEEDS_SECONDARY);
+					if (*stop_searching)
+					{
+						return std::numeric_limits<Real>::max();
 					}
 					else
 					{
-						*stop_searching = false;
-						pg->SetActivePosture<true>(pose_id, true);
-						auto err = m_primary.Error();
-						return err;
+						pg_seq->SetActivePosture<true>(pose_id, true);
+						return m_primary.Error();
 					}
 				};
 
 			auto OnPG_Lomin = [&](int pose_id)
 				{
 					n_localMinima ++;
-					pg->SetActivePosture<true>(pose_id, false);
+					pg_seq->SetActivePosture<true>(pose_id, false);
 					CArtiBodyTree::Serialize<true>(root_body, tm_star);
-					m_secondary.Update_A(tm_star);
+					m_secondary.Update_A(w2g, tm_star);
 				};
 
-			CPGRuntime::LocalMin(pg, IKErr, OnPG_Lomin);
-			m_pg->UnLock();
+			CPGRuntime::LocalMin(*pg_seq, IKErr, OnPG_Lomin);
+			m_pg->UnLock(locker);
 			CArtiBodyTree::FK_Update<false>(root_body);
+			m_pg->UpdateFKProj();
 		}
 	}
 }
@@ -135,6 +141,9 @@ void CIKGroupNode::Dump(int n_indents, std::ostream& logInfo) const
 {
 	m_primary.Dump(n_indents, logInfo);
 }
+
+#undef N_SEEDS_SECONDARY
+#undef N_CONCURRENCY_SECONDARY
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CArtiBodyClrNode

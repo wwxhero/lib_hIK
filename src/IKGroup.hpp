@@ -1,5 +1,7 @@
 #pragma once
 #include "IKChain.hpp"
+#include "parallel_thread_helper.hpp"
+
 class CIKGroup
 {
 public:
@@ -29,7 +31,8 @@ public:
 		return n_steps_i;
 	}
 
-	bool BeginUpdate();
+	bool BeginUpdate(Transform_TR* w2g);
+	bool BeginUpdate(const Transform_TR& w2g, const TransformArchive& tm_0);
 	bool Update();
 	void EndUpdate();
 	void IKReset();
@@ -47,7 +50,43 @@ public:
 	{
 		return m_rootBody;
 	}
+
+	Real Error() const
+	{
+		Real err = 0;
+		for (auto chain_i : m_kChains)
+			err += chain_i->Error();
+		return err;
+	}
+
+	CIKGroup* Clone() const;
 private:
 	CArtiBodyNode* m_rootBody;
 	std::vector<CIKChain*> m_kChains;
+};
+
+class CThreadIKGroup : public CThread_W32
+{
+public:
+	CThreadIKGroup();
+	~CThreadIKGroup();
+	void Initialize_main(const CIKGroup& group_src);
+	void Update_main(const Transform_TR& w2g, const TransformArchive& tm_0);
+	void Run_worker();
+	bool Solution_main(TransformArchive* tm_k);
+private:
+	volatile bool m_solved;
+	CIKGroup* volatile m_group;
+};
+
+class CIKGroupsParallel
+{
+public:
+	CIKGroupsParallel();
+	~CIKGroupsParallel();
+	void Initialize(const CIKGroup& src, int concurrency);
+	void Update_A(const Transform_TR& w2g, const TransformArchive& tm_0);
+	bool Solution(TransformArchive* tm_star);
+private:
+	CThreadPool_W32<CThreadIKGroup> m_pool;
 };
