@@ -149,6 +149,25 @@ void LogInfoInt(const char* file, unsigned int line, const char* token, int v)
 #endif
 }
 
+void LogInfoUint(const char* file, unsigned int line, const char* token, unsigned int v)
+{
+#ifndef SMOOTH_LOGGING
+	fprintf(stdout
+		, "[%s:%d] %s = %u\n"
+		, file_short(file)
+		, line
+		, token
+		, v);
+	fflush(stdout);
+#else
+	g_LoggerFast.OutFmt("[%s:%d] %s = %u\n"
+		, file_short(file)
+		, line
+		, token
+		, v);
+#endif
+}
+
 void LogInfoBool(const char* file, unsigned int line, const char* token, bool v)
 {
 	const char* repre_b[] = {"false", "true"};

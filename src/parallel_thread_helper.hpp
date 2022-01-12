@@ -116,7 +116,7 @@ private:
 		{
 			if (!ReleaseSemaphore(pThis->m_readiness_sema, 1, NULL))
 			{
-				printf("ReleaseSemaphore error: %d\n", GetLastError());
+				LOGIKVarErr(LogInfoUint, GetLastError());
 				err_code = 0; //indicate an error happened
 				break;
 			}

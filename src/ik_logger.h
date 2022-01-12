@@ -18,6 +18,7 @@ void LogInfoWCharPtr(const char *file, unsigned int line, const char *token, con
 void LogInfoCharPtr(const char *file, unsigned int line, const char *token, const char* v);
 void LogInfoPtr(const char *file, unsigned int line, const char *token, const void* v);
 void LogInfoInt(const char *file, unsigned int line, const char *token, int v);
+void LogInfoUint(const char *file, unsigned int line, const char *token, unsigned int v);
 void LogInfoBool(const char *file, unsigned int line, const char *token, bool v);
 void LogInfoReal(const char *file, unsigned int line, const char *token, Real v);
 void LogInfoReal3x3_m(const char *file, unsigned int line, const char *token, const Real m[3][3]);
