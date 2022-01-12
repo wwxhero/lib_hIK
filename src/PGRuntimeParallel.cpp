@@ -31,7 +31,11 @@ void CThreadPGProj::Run_worker()
 			return err;
 		};
 
-	int theta_min = CPGRuntime::LocalMin(*m_pg, FK_Err);
+	auto OnLocalMin = [&](int pose_id)
+		{
+		};
+
+	int theta_min = CPGRuntime::LocalMin(*m_pg, FK_Err, OnLocalMin);
 	// LOGIKVarErr(LogInfoInt, theta_min);
 	m_pg->SetActivePosture<true>(theta_min, false);
 	// LOGIKVarErr(LogInfoInt, n_errs);
@@ -40,6 +44,7 @@ void CThreadPGProj::Run_worker()
 
 CPGRuntimeParallel::CPGRuntimeParallel()
 	: m_pg(NULL)
+	, m_radius(0)
 {
 
 }
@@ -66,6 +71,7 @@ bool CPGRuntimeParallel::Load(const char* pgDir, CArtiBodyNode* rootBody, int ra
 								{
 									thread->Initialize_main(m_pg, radius);
 								});
+		m_radius = radius;
 		return true;
 	}
 
@@ -75,5 +81,19 @@ void CPGRuntimeParallel::UpdateFKProj()
 {
 	auto worker = m_pool.WaitForAReadyThread_main(INFINITE);
 	worker->UpdateFKProj_main();
+}
+
+
+CPGRuntime* CPGRuntimeParallel::Lock(Locker* locker)
+{
+	*locker = &m_pool.WaitForAllReadyThreads_main();
+	IKAssert(1 == (*locker)->size());
+	return m_pg;
+}
+
+void CPGRuntimeParallel::UnLock(Locker locker)
+{
+	for (auto thread_i : (*locker))
+		thread_i->HoldReadyOn_main();
 }
 

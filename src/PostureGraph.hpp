@@ -383,8 +383,8 @@ public:
 	}
 
 
-	template<typename LAMBDA_Err>
-	static int LocalMin(CPGRuntime& graph, LAMBDA_Err kineErr)
+	template<typename LAMBDA_Err, typename LAMBDA_onMin>
+	static int LocalMin(CPGRuntime& graph, LAMBDA_Err kineErr, LAMBDA_onMin onMin)
 	{
 		// auto ErrTheta = [&graph, err](vertex_descriptor theta) -> Real
 		// 	{
@@ -451,6 +451,9 @@ public:
 				}
 				local_min = local_min && (err < err_n);
 			}
+
+			if (local_min)
+				onMin(theta);
 
 			LOGIKVar(LogInfoInt, theta);
 
