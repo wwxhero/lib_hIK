@@ -34,7 +34,7 @@ public:
 	CPGThetaRuntime(const char* path, CArtiBodyNode* body_ref);
 	CPGThetaRuntime(const std::string& path, CArtiBodyNode* body_ref);
 	template<bool G_SPACE>
-	void PoseBody(int i_frame) const
+	void PoseBody(int i_frame, bool UpdatePose = true) const
 	{
 		const TransformArchive& motion_i = m_motions[i_frame];
 		std::size_t n_tms = m_jointsRef.size();
@@ -44,7 +44,8 @@ public:
 			IJoint* joint_j = m_jointsRef[j_tm];
 			joint_j->GetTransform()->CopyFrom(tm_ij);
 		}
-		CArtiBodyTree::FK_Update<G_SPACE>(m_rootRef);
+		if (UpdatePose)
+			CArtiBodyTree::FK_Update<G_SPACE>(m_rootRef);
 	}
 	int N_Theta() const
 	{
@@ -361,10 +362,7 @@ public:
 	{
 		int pose_id_m = m_theta_star;
 		m_theta_star = pose_id;
-		if (UpdatePose)
-		{
-			m_thetas->PoseBody<G_SPACE>(pose_id);
-		}
+		m_thetas->PoseBody<G_SPACE>(pose_id, UpdatePose);
 		return pose_id_m;
 	}
 

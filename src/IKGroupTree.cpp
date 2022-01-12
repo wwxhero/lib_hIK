@@ -7,7 +7,7 @@
 
 CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
 	: m_primary(root)
-	, m_nSpecMax(0)
+	, m_secondary(root)
 	, m_pg(NULL)
 {
 
@@ -16,7 +16,6 @@ CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
 CIKGroupNode::CIKGroupNode(CIKGroupNode& src)
 	: m_primary(src.m_primary)
 {
-	m_nSpecMax = src.m_nSpecMax;
 	m_pg = src.m_pg; src.m_pg = NULL;
 }
 
@@ -59,15 +58,65 @@ void CIKGroupNode::IKUpdate()
 	else if (NULL != m_primary.RootBody()->GetParent()) //for root of the three FK_Update<G_SPACE=true> has no effect but waist computational resource
 		CArtiBodyTree::FK_Update<true>(m_primary.RootBody());
 
-	m_primary.Update();
-
-	if (m_pg)
-	{
-		m_pg->UpdateFKProj();
-	}
+	bool updated = m_primary.Update();
 
 	m_primary.EndUpdate();
 
+	if (m_pg)
+	{
+		if (updated)
+			m_pg->UpdateFKProj();
+		else
+		{
+			// auto Err = [&]() -> Real
+			// 	{
+			// 		Real err = 0;
+			// 		for (auto chain : m_kChains)
+			// 			err += chain->Error();
+			// 		return err;
+			// 	};
+			auto pg = m_pg->Lock();
+			auto root_body = m_primary.RootBody();
+			int n_errs = 0;
+			int n_localMinima = 0;
+			TransformArchive tm_star;
+			CArtiBodyTree::Serialize<true>(root_body, tm_star);
+			m_secondary.BeginUpdate(tm_star);
+
+			auto IKErr = [&](int pose_id, bool* stop_searching) -> Real
+				{
+					n_errs ++;
+					if (m_secondary.Solved()
+						|| n_errs > m_radius
+						|| n_localMinima > 10)
+					{
+						*stop_searching = true;
+						m_secondary.EndUpdate(tm_star);
+						CArtiBodyTree::Serialize<false>(root_body, tm_star);
+						return std::numeric_limits<Real>::Max();
+					}
+					else
+					{
+						*stop_searching = false;
+						pg->SetActivePosture<true>(pose_id, true);
+						auto err = m_primary.Error();
+						return err;
+					}
+				};
+
+			auto OnPG_Lomin = [&](int pose_id)
+				{
+					n_localMinima ++;
+					pg->SetActivePosture<true>(pose_id, false);
+					CArtiBodyTree::Serialize<true>(root_body, tm_star);
+					m_secondary.Update_A(tm_star);
+				};
+
+			CPGRuntime::LocalMin(pg, IKErr, OnPG_Lomin);
+			m_pg->UnLock();
+			CArtiBodyTree::FK_Update<false>(root_body);
+		}
+	}
 }
 
 void CIKGroupNode::IKReset()

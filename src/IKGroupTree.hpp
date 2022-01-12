@@ -14,9 +14,8 @@ public:
 
 	void Join(CIKChain* chain)
 	{
-		int n_steps_i = m_primary.Join(chain);
-		if (m_nSpecMax < n_steps_i)
-			m_nSpecMax = n_steps_i;
+		m_primary.Join(chain);
+		m_secondary.Joint(chain);
 	}
 
 	void IKUpdate();
@@ -38,7 +37,7 @@ public:
 	}
 protected:
 	CIKGroup m_primary;
-	int m_nSpecMax;
+	CIKGroupsParallel m_secondary;
 	CPGRuntimeParallel* m_pg;
 };
 
