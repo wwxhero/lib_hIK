@@ -150,6 +150,17 @@ template<typename Thread>
 class CThreadPool_W32
 {
 public:
+	CThreadPool_W32()
+	{
+	}
+
+	CThreadPool_W32(CThreadPool_W32<Thread>&& src)
+	{
+		m_threads = std::move(src.m_threads);
+		m_readiness_ref = std::move(src.m_readiness_ref); //semaphores
+		m_cmdQuits_ref = std::move(src.m_cmdQuits_ref);  //event
+	}
+
 	template<typename LAMBDA_Initialize>
 	bool Initialize_main(int n_threads, LAMBDA_Initialize Initialize)
 	{

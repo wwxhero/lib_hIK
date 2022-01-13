@@ -1,6 +1,5 @@
 #pragma once
 #include <ostream>
-
 #include "MotionPipeConf.hpp"
 #include "PGRuntimeParallel.hpp"
 #include "IKGroup.hpp"
@@ -11,11 +10,6 @@ public:
 	CIKGroupNode(CArtiBodyNode* root);
 	explicit CIKGroupNode(CIKGroupNode& src);
 	~CIKGroupNode();
-
-	void Join(CIKChain* chain)
-	{
-		m_primary.Join(chain);
-	}
 
 	void IKUpdate();
 	void IKReset();
@@ -34,6 +28,8 @@ public:
 	{
 		return m_primary.RootBody();
 	}
+
+	CIKChain* AddChain(const CONF::CIKChainConf* chainConf);
 protected:
 	CIKGroup m_primary;
 	CIKGroupsParallel m_secondary;

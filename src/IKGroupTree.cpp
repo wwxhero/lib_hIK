@@ -10,6 +10,7 @@
 
 CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
 	: m_primary(root)
+	, m_secondary(root, N_CONCURRENCY_SECONDARY)
 	, m_pg(NULL)
 {
 
@@ -17,6 +18,7 @@ CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
 
 CIKGroupNode::CIKGroupNode(CIKGroupNode& src)
 	: m_primary(src.m_primary)
+	, m_secondary(src.m_secondary)
 {
 	m_pg = src.m_pg; src.m_pg = NULL;
 }
@@ -48,9 +50,15 @@ void CIKGroupNode::LoadPostureGraph(const char* pgDir, int radius)
 		else
 		{
 			m_pg->SetActivePosture<false>(0, true);
-			m_secondary.Initialize(m_primary, N_CONCURRENCY_SECONDARY);
 		}
 	}
+}
+
+CIKChain* CIKGroupNode::AddChain(const CONF::CIKChainConf* chainConf)
+{
+	CIKChain* ret = m_primary.AddChain(chainConf);
+	m_secondary.AddChain(chainConf);
+	return ret;
 }
 
 void CIKGroupNode::IKUpdate()
@@ -239,33 +247,6 @@ public:
 		LOGIKVar(LogInfoInt, c_dist2root);
 	}
 
-	CIKChain* Generate() const
-	{
-		CIKChain* chain = NULL;
-		switch(c_conf->algor)
-		{
-			case CIKChain::Proj:
-				chain = new CIKChainProj(c_conf->up);
-				break;
-			case CIKChain::DLS:
-				chain = new CIKChainInverseJK_DLS(c_conf->weight_p
-												, c_conf->weight_r
-												, c_conf->n_iter);
-				break;
-			case CIKChain::SDLS:
-				chain = new CIKChainInverseJK_SDLS(c_conf->weight_p
-												, c_conf->weight_r
-												, c_conf->n_iter);
-				break;
-		}
-
-		if (!chain->Init(c_eef->c_body, c_conf->len, c_conf->Joints))
-		{
-			delete chain;
-			chain = NULL;
-		}
-		return chain;
-	}
 public:
 	int m_Color;
 	CArtiBodyClrNode* c_eef;
@@ -438,10 +419,7 @@ void CIKGroupTreeGen::InitKChain(CIKGroupNodeGen* root, const std::vector<CIKCha
 					const GroupChains& g_chains = c_gid2gchains[clr_this];
 					for (const CIKChainClr& chainclr : g_chains)
 					{
-						CIKChain *chain = chainclr.Generate();
-						if (NULL != chain)
-							node_this_gen->Join(chain);
-						else
+						if (NULL == node_this_gen->AddChain(chainclr.c_conf))
 						{
 							std::stringstream err;
 							err << "Chain: " << chainclr.c_eef->c_body->GetName_c() << " failed initialization!!!";

@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "IKGroup.hpp"
+#include "IKChainInverseJK.hpp"
+
 
 CIKGroup::CIKGroup(CArtiBodyNode* root)
 	: m_rootBody(root)
@@ -146,9 +148,51 @@ void CIKGroup::Dump(int n_indents, std::ostream& logInfo) const
 	logInfo << "}";
 }
 
-CIKGroup* CIKGroup::Clone() const
+CIKChain* CIKGroup::AddChain(const CONF::CIKChainConf* conf)
 {
-	return NULL;
+	const CArtiBodyNode* eef = NULL;
+	auto SearchOnBody = [&eef, conf](const CArtiBodyNode* node) -> bool
+		{
+			if (std::string(node->GetName_c()) == conf->eef)
+			{
+				eef = node;
+				return true;
+			}
+			else
+				return false;
+		};
+
+	CArtiBodyTree::SearchBFS(m_rootBody, SearchOnBody);
+
+	if (NULL == eef)
+		return NULL;
+
+	CIKChain* chain = NULL;
+	switch(conf->algor)
+	{
+		case CIKChain::Proj:
+			chain = new CIKChainProj(conf->up);
+			break;
+		case CIKChain::DLS:
+			chain = new CIKChainInverseJK_DLS(conf->weight_p
+											, conf->weight_r
+											, conf->n_iter);
+			break;
+		case CIKChain::SDLS:
+			chain = new CIKChainInverseJK_SDLS(conf->weight_p
+											, conf->weight_r
+											, conf->n_iter);
+			break;
+	}
+
+	if (!chain->Init(eef, conf->len, conf->Joints))
+	{
+		delete chain;
+		chain = NULL;
+	}
+	else
+		Join(chain);
+	return chain;
 }
 
 CThreadIKGroup::CThreadIKGroup()
@@ -162,15 +206,21 @@ CThreadIKGroup::~CThreadIKGroup()
 	delete m_group;
 }
 
-void CThreadIKGroup::Initialize_main(const CIKGroup& group_src)
+void CThreadIKGroup::Initialize_main(const CArtiBodyNode* root)
 {
-	m_group = group_src.Clone();
+	//fixme: create an IKGroup with a duplicated ArtiBody from the root
 }
 
 void CThreadIKGroup::Update_main(const Transform_TR& w2g, const TransformArchive& tm_0)
 {
 	m_solved = (m_group &&  !m_group->BeginUpdate(w2g, tm_0));
 	Execute_main();
+}
+
+CIKChain* CThreadIKGroup::AddChain_main(const CONF::CIKChainConf* conf)
+{
+	//fixme: add the chain to the group, make sure no workers running
+	return NULL;
 }
 
 void CThreadIKGroup::Run_worker()
@@ -191,9 +241,18 @@ bool CThreadIKGroup::Solution_main(TransformArchive* tm_k)
 		return false;
 }
 
-CIKGroupsParallel::CIKGroupsParallel()
+CIKGroupsParallel::CIKGroupsParallel(const CArtiBodyNode* root, int concurrency)
 {
+	m_pool.Initialize_main(concurrency,
+						[&](CThreadIKGroup* thread)
+							{
+								thread->Initialize_main(root);
+							});
+}
 
+CIKGroupsParallel::CIKGroupsParallel(CIKGroupsParallel& src)
+	: m_pool(std::move(src.m_pool))
+{
 }
 
 CIKGroupsParallel::~CIKGroupsParallel()
@@ -201,16 +260,7 @@ CIKGroupsParallel::~CIKGroupsParallel()
 }
 
 
-void CIKGroupsParallel::Initialize(const CIKGroup& group_src, int n_concurrency)
-{
-	int thread_id = 0;
-	m_pool.Initialize_main(n_concurrency,
-						[&](CThreadIKGroup* thread)
-							{
-								thread->Initialize_main(group_src);
-							});
 
-}
 
 void CIKGroupsParallel::Update_A(const Transform_TR& w2g, const TransformArchive& tm_0)
 {
@@ -234,4 +284,9 @@ bool CIKGroupsParallel::Solution(TransformArchive* tm_star)
 	for (auto thread_i : readies)
 		thread_i->HoldReadyOn_main();
 	return solved;
+}
+
+void CIKGroupsParallel::AddChain(const CONF::CIKChainConf* conf)
+{
+	// fixme: let each group thread add the chain
 }
