@@ -60,6 +60,23 @@ void LogInfo(const char* file, unsigned int line, const char *info)
 #endif
 }
 
+void LogInfoErr(const char* file, unsigned int line, const char *info)
+{
+#ifndef SMOOTH_LOGGING
+	fprintf(stdout
+		, "[%s:%d] ERROR: %s\n"
+		, file_short(file)
+		, line
+		, info);
+	fflush(stdout);
+#else
+	g_LoggerFast.OutFmt("[%s:%d] ERROR: %s\n"
+						, file_short(file)
+						, line
+						, info);
+#endif
+}
+
 void LogInfoWCharPtr(const char *file, unsigned int line, const char *token, const wchar_t* v)
 {
 	if (NULL == v)

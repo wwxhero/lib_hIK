@@ -92,8 +92,8 @@ public:
 	CIKGroupsParallel(const CArtiBodyNode* root_src, int concurrency);
 	CIKGroupsParallel(CIKGroupsParallel& src);
 	~CIKGroupsParallel();
-	void Update_A(const Transform_TR& w2g, const TransformArchive& tm_0);
-	bool Solution(TransformArchive* tm_star);
+	bool Update_A(const Transform_TR& w2g, TransformArchive& tm_0);
+	bool SolutionFinal(TransformArchive* tm_star);
 	void AddChain(const CONF::CIKChainConf* conf);
 	void SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
 private:

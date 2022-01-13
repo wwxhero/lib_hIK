@@ -100,8 +100,8 @@ bool CIKGroup::Update()
 				solved_all = (*chain_i)->UpdateCompleted();
 		}
 	}
-	LOGIKVarErr(LogInfoCharPtr, m_rootBody->GetName_c());
-	LOGIKVarErr(LogInfoBool, solved_all);
+	// LOGIKVarErr(LogInfoCharPtr, m_rootBody->GetName_c());
+	// LOGIKVarErr(LogInfoBool, solved_all);
 	return solved_all;
 }
 
@@ -267,7 +267,7 @@ void CThreadIKGroup::Run_worker()
 
 bool CThreadIKGroup::Solution_main(TransformArchive* tm_k)
 {
-	if (m_solved && m_group)
+	if (m_group && m_solved)
 	{
 		m_group->EndUpdate();
 		CArtiBodyTree::Serialize<true>(m_group->RootBody(), *tm_k);
@@ -295,27 +295,35 @@ CIKGroupsParallel::~CIKGroupsParallel()
 {
 }
 
-void CIKGroupsParallel::Update_A(const Transform_TR& w2g, const TransformArchive& tm_0)
+bool CIKGroupsParallel::Update_A(const Transform_TR& w2g, TransformArchive& tm_0)
 {
 	auto thread_i = m_pool.WaitForAReadyThread_main(INFINITE);
-	thread_i->Update_main(w2g, tm_0);
+	TransformArchive& tm_k = tm_0;
+	if (thread_i->Solution_main(&tm_k))
+	{
+		thread_i->HoldReadyOn_main();
+		return true;
+	}
+	else
+	{
+		thread_i->Update_main(w2g, tm_0);
+		return false;
+	}
 }
 
-bool CIKGroupsParallel::Solution(TransformArchive* tm_star)
+bool CIKGroupsParallel::SolutionFinal(TransformArchive* tm_star)
 {
 	bool solved = false;
-	std::list<CThreadIKGroup*> readies;
-	CThreadIKGroup* thread_i = NULL;
-	while (!solved
-			&& NULL !=
-				(thread_i = m_pool.WaitForAReadyThread_main(0)))
-	{
-		readies.push_back(thread_i);
-		solved = thread_i->Solution_main(tm_star);
-	}
 
-	for (auto thread_i : readies)
+	auto& threads = m_pool.WaitForAllReadyThreads_main();
+	for (auto it = threads.begin()
+		; it != threads.end() && !solved
+		; it ++)
+		solved = (*it)->Solution_main(tm_star);
+
+	for (auto thread_i : threads)
 		thread_i->HoldReadyOn_main();
+
 	return solved;
 }
 

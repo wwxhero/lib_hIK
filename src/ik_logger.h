@@ -13,6 +13,7 @@ extern "C" {
 const char *file_short(const char *file_f);
 
 void LogInfo(const char *file, unsigned int line, const char *info);
+void LogInfoErr(const char* file, unsigned int line, const char *info);
 
 void LogInfoWCharPtr(const char *file, unsigned int line, const char *token, const wchar_t* v);
 void LogInfoCharPtr(const char *file, unsigned int line, const char *token, const char* v);
@@ -46,6 +47,7 @@ void AssertionFail(const char *file, unsigned int line);
 			func(__FILE__, __LINE__, "WARNING: "#var, var);\
 			LOGIKFlush();
 #		define LOGIK(msg) LogInfo(__FILE__, __LINE__, msg);
+#		define LOGIKErr(msg) LogInfoErr(__FILE__, __LINE__, msg);
 #		if defined HARDASSERTION
 #			define IKAssert assert
 #		else
@@ -67,6 +69,7 @@ void AssertionFail(const char *file, unsigned int line);
 			func(__FILE__, __LINE__, "WARNING: "#var, var);\
 			LOGIKFlush();
 #		define LOGIK(msg)
+#		define LOGIKErr(msg) LogInfoErr(__FILE__, __LINE__, msg);
 #		define IKAssert(v)\
 				if(!(v))\
 					AssertionFail(__FILE__, __LINE__);
