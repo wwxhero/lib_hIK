@@ -35,6 +35,7 @@ void CIKGroupNode::SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& na
 								, const Eigen::Matrix3r& dst2src_w)
 {
 	m_primary.SetupTargets(nameSrc2bodyDst, src2dst_w, dst2src_w);
+	m_secondary.SetupTargets(nameSrc2bodyDst, src2dst_w, dst2src_w);
 }
 
 void CIKGroupNode::LoadPostureGraph(const char* pgDir, int radius)

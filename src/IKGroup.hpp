@@ -77,11 +77,13 @@ public:
 	CIKChain* AddChain_main(const CONF::CIKChainConf* conf);
 	void Update_main(const Transform_TR& w2g, const TransformArchive& tm_0);
 	bool Solution_main(TransformArchive* tm_k);
+	void SetupTargets_main(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
 private:
 	virtual void Run_worker();
 private:
 	volatile bool m_solved;
 	CIKGroup* volatile m_group;
+	CArtiBodyNode* m_rootParent;
 };
 
 class CIKGroupsParallel
@@ -93,6 +95,7 @@ public:
 	void Update_A(const Transform_TR& w2g, const TransformArchive& tm_0);
 	bool Solution(TransformArchive* tm_star);
 	void AddChain(const CONF::CIKChainConf* conf);
+	void SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
 private:
 	CThreadPool_W32<CThreadIKGroup> m_pool;
 };

@@ -198,17 +198,43 @@ CIKChain* CIKGroup::AddChain(const CONF::CIKChainConf* conf)
 CThreadIKGroup::CThreadIKGroup()
 	: m_solved(false)
 	, m_group(NULL)
+	, m_rootParent(NULL)
 {
 }
 
 CThreadIKGroup::~CThreadIKGroup()
 {
 	delete m_group;
+	CArtiBodyTree::Destroy(m_rootParent);
 }
 
-void CThreadIKGroup::Initialize_main(const CArtiBodyNode* root)
+void CThreadIKGroup::Initialize_main(const CArtiBodyNode* root_src)
 {
 	//fixme: create an IKGroup with a duplicated ArtiBody from the root
+	const CArtiBodyNode* root_parent_src = root_src->GetParent();
+	CArtiBodyNode* root_dup = NULL;
+	if (root_parent_src)
+		CArtiBodyTree::Clone(root_parent_src, &m_rootParent);
+	else
+		CArtiBodyTree::Clone(root_src, &m_rootParent);
+
+	std::string root_name(root_src->GetName_c());
+	auto SearchOnBody = [&root_dup, &root_name = std::as_const(root_name)](const CArtiBodyNode* node) -> bool
+		{
+			if (std::string(node->GetName_c()) == root_name)
+			{
+				root_dup = const_cast<CArtiBodyNode*>(node);
+				return true;
+			}
+			else
+				return false;
+		};
+
+	CArtiBodyTree::SearchBFS(m_rootParent, SearchOnBody);
+
+	IKAssert(NULL != root_dup);
+
+	m_group = new CIKGroup(root_dup);
 }
 
 void CThreadIKGroup::Update_main(const Transform_TR& w2g, const TransformArchive& tm_0)
@@ -219,8 +245,18 @@ void CThreadIKGroup::Update_main(const Transform_TR& w2g, const TransformArchive
 
 CIKChain* CThreadIKGroup::AddChain_main(const CONF::CIKChainConf* conf)
 {
-	//fixme: add the chain to the group, make sure no workers running
-	return NULL;
+	if (m_group)
+		return m_group->AddChain(conf);
+	else
+		return NULL;
+}
+
+void CThreadIKGroup::SetupTargets_main(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w)
+{
+	if (m_group)
+	{
+		m_group->SetupTargets(nameSrc2bodyDst, src2dst_w, dst2src_w);
+	}
 }
 
 void CThreadIKGroup::Run_worker()
@@ -259,9 +295,6 @@ CIKGroupsParallel::~CIKGroupsParallel()
 {
 }
 
-
-
-
 void CIKGroupsParallel::Update_A(const Transform_TR& w2g, const TransformArchive& tm_0)
 {
 	auto thread_i = m_pool.WaitForAReadyThread_main(INFINITE);
@@ -288,5 +321,20 @@ bool CIKGroupsParallel::Solution(TransformArchive* tm_star)
 
 void CIKGroupsParallel::AddChain(const CONF::CIKChainConf* conf)
 {
-	// fixme: let each group thread add the chain
+	auto threads = m_pool.WaitForAllReadyThreads_main();
+	for (auto thread_i : threads)
+	{
+		thread_i->AddChain_main(conf);
+		thread_i->HoldReadyOn_main();
+	}
+}
+
+void CIKGroupsParallel::SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w)
+{
+	auto threads = m_pool.WaitForAllReadyThreads_main();
+	for (auto thread_i : threads)
+	{
+		thread_i->SetupTargets_main(nameSrc2bodyDst, src2dst_w, dst2src_w);
+		thread_i->HoldReadyOn_main();
+	}
 }
