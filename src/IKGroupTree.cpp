@@ -89,12 +89,15 @@ void CIKGroupNode::IKUpdate()
 			auto root_body = m_primary.RootBody();
 			int n_errs = 0;
 			int n_localMinima = 0;
+			TransformArchive tm_bk;
+			CArtiBodyTree::Serialize<true>(root_body, tm_bk);
 			TransformArchive tm_star;
+			bool solved = false;
 
 			auto IKErr = [&](int pose_id, bool* stop_searching) -> Real
 				{
 					n_errs ++;
-					bool solved = m_secondary.Solution(&tm_star);
+					solved = m_secondary.Solution(&tm_star);
 					if (solved)
 						CArtiBodyTree::Serialize<false>(root_body, tm_star);
 					*stop_searching = (solved || n_errs > m_pg->Radius() || n_localMinima > N_SEEDS_SECONDARY);
@@ -119,6 +122,8 @@ void CIKGroupNode::IKUpdate()
 
 			CPGRuntime::LocalMin(*pg_seq, IKErr, OnPG_Lomin);
 			m_pg->UnLock(locker);
+			if (!solved)
+				CArtiBodyTree::Serialize<false>(root_body, tm_bk);
 			CArtiBodyTree::FK_Update<false>(root_body);
 			m_pg->UpdateFKProj();
 		}
