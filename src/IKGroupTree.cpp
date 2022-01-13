@@ -5,7 +5,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKGroupNode:
 #define N_CONCURRENCY_SECONDARY 6
-#define N_SEEDS_SECONDARY 12
+#define N_SEEDS_SECONDARY 18
 
 
 CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
@@ -67,9 +67,13 @@ void CIKGroupNode::IKUpdate()
 	if (m_primary.Empty())
 		return;
 
+	// LOGIKErr("BeginPrimaryUpdate");
 	Transform_TR w2g;
 	if (!m_primary.BeginUpdate(&w2g))
+	{
+		// LOGIKErr("EndPrimaryUpdate");
 		return;
+	}
 
 	if (m_pg)
 		m_pg->ApplyActivePosture<true>();  // apply active posture
@@ -80,6 +84,7 @@ void CIKGroupNode::IKUpdate()
 
 	m_primary.EndUpdate();
 
+	// LOGIKErr("EndPrimaryUpdate");
 	if (m_pg)
 	{
 		if (updated)
@@ -93,6 +98,7 @@ void CIKGroupNode::IKUpdate()
 			// 			err += chain->Error();
 			// 		return err;
 			// 	};
+			// LOGIKErr("BeginSecondaryUpdate");
 			CPGRuntimeParallel::Locker locker;
 			auto pg_seq = m_pg->Lock(&locker);
 			auto root_body = m_primary.RootBody();
@@ -106,9 +112,6 @@ void CIKGroupNode::IKUpdate()
 			auto IKErr = [&](int pose_id, bool* stop_searching) -> Real
 				{
 					n_errs ++;
-					solved = m_secondary.Solution(&tm_star);
-					if (solved)
-						CArtiBodyTree::Serialize<false>(root_body, tm_star);
 					*stop_searching = (solved || n_errs > m_pg->Radius() || n_localMinima > N_SEEDS_SECONDARY);
 					if (*stop_searching)
 					{
@@ -124,17 +127,28 @@ void CIKGroupNode::IKUpdate()
 			auto OnPG_Lomin = [&](int pose_id)
 				{
 					n_localMinima ++;
-					pg_seq->SetActivePosture<true>(pose_id, false);
+					pg_seq->SetActivePosture<true>(pose_id, true);
 					CArtiBodyTree::Serialize<true>(root_body, tm_star);
-					m_secondary.Update_A(w2g, tm_star);
+					solved = m_secondary.Update_A(w2g, tm_star);
+					if (solved)
+						CArtiBodyTree::Serialize<false>(root_body, tm_star);
 				};
 
 			CPGRuntime::LocalMin(*pg_seq, IKErr, OnPG_Lomin);
 			m_pg->UnLock(locker);
+
+			if (!solved
+				&& m_secondary.SolutionFinal(&tm_star))
+			{
+				solved = true;
+				CArtiBodyTree::Serialize<false>(root_body, tm_star);
+			}
+			LOGIKVarErr(LogInfoBool, solved);
 			if (!solved)
 				CArtiBodyTree::Serialize<false>(root_body, tm_bk);
 			CArtiBodyTree::FK_Update<false>(root_body);
 			m_pg->UpdateFKProj();
+			// LOGIKErr("EndSecondaryUpdate");
 		}
 	}
 }

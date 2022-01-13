@@ -76,7 +76,7 @@ public:
 	void Initialize_main(const CArtiBodyNode* root_src);
 	CIKChain* AddChain_main(const CONF::CIKChainConf* conf);
 	void Update_main(const Transform_TR& w2g, const TransformArchive& tm_0);
-	bool Solution_main(TransformArchive* tm_k);
+	bool AcqUpdateRes_main(TransformArchive* tm_k);
 	void SetupTargets_main(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
 private:
 	virtual void Run_worker();

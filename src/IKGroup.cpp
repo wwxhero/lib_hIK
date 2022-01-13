@@ -59,7 +59,7 @@ bool CIKGroup::BeginUpdate(const Transform_TR& tm_w2g_tr, const TransformArchive
 		Transform_TR g2w = tm_w2g_tr.inverse();
 		IJoint* group_origin = g_parent->GetJoint();
 		group_origin->SetRotation(g2w.getRotation_q());
-		group_origin->SetTranslation(g2w.getTranslation());;
+		group_origin->SetTranslation(g2w.getTranslation());
 	}
 
 	CArtiBodyTree::Serialize<false>(m_rootBody, const_cast<TransformArchive&>(tm_0));
@@ -265,12 +265,13 @@ void CThreadIKGroup::Run_worker()
 		m_solved = m_group->Update();
 }
 
-bool CThreadIKGroup::Solution_main(TransformArchive* tm_k)
+bool CThreadIKGroup::AcqUpdateRes_main(TransformArchive* tm_k)
 {
 	if (m_group && m_solved)
 	{
 		m_group->EndUpdate();
 		CArtiBodyTree::Serialize<true>(m_group->RootBody(), *tm_k);
+		m_solved = false; // reset m_solved for the subsequent IK tasks
 		return true;
 	}
 	else
@@ -299,7 +300,7 @@ bool CIKGroupsParallel::Update_A(const Transform_TR& w2g, TransformArchive& tm_0
 {
 	auto thread_i = m_pool.WaitForAReadyThread_main(INFINITE);
 	TransformArchive& tm_k = tm_0;
-	if (thread_i->Solution_main(&tm_k))
+	if (thread_i->AcqUpdateRes_main(&tm_k))
 	{
 		thread_i->HoldReadyOn_main();
 		return true;
@@ -319,7 +320,7 @@ bool CIKGroupsParallel::SolutionFinal(TransformArchive* tm_star)
 	for (auto it = threads.begin()
 		; it != threads.end() && !solved
 		; it ++)
-		solved = (*it)->Solution_main(tm_star);
+		solved = (*it)->AcqUpdateRes_main(tm_star);
 
 	for (auto thread_i : threads)
 		thread_i->HoldReadyOn_main();
