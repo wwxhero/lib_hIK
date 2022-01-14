@@ -18,8 +18,7 @@ public:
 	}
 
 	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>& joint_confs) override;
-	virtual bool Update();
-	virtual bool Update_AnyThread() = 0;
+	virtual bool Update() = 0;
 	virtual Real Error() const;
 protected:
 	Real ErrorCCD() const;
