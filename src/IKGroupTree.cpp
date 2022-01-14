@@ -122,7 +122,7 @@ void CIKGroupNode::IKUpdate()
 					{
 						pg_seq->SetActivePosture<true>(pose_id, true);
 						Real err = m_primary.Error();
-						LOGIKVarErr(LogInfoReal, err);
+						// LOGIKVarErr(LogInfoReal, err);
 						return err;
 					}
 				};
@@ -130,14 +130,17 @@ void CIKGroupNode::IKUpdate()
 			auto OnPG_Lomin = [&](int pose_id)
 				{
 					n_localMinima ++;
-					pg_seq->SetActivePosture<true>(pose_id, true);
-					CArtiBodyTree::Serialize<true>(root_body, tm_star);
-					solved = m_secondary.Update_A(w2g, tm_star);
+					if (!solved)
+					{
+						pg_seq->SetActivePosture<true>(pose_id, true);
+						CArtiBodyTree::Serialize<true>(root_body, tm_star);
+						solved = m_secondary.Update_A(w2g, tm_star);
+					}
 				};
 
 			CPGRuntime::LocalMin(*pg_seq, IKErr, OnPG_Lomin);
 			m_pg->UnLock(locker);
-			solved = solved || m_secondary.SolutionFinal(&tm_star);
+			solved = m_secondary.SolutionFinal(tm_bk, &tm_star);
 			if (solved)
 				CArtiBodyTree::Serialize<false>(root_body, tm_star);
 			else

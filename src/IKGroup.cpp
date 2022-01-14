@@ -269,7 +269,7 @@ bool CThreadIKGroup::AcqUpdateRes_main(TransformArchive* tm_k)
 {
 	if (m_group && m_solved)
 	{
-		LOGIKVarErr(LogInfoReal, m_group->Error());
+//		LOGIKVarErr(LogInfoReal, m_group->Error());
 		m_group->EndUpdate();
 		CArtiBodyTree::Serialize<true>(m_group->RootBody(), *tm_k);
 		m_solved = false; // reset m_solved for the subsequent IK tasks
@@ -297,11 +297,10 @@ CIKGroupsParallel::~CIKGroupsParallel()
 {
 }
 
-bool CIKGroupsParallel::Update_A(const Transform_TR& w2g, TransformArchive& tm_0)
+bool CIKGroupsParallel::Update_A(const Transform_TR& w2g, const TransformArchive& tm_0)
 {
 	auto thread_i = m_pool.WaitForAReadyThread_main(INFINITE);
-	TransformArchive& tm_k = tm_0;
-	if (thread_i->AcqUpdateRes_main(&tm_k))
+	if (thread_i->Reset())
 	{
 		thread_i->HoldReadyOn_main();
 		return true;
@@ -313,15 +312,29 @@ bool CIKGroupsParallel::Update_A(const Transform_TR& w2g, TransformArchive& tm_0
 	}
 }
 
-bool CIKGroupsParallel::SolutionFinal(TransformArchive* tm_star)
+bool CIKGroupsParallel::SolutionFinal(const TransformArchive& tm_0, TransformArchive* tm_star)
 {
 	bool solved = false;
 
+	TransformArchive tm_i;
+	Real err_star = std::numeric_limits<Real>::max();
+
 	auto& threads = m_pool.WaitForAllReadyThreads_main();
 	for (auto it = threads.begin()
-		; it != threads.end() && !solved
+		; it != threads.end()
 		; it ++)
-		solved = (*it)->AcqUpdateRes_main(tm_star);
+	{
+		if ((*it)->AcqUpdateRes_main(&tm_i))
+		{
+			Real err_i = TransformArchive::Error_q(tm_i, tm_0);
+			if (err_i < err_star)
+			{
+				err_star = err_i;
+				*tm_star = tm_i;	//try to optimize it
+			}
+			solved = true;
+		}
+	}
 
 	for (auto thread_i : threads)
 		thread_i->HoldReadyOn_main();

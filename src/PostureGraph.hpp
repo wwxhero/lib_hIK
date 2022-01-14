@@ -452,7 +452,7 @@ public:
 				local_min = local_min && (err < err_n);
 			}
 
-			if (local_min)
+			if (!stop_err_compu && local_min)
 				onMin(theta);
 
 			LOGIKVar(LogInfoInt, theta);

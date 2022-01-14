@@ -78,6 +78,12 @@ public:
 	void Update_main(const Transform_TR& w2g, const TransformArchive& tm_0);
 	bool AcqUpdateRes_main(TransformArchive* tm_k);
 	void SetupTargets_main(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
+	bool Reset()
+	{
+		bool solved = m_solved;
+		m_solved = false;
+		return solved;
+	}
 private:
 	virtual void Run_worker();
 private:
@@ -92,8 +98,8 @@ public:
 	CIKGroupsParallel(const CArtiBodyNode* root_src, int concurrency);
 	CIKGroupsParallel(CIKGroupsParallel& src);
 	~CIKGroupsParallel();
-	bool Update_A(const Transform_TR& w2g, TransformArchive& tm_0);
-	bool SolutionFinal(TransformArchive* tm_star);
+	bool Update_A(const Transform_TR& w2g, const TransformArchive& tm_0);
+	bool SolutionFinal(const TransformArchive& tm_0, TransformArchive* tm_star);
 	void AddChain(const CONF::CIKChainConf* conf);
 	void SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
 private:
