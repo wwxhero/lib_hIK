@@ -299,7 +299,7 @@ CIKGroupsParallel::~CIKGroupsParallel()
 bool CIKGroupsParallel::Update_A(const TransformArchive& tmk)
 {
 	auto thread_i = m_pool.WaitForAReadyThread_main(INFINITE);
-	if (thread_i->Reset())
+	if (thread_i->Updated())
 	{
 		thread_i->HoldReadyOn_main();
 		return true;

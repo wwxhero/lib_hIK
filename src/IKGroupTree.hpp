@@ -34,8 +34,8 @@ protected:
 	CIKGroup m_primary;
 	CIKGroupsParallel m_secondary;
 	CPGRuntimeParallel* m_pg;
-	TransformArchive m_tmk0; 	//the starting posture for frame k for secondary solution
-	TransformArchive m_tmk; 	//the ending posture for frame k for secondary solution
+	TransformArchive m_tmk0; 	//the starting posture for frame k for the secondary solution
+	TransformArchive m_tmk; 	//the ending posture for frame k for the secondary solution
 };
 
 class CIKGroupTree : public Tree<CIKGroupNode>
