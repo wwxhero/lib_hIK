@@ -98,10 +98,15 @@ public:
 	CIKGroupsParallel(const CArtiBodyNode* root_src, int concurrency);
 	CIKGroupsParallel(CIKGroupsParallel& src);
 	~CIKGroupsParallel();
-	bool Update_A(const Transform_TR& w2g, const TransformArchive& tm_0);
-	bool SolutionFinal(const TransformArchive& tm_0, TransformArchive* tm_star);
+	void BeginUpdate(const Transform_TR& w2g)
+	{
+		m_w2g = w2g;
+	}
+	bool Update_A(const TransformArchive& tmk);
+	bool EndUpdate(const TransformArchive& tmk0, TransformArchive* tm_star);
 	void AddChain(const CONF::CIKChainConf* conf);
 	void SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
 private:
 	CThreadPool_W32<CThreadIKGroup> m_pool;
+	Transform_TR m_w2g;
 };

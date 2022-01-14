@@ -74,11 +74,12 @@ void CIKGroupNode::IKUpdate()
 		// LOGIKErr("EndPrimaryUpdate");
 		return;
 	}
+	auto root_body = m_primary.RootBody();
 
 	if (m_pg)
-		m_pg->ApplyActivePosture<true>();  // apply active posture
-	else if (NULL != m_primary.RootBody()->GetParent()) //for root of the three FK_Update<G_SPACE=true> has no effect but waist computational resource
-		CArtiBodyTree::FK_Update<true>(m_primary.RootBody());
+		m_pg->ApplyActivePosture<true>();  		// apply active posture with respect to group space
+	else if (NULL != root_body->GetParent()) 	//for root of the three FK_Update<G_SPACE=true> has no effect but waist of computational resource
+		CArtiBodyTree::FK_Update<true>(root_body);
 
 	bool updated = m_primary.Update();
 
@@ -87,35 +88,24 @@ void CIKGroupNode::IKUpdate()
 	// LOGIKErr("EndPrimaryUpdate");
 	if (m_pg)
 	{
-		// if (updated)
-		// 	m_pg->UpdateFKProj();
-		// else
+		if (!updated)
 		{
-			// auto Err = [&]() -> Real
-			// 	{
-			// 		Real err = 0;
-			// 		for (auto chain : m_kChains)
-			// 			err += chain->Error();
-			// 		return err;
-			// 	};
-			// LOGIKErr("BeginSecondaryUpdate");
+			CArtiBodyTree::Serialize<true>(root_body, m_tmk0);
+			m_secondary.BeginUpdate(w2g);
+
 			CPGRuntimeParallel::Locker locker;
 			auto pg_seq = m_pg->Lock(&locker);
-			auto root_body = m_primary.RootBody();
+
 			int n_errs = 0;
 			int n_localMinima = 0;
-			TransformArchive tm_bk;
-			CArtiBodyTree::Serialize<true>(root_body, tm_bk);
-			TransformArchive tm_star;
-			bool solved = false;
 
 			auto IKErr = [&](int pose_id, bool* stop_searching) -> Real
 				{
 					n_errs ++;
-					*stop_searching = (solved || n_errs > m_pg->Radius() || n_localMinima > N_SEEDS_SECONDARY);
+					*stop_searching = (updated || n_errs > m_pg->Radius() || n_localMinima > N_SEEDS_SECONDARY);
 					if (*stop_searching)
 					{
-						LOGIKVarErr(LogInfoBool, solved);
+						LOGIKVarErr(LogInfoBool, updated);
 						return std::numeric_limits<Real>::max();
 					}
 					else
@@ -130,29 +120,33 @@ void CIKGroupNode::IKUpdate()
 			auto OnPG_Lomin = [&](int pose_id)
 				{
 					n_localMinima ++;
-					if (!solved)
-					{
-						pg_seq->SetActivePosture<true>(pose_id, true);
-						CArtiBodyTree::Serialize<true>(root_body, tm_star);
-						solved = m_secondary.Update_A(w2g, tm_star);
-					}
+					pg_seq->SetActivePosture<true>(pose_id, true);
+					CArtiBodyTree::Serialize<true>(root_body, m_tmk);
+					updated = m_secondary.Update_A(m_tmk);
 				};
 
 			CPGRuntime::LocalMin(*pg_seq, IKErr, OnPG_Lomin);
 			m_pg->UnLock(locker);
-			solved = m_secondary.SolutionFinal(tm_bk, &tm_star);
-			if (solved)
-				CArtiBodyTree::Serialize<false>(root_body, tm_star);
+
+			if (updated)
+			{
+				m_secondary.EndUpdate(m_tmk0, &m_tmk);
+				CArtiBodyTree::Serialize<false>(root_body, m_tmk);
+			}
 			else
-				CArtiBodyTree::Serialize<false>(root_body, tm_bk);
+				CArtiBodyTree::Serialize<false>(root_body, m_tmk0);
 
-			LOGIKVarErr(LogInfoBool, solved);
+			LOGIKVarErr(LogInfoInt, n_errs);
+			LOGIKVarErr(LogInfoInt, n_localMinima);
 
-			CArtiBodyTree::FK_Update<false>(root_body);
-			m_pg->UpdateFKProj();
 			// LOGIKErr("EndSecondaryUpdate");
 		}
+		m_pg->UpdateFKProj();
 	}
+	LOGIKVarErr(LogInfoBool, updated);
+	CArtiBodyTree::FK_Update<false>(root_body);
+
+
 }
 
 void CIKGroupNode::IKReset()

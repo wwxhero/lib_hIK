@@ -112,7 +112,6 @@ void CIKGroup::EndUpdate()
 	{
 		m_kChains[i_chain]->EndUpdate();
 	}
-	CArtiBodyTree::FK_Update<false>(m_rootBody);
 }
 
 void CIKGroup::IKReset()
@@ -297,7 +296,7 @@ CIKGroupsParallel::~CIKGroupsParallel()
 {
 }
 
-bool CIKGroupsParallel::Update_A(const Transform_TR& w2g, const TransformArchive& tm_0)
+bool CIKGroupsParallel::Update_A(const TransformArchive& tmk)
 {
 	auto thread_i = m_pool.WaitForAReadyThread_main(INFINITE);
 	if (thread_i->Reset())
@@ -307,12 +306,12 @@ bool CIKGroupsParallel::Update_A(const Transform_TR& w2g, const TransformArchive
 	}
 	else
 	{
-		thread_i->Update_main(w2g, tm_0);
+		thread_i->Update_main(m_w2g, tmk);
 		return false;
 	}
 }
 
-bool CIKGroupsParallel::SolutionFinal(const TransformArchive& tm_0, TransformArchive* tm_star)
+bool CIKGroupsParallel::EndUpdate(const TransformArchive& tmk0, TransformArchive* tm_star)
 {
 	bool solved = false;
 
@@ -326,11 +325,11 @@ bool CIKGroupsParallel::SolutionFinal(const TransformArchive& tm_0, TransformArc
 	{
 		if ((*it)->AcqUpdateRes_main(&tm_i))
 		{
-			Real err_i = TransformArchive::Error_q(tm_i, tm_0);
+			Real err_i = TransformArchive::Error_q(tm_i, tmk0);
 			if (err_i < err_star)
 			{
 				err_star = err_i;
-				*tm_star = tm_i;	//try to optimize it
+				*tm_star = tm_i;
 			}
 			solved = true;
 		}
