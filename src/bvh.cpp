@@ -670,9 +670,9 @@ bool convert(const char* src, const char* dst, bool htr2bvh)
 		else
 		{
 			bodies[0] = bvh_src.GetBody();
-			auto CloneNode = [](const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt) -> bool
+			auto CloneNode = [](const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt, bool force_root) -> bool
 				{
-					return CArtiBodyTree::CloneNode_htr(src, dst, Eigen::Matrix3r::Identity(), name_dst_opt);
+					return CArtiBodyTree::CloneNode_htr(src, dst, Eigen::Matrix3r::Identity(), name_dst_opt, force_root);
 				};
 			ret = CArtiBodyTree::Clone(bodies[0], &bodies[1], CloneNode);
 			IKAssert(BODY_TYPE::bvh == bodies[0]->c_type

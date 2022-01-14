@@ -365,9 +365,9 @@ private:
 	}
 
 public:
-	static bool CloneNode_fbx(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL);
-	static bool CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL);
-	static bool CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const Eigen::Matrix3r& src2dst_w, const wchar_t* name_dst_opt = NULL);
+	static bool CloneNode_fbx(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL, bool force_root = false);
+	static bool CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt = NULL, bool force_root = false);
+	static bool CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const Eigen::Matrix3r& src2dst_w, const wchar_t* name_dst_opt = NULL, bool force_root = false);
 
 	static CArtiBodyNode* CreateAnimNode(const wchar_t* name, const _TRANSFORM* tm);
 	static CArtiBodyNode* CreateAnimNode(const char* name, const _TRANSFORM* tm);
@@ -377,11 +377,11 @@ public:
 	static bool Clone_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* (*matches)[2], int n_matches, bool src_on_match0, const Eigen::Matrix3r& src2dst_w);
 
 	template<typename CloneNode_x>
-	static bool Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, CloneNode_x CloneNode)
+	static bool Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, CloneNode_x CloneNode,  bool force_root = false)
 	{
-		auto ConstructNode = [CloneNode](const CArtiBodyNode* src, CArtiBodyNode** dst) -> bool
+		auto ConstructNode = [CloneNode, src, force_root](const CArtiBodyNode* a_src, CArtiBodyNode** a_dst) -> bool
 		{
-			bool ret = CloneNode(src, dst, NULL);
+			bool ret = CloneNode(a_src, a_dst, NULL, force_root && (src == a_src));
 			return ret;
 		};
 
@@ -401,21 +401,21 @@ public:
 
 	}
 
-	static bool Clone(const CArtiBodyNode* src, CArtiBodyNode** dst)
+	static bool Clone(const CArtiBodyNode* src, CArtiBodyNode** dst, bool force_root = false)
 	{
 		switch(src->c_type)
 		{
 			case BODY_TYPE::fbx:
-				return Clone(src, dst, CloneNode_fbx);
+				return Clone(src, dst, CloneNode_fbx, force_root);
 			case BODY_TYPE::bvh:
-				return Clone(src, dst, CloneNode_bvh);
+				return Clone(src, dst, CloneNode_bvh, force_root);
 			case BODY_TYPE::htr:
 			{
-				auto CloneNode = [](const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt) -> bool
+				auto CloneNode = [](const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt, bool force_root) -> bool
 				{
-					return CArtiBodyTree::CloneNode_htr(src, dst, Eigen::Matrix3r::Identity(), name_dst_opt);
+					return CArtiBodyTree::CloneNode_htr(src, dst, Eigen::Matrix3r::Identity(), name_dst_opt, force_root);
 				};
-				return Clone(src, dst, CloneNode);
+				return Clone(src, dst, CloneNode, force_root);
 			}
 			default:
 				IKAssert(0);

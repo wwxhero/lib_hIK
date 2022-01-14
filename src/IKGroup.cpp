@@ -214,7 +214,7 @@ void CThreadIKGroup::Initialize_main(const CArtiBodyNode* root_src)
 	const CArtiBodyNode* root_parent_src = root_src->GetParent();
 	CArtiBodyNode* root_dup = NULL;
 	if (root_parent_src)
-		CArtiBodyTree::Clone(root_parent_src, &m_rootParent);
+		CArtiBodyTree::Clone(root_parent_src, &m_rootParent, true);
 	else
 		CArtiBodyTree::Clone(root_src, &m_rootParent);
 
