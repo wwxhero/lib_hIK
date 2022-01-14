@@ -143,6 +143,7 @@ void CIKGroupNode::IKUpdate()
 		}
 		m_pg->UpdateFKProj();
 	}
+	// LOGIKVarErr(LogInfoCharPtr, root_body->GetName_c());
 	// LOGIKVarErr(LogInfoBool, updated);
 	CArtiBodyTree::FK_Update<false>(root_body);
 
