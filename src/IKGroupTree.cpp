@@ -105,7 +105,7 @@ void CIKGroupNode::IKUpdate()
 					*stop_searching = (updated || n_errs > m_pg->Radius() || n_localMinima > N_SEEDS_SECONDARY);
 					if (*stop_searching)
 					{
-						LOGIKVarErr(LogInfoBool, updated);
+						// LOGIKVarErr(LogInfoBool, updated);
 						return std::numeric_limits<Real>::max();
 					}
 					else
@@ -136,14 +136,14 @@ void CIKGroupNode::IKUpdate()
 			else
 				CArtiBodyTree::Serialize<false>(root_body, m_tmk0);
 
-			LOGIKVarErr(LogInfoInt, n_errs);
-			LOGIKVarErr(LogInfoInt, n_localMinima);
+			// LOGIKVarErr(LogInfoInt, n_errs);
+			// LOGIKVarErr(LogInfoInt, n_localMinima);
 
 			// LOGIKErr("EndSecondaryUpdate");
 		}
 		m_pg->UpdateFKProj();
 	}
-	LOGIKVarErr(LogInfoBool, updated);
+	// LOGIKVarErr(LogInfoBool, updated);
 	CArtiBodyTree::FK_Update<false>(root_body);
 
 
