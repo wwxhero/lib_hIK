@@ -269,6 +269,7 @@ bool CThreadIKGroup::AcqUpdateRes_main(TransformArchive* tm_k)
 {
 	if (m_group && m_solved)
 	{
+		LOGIKVarErr(LogInfoReal, m_group->Error());
 		m_group->EndUpdate();
 		CArtiBodyTree::Serialize<true>(m_group->RootBody(), *tm_k);
 		m_solved = false; // reset m_solved for the subsequent IK tasks

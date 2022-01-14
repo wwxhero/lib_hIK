@@ -5,7 +5,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKGroupNode:
 #define N_CONCURRENCY_SECONDARY 6
-#define N_SEEDS_SECONDARY 18
+#define N_SEEDS_SECONDARY 30
 
 
 CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
@@ -87,9 +87,9 @@ void CIKGroupNode::IKUpdate()
 	// LOGIKErr("EndPrimaryUpdate");
 	if (m_pg)
 	{
-		if (updated)
-			m_pg->UpdateFKProj();
-		else
+		// if (updated)
+		// 	m_pg->UpdateFKProj();
+		// else
 		{
 			// auto Err = [&]() -> Real
 			// 	{
@@ -115,12 +115,15 @@ void CIKGroupNode::IKUpdate()
 					*stop_searching = (solved || n_errs > m_pg->Radius() || n_localMinima > N_SEEDS_SECONDARY);
 					if (*stop_searching)
 					{
+						LOGIKVarErr(LogInfoBool, solved);
 						return std::numeric_limits<Real>::max();
 					}
 					else
 					{
 						pg_seq->SetActivePosture<true>(pose_id, true);
-						return m_primary.Error();
+						Real err = m_primary.Error();
+						LOGIKVarErr(LogInfoReal, err);
+						return err;
 					}
 				};
 
@@ -130,22 +133,18 @@ void CIKGroupNode::IKUpdate()
 					pg_seq->SetActivePosture<true>(pose_id, true);
 					CArtiBodyTree::Serialize<true>(root_body, tm_star);
 					solved = m_secondary.Update_A(w2g, tm_star);
-					if (solved)
-						CArtiBodyTree::Serialize<false>(root_body, tm_star);
 				};
 
 			CPGRuntime::LocalMin(*pg_seq, IKErr, OnPG_Lomin);
 			m_pg->UnLock(locker);
-
-			if (!solved
-				&& m_secondary.SolutionFinal(&tm_star))
-			{
-				solved = true;
+			solved = solved || m_secondary.SolutionFinal(&tm_star);
+			if (solved)
 				CArtiBodyTree::Serialize<false>(root_body, tm_star);
-			}
-			LOGIKVarErr(LogInfoBool, solved);
-			if (!solved)
+			else
 				CArtiBodyTree::Serialize<false>(root_body, tm_bk);
+
+			LOGIKVarErr(LogInfoBool, solved);
+
 			CArtiBodyTree::FK_Update<false>(root_body);
 			m_pg->UpdateFKProj();
 			// LOGIKErr("EndSecondaryUpdate");
