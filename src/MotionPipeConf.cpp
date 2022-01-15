@@ -142,6 +142,8 @@ namespace CONF
 
 	CBodyConf::CBodyConf()
 		: m_pgRadius(500)
+		, m_pgRestartConcurrency(6)
+		, m_pgRestartAttempts(30)
 	{
 	}
 
@@ -247,6 +249,16 @@ namespace CONF
 		return m_pgRadius;
 	}
 
+	int CBodyConf::PG_restart_concurrency() const
+	{
+		return m_pgRestartConcurrency;
+	}
+
+	int CBodyConf::PG_restart_attempts() const
+	{
+		return m_pgRestartAttempts;
+	}
+
 
 	void CBodyConf::SetFileName(const char* filename)
 	{
@@ -272,6 +284,16 @@ namespace CONF
 	void CBodyConf::SetPGRadius(int radius)
 	{
 		m_pgRadius = radius;
+	}
+
+	void CBodyConf::SetPGRestartAttempts(int attempts)
+	{
+		m_pgRestartAttempts = attempts;
+	}
+
+	void CBodyConf::SetPGRestartConcurrency(int concur)
+	{
+		m_pgRestartConcurrency = concur;
 	}
 
 #ifdef _DEBUG
@@ -459,6 +481,15 @@ namespace CONF
 					int radius;
 					if (TIXML_SUCCESS == ele->QueryIntAttribute("PG_radius", &radius))
 						SetPGRadius(radius);
+
+					int concorrency;
+					if (TIXML_SUCCESS == ele->QueryIntAttribute("PG_restart_concurrency", &concorrency))
+						SetPGRestartConcurrency(concorrency);
+
+					int attempts;
+					if (TIXML_SUCCESS == ele->QueryIntAttribute("PG_restart_attempts", &attempts))
+						SetPGRestartAttempts(attempts);
+
 				}
 				else if("IK_Chain" == name)
 				{

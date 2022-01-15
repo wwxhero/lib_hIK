@@ -235,6 +235,7 @@
     <ClInclude Include="..\..\src\IKChain.hpp" />
     <ClInclude Include="..\..\src\IKChainNumerical.hpp" />
     <ClInclude Include="..\..\src\IKChainInverseJK.hpp" />
+    <ClInclude Include="..\..\src\IKGroup.hpp" />
     <ClInclude Include="..\..\src\IKGroupTree.hpp" />
     <ClInclude Include="..\..\src\IK_QJacobian.h" />
     <ClInclude Include="..\..\src\IK_QSegment.hpp" />
@@ -268,6 +269,7 @@
     <ClCompile Include="..\..\src\IKChain.cpp" />
     <ClCompile Include="..\..\src\IKChainInverseJK.cpp" />
     <ClCompile Include="..\..\src\IKChainNumerical.cpp" />
+    <ClCompile Include="..\..\src\IKGroup.cpp" />
     <ClCompile Include="..\..\src\IKGroupTree.cpp" />
     <ClCompile Include="..\..\src\IK_QJacobian.cpp" />
     <ClCompile Include="..\..\src\IK_QSegment.cpp" />

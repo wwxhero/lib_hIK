@@ -32,7 +32,7 @@ CArtiBodyNode* CArtiBodyTree::CreateSimNode(const char* name, const _TRANSFORM* 
 	return CreateSimNodeInternal(name, tm, type, jtm, local);
 }
 
-bool CArtiBodyTree::CloneNode_fbx(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt)
+bool CArtiBodyTree::CloneNode_fbx(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt, bool force_root)
 {
 	*dst = NULL;
 	const Transform* l2p_tm = src->GetTransformLocal2Parent();
@@ -46,16 +46,16 @@ bool CArtiBodyTree::CloneNode_fbx(const CArtiBodyNode* src, CArtiBodyNode** dst,
 	return NULL != *dst;
 }
 
-bool CArtiBodyTree::CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt)
+bool CArtiBodyTree::CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt, bool force_root)
 {
 	*dst = NULL;
 	CArtiBodyNode* src_parent = src->GetParent();
 	bool jtm_copy = (src->c_type&sim);
 	const wchar_t* name_dst = (NULL == name_dst_opt ? src->GetName_w() : name_dst_opt);
 	TM_TYPE jtm = TM_TYPE::t_none;
-	bool is_root = (NULL == src_parent);
+	bool is_root = (NULL == src_parent || force_root);
 	if (jtm_copy)
-		jtm = src->c_jtmflag;
+		jtm = (is_root ? t_tr : src->c_jtmflag);
 	else
 	{
 		if (is_root)
@@ -88,7 +88,7 @@ bool CArtiBodyTree::CloneNode_bvh(const CArtiBodyNode* src, CArtiBodyNode** dst,
 
 
 
-bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const Eigen::Matrix3r& src2dst_w, const wchar_t* name_dst_opt)
+bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst, const Eigen::Matrix3r& src2dst_w, const wchar_t* name_dst_opt, bool force_root)
 {
 	// if (0 == strcmp(src->GetName_c(), "LeftHand"))
 	//  	DebugBreak(); //a zero length bone
@@ -96,7 +96,7 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 	//  	DebugBreak(); //a zero length bone
 	const CArtiBodyNode* child_src = src->GetFirstChild();
 	const CArtiBodyNode* parent_src = src->GetParent();
-	bool is_root = (NULL == parent_src);
+	bool is_root = (NULL == parent_src || force_root);
 	bool is_leaf = (NULL == child_src);
 	bool single_node = (is_leaf && is_root);
 	*dst = NULL;
@@ -180,7 +180,7 @@ bool CArtiBodyTree::CloneNode_htr(const CArtiBodyNode* src, CArtiBodyNode** dst,
 		bool jtm_copy = (src->c_type&sim);
 		TM_TYPE tm_type = t_none;
 		if (jtm_copy)
-			tm_type = src->c_jtmflag;
+			tm_type = (is_root ? t_tr : src->c_jtmflag);
 		else
 			tm_type = ((is_root || NULL == parent_src->GetParent()) ? t_tr : t_r); 		// entity node and hip node are tr nodes: translation + rotation
 		const wchar_t* name_dst = (NULL == name_dst_opt ? src->GetName_w() : name_dst_opt);

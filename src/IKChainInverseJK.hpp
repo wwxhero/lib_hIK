@@ -143,7 +143,7 @@ public:
 
 	// virtual void UpdateNext(int step) override;
 	// this is a quick IK update solution
-	virtual bool Update_AnyThread()
+	virtual bool Update()
 	{
 		auto it_eef_seg = m_segments.end();
 		it_eef_seg --;

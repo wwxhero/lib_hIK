@@ -362,9 +362,7 @@ public:
 		int pose_id_m = m_theta_star;
 		m_theta_star = pose_id;
 		if (UpdatePose)
-		{
 			m_thetas->PoseBody<G_SPACE>(pose_id);
-		}
 		return pose_id_m;
 	}
 
@@ -385,8 +383,8 @@ public:
 	}
 
 
-	template<typename LAMBDA_Err>
-	static int LocalMin(CPGRuntime& graph, LAMBDA_Err kineErr)
+	template<typename LAMBDA_Err, typename LAMBDA_onMin>
+	static int LocalMin(CPGRuntime& graph, LAMBDA_Err kineErr, LAMBDA_onMin onMin)
 	{
 		// auto ErrTheta = [&graph, err](vertex_descriptor theta) -> Real
 		// 	{
@@ -417,8 +415,8 @@ public:
 		std::priority_queue<vertex_descriptor, std::vector<vertex_descriptor>, GreatorThetaErr> err_known (greator_thetaErr);
 		// std::queue<vertex_descriptor> err_known;
 		std::list<vertex_descriptor> tagged;
-		bool compute_err_failed = false;
-		graph[theta_star_k].err = kineErr(theta_star_k, &compute_err_failed);
+		bool stop_err_compu = false;
+		graph[theta_star_k].err = kineErr(theta_star_k, &stop_err_compu);
 		tagged.push_back(theta_star_k);
 		err_known.push(theta_star_k);
 
@@ -426,10 +424,10 @@ public:
 		{
 			vertex_descriptor theta;
 			Real err;
-		} theta_err_kp = {boost::num_vertices(graph), REAL_MAX};
+		} theta_err_kp = {theta_star_k, graph[theta_star_k].err};
 
 		while (!err_known.empty()
-			&& !compute_err_failed)
+			&& !stop_err_compu)
 		{
 			vertex_descriptor theta = err_known.top();
 			err_known.pop();
@@ -438,14 +436,14 @@ public:
 			bool local_min = true;
 			auto vertices_range_neighbors = boost::adjacent_vertices(theta, graph);
 			for (auto it_v_n = vertices_range_neighbors.first
-				; it_v_n != vertices_range_neighbors.second && !compute_err_failed
+				; it_v_n != vertices_range_neighbors.second && !stop_err_compu
 				; it_v_n ++)
 			{
 				vertex_descriptor theta_n = *it_v_n;
 				Real& err_n = graph[theta_n].err;
 				if (!ErrorTagged(err_n))
 				{
-					err_n = kineErr(theta_n, &compute_err_failed);
+					err_n = kineErr(theta_n, &stop_err_compu);
 					tagged.push_back(theta_n);
 					err_known.push(theta_n);
 					LOGIKVar(LogInfoInt, theta_n);
@@ -453,6 +451,9 @@ public:
 				}
 				local_min = local_min && (err < err_n);
 			}
+
+			if (!stop_err_compu && local_min)
+				onMin(theta);
 
 			LOGIKVar(LogInfoInt, theta);
 

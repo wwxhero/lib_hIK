@@ -5,27 +5,25 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKGroupNode:
 
-CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
-	: m_rootBody(root)
-	, m_nSpecMax(0)
+CIKGroupNode::CIKGroupNode(CArtiBodyNode* root, int concurrency, int attempts)
+	: m_primary(root)
+	, m_secondary(root, concurrency)
+	, c_restartAttempts(attempts)
 	, m_pg(NULL)
-	, m_pgRadius(500)
 {
 
 }
 
 CIKGroupNode::CIKGroupNode(CIKGroupNode& src)
+	: m_primary(src.m_primary)
+	, m_secondary(src.m_secondary)
+	, c_restartAttempts(src.c_restartAttempts)
 {
-	m_rootBody = src.m_rootBody;
-	m_kChains = std::move(src.m_kChains);
-	m_nSpecMax = src.m_nSpecMax;
 	m_pg = src.m_pg; src.m_pg = NULL;
 }
 
 CIKGroupNode::~CIKGroupNode()
 {
-	for (auto chain : m_kChains)
-		delete chain;
 	if (NULL != m_pg)
 		delete m_pg;
 }
@@ -35,89 +33,119 @@ void CIKGroupNode::SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& na
 								, const Eigen::Matrix3r& src2dst_w
 								, const Eigen::Matrix3r& dst2src_w)
 {
-	for (auto chain : m_kChains)
-		chain->SetupTarget(nameSrc2bodyDst, src2dst_w, dst2src_w);
+	m_primary.SetupTargets(nameSrc2bodyDst, src2dst_w, dst2src_w);
+	m_secondary.SetupTargets(nameSrc2bodyDst, src2dst_w, dst2src_w);
 }
 
 void CIKGroupNode::LoadPostureGraph(const char* pgDir, int radius)
 {
-	if (m_kChains.size() > 0)
+	if (!m_primary.Empty())
 	{
 		m_pg = new CPGRuntimeParallel();
-		if (!m_pg->Load(pgDir, m_rootBody, radius))
+		if (!m_pg->Load(pgDir, m_primary.RootBody(), radius))
 		{
 			delete m_pg;
 			m_pg = NULL;
 		}
 		else
+		{
 			m_pg->SetActivePosture<false>(0, true);
+		}
 	}
-	m_pgRadius = radius;
+}
+
+CIKChain* CIKGroupNode::AddChain(const CONF::CIKChainConf* chainConf)
+{
+	CIKChain* ret = m_primary.AddChain(chainConf);
+	m_secondary.AddChain(chainConf);
+	return ret;
 }
 
 void CIKGroupNode::IKUpdate()
 {
-	int n_chains = (int)m_kChains.size();
-	if (n_chains < 1)
+	if (m_primary.Empty())
 		return;
-	Transform_TR tm_w2g_tr;
-	CArtiBodyNode* g_parent = m_rootBody->GetParent();
-	if (NULL != g_parent)
-	{
-		const Transform* tm_w2g = g_parent->GetTransformWorld2Local();
-		IKAssert(t_tr == tm_w2g->Type());
-		tm_w2g_tr = *static_cast<const Transform_TR*>(tm_w2g);
-	}
 
-	bool exist_an_update = false;
-	for (int i_chain = 0; i_chain < n_chains; i_chain ++)
+	// LOGIKErr("BeginPrimaryUpdate");
+	Transform_TR w2g;
+	if (!m_primary.BeginUpdate(&w2g))
 	{
-		bool updating_i = m_kChains[i_chain]->BeginUpdate(tm_w2g_tr);
-		exist_an_update = (exist_an_update || updating_i);
-	}
-
-	if (!exist_an_update)
+		// LOGIKErr("EndPrimaryUpdate");
 		return;
+	}
+	auto root_body = m_primary.RootBody();
 
 	if (m_pg)
-		m_pg->ApplyActivePosture<true>();  // apply active posture
-	else if (NULL != g_parent) //for root of the three FK_Update<G_SPACE=true> has no effect but waist computational resource
-		CArtiBodyTree::FK_Update<true>(m_rootBody);
+		m_pg->ApplyActivePosture<true>();  		// apply active posture with respect to group space
+	else if (NULL != root_body->GetParent()) 	//for root of the three FK_Update<G_SPACE=true> has no effect but waist of computational resource
+		CArtiBodyTree::FK_Update<true>(root_body);
 
+	bool updated = m_primary.Update();
 
-	bool solved_all = false;
+	m_primary.EndUpdate();
 
-	if (1 == n_chains)
+	// LOGIKErr("EndPrimaryUpdate");
+	if (m_pg)
 	{
-		solved_all = m_kChains[0]->Update();
-	}
-	else
-	{
-		for (int i_update = 0; i_update < n_chains && !solved_all; i_update ++)
+		if (!updated)
 		{
-			for (auto& chain_i : m_kChains)
-				chain_i->Update();
+			CArtiBodyTree::Serialize<true>(root_body, m_tmk0);
+			m_secondary.BeginUpdate(w2g);
 
-			solved_all = true;
-			for (auto chain_i = m_kChains.begin()
-				; solved_all && chain_i != m_kChains.end()
-				; chain_i ++)
-				solved_all = (*chain_i)->UpdateCompleted();
+			CPGRuntimeParallel::Locker locker;
+			auto pg_seq = m_pg->Lock(&locker);
+
+			int n_errs = 0;
+			int n_localMinima = 0;
+
+			auto IKErr = [&](int pose_id, bool* stop_searching) -> Real
+				{
+					n_errs ++;
+					*stop_searching = (updated || n_errs > m_pg->Radius() || n_localMinima > c_restartAttempts);
+					if (*stop_searching)
+					{
+						// LOGIKVarErr(LogInfoBool, updated);
+						return std::numeric_limits<Real>::max();
+					}
+					else
+					{
+						pg_seq->SetActivePosture<true>(pose_id, true);
+						Real err = m_primary.Error();
+						// LOGIKVarErr(LogInfoReal, err);
+						return err;
+					}
+				};
+
+			auto OnPG_Lomin = [&](int pose_id)
+				{
+					n_localMinima ++;
+					pg_seq->SetActivePosture<true>(pose_id, true);
+					CArtiBodyTree::Serialize<true>(root_body, m_tmk);
+					updated = m_secondary.Update_A(m_tmk);
+				};
+
+			CPGRuntime::LocalMin(*pg_seq, IKErr, OnPG_Lomin);
+			m_pg->UnLock(locker);
+
+			if (updated)
+			{
+				m_secondary.EndUpdate(m_tmk0, &m_tmk);
+				CArtiBodyTree::Serialize<false>(root_body, m_tmk);
+			}
+			else
+				CArtiBodyTree::Serialize<false>(root_body, m_tmk0);
+
+			// LOGIKVarErr(LogInfoInt, n_errs);
+			// LOGIKVarErr(LogInfoInt, n_localMinima);
+
+			// LOGIKErr("EndSecondaryUpdate");
 		}
-	}
-	LOGIKVar(LogInfoBool, solved_all);
-
-	for (int i_chain = 0; i_chain < n_chains; i_chain++)
-	{
-		m_kChains[i_chain]->EndUpdate();
-	}
-
-	if (m_pg)
-	{
 		m_pg->UpdateFKProj();
 	}
+	// LOGIKVarErr(LogInfoCharPtr, root_body->GetName_c());
+	// LOGIKVarErr(LogInfoBool, updated);
+	CArtiBodyTree::FK_Update<false>(root_body);
 
-	CArtiBodyTree::FK_Update<false>(m_rootBody);
 
 }
 
@@ -125,35 +153,17 @@ void CIKGroupNode::IKReset()
 {
 	if (m_pg)
 		m_pg->SetActivePosture<false>(0, false);
-	for (auto chain_i : m_kChains)
-		chain_i->Reset();
-	CArtiBodyTree::FK_Update<false>(m_rootBody);
+	m_primary.IKReset();
 }
 
 void CIKGroupNode::Dump(int n_indents) const
 {
-	std::stringstream logInfo;
-	for (int i_indent = 0; i_indent < n_indents; i_indent ++)
-		logInfo << "\t";
-	logInfo << "{";
-		for (auto chain : m_kChains)
-		{
-			chain->Dump(logInfo);
-		}
-	logInfo << "}";
-	LOGIK(logInfo.str().c_str());
+	m_primary.Dump(n_indents);
 }
 
 void CIKGroupNode::Dump(int n_indents, std::ostream& logInfo) const
 {
-	for (int i_indent = 0; i_indent < n_indents; i_indent++)
-		logInfo << "\t";
-	logInfo << "{";
-	for (auto chain : m_kChains)
-	{
-		chain->Dump(logInfo);
-	}
-	logInfo << "}";
+	m_primary.Dump(n_indents, logInfo);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -245,33 +255,6 @@ public:
 		LOGIKVar(LogInfoInt, c_dist2root);
 	}
 
-	CIKChain* Generate() const
-	{
-		CIKChain* chain = NULL;
-		switch(c_conf->algor)
-		{
-			case CIKChain::Proj:
-				chain = new CIKChainProj(c_conf->up);
-				break;
-			case CIKChain::DLS:
-				chain = new CIKChainInverseJK_DLS(c_conf->weight_p
-												, c_conf->weight_r
-												, c_conf->n_iter);
-				break;
-			case CIKChain::SDLS:
-				chain = new CIKChainInverseJK_SDLS(c_conf->weight_p
-												, c_conf->weight_r
-												, c_conf->n_iter);
-				break;
-		}
-
-		if (!chain->Init(c_eef->c_body, c_conf->len, c_conf->Joints))
-		{
-			delete chain;
-			chain = NULL;
-		}
-		return chain;
-	}
 public:
 	int m_Color;
 	CArtiBodyClrNode* c_eef;
@@ -371,8 +354,8 @@ class CIKGroupNodeGen 		// G
 	: public CIKGroupNode
 {
 public:
-	CIKGroupNodeGen(const CArtiBodyClrNode* jTree)
-		: CIKGroupNode(const_cast<CArtiBodyNode*>(jTree->c_body))
+	CIKGroupNodeGen(const CArtiBodyClrNode* jTree, int concurrency, int attempts)
+		: CIKGroupNode(const_cast<CArtiBodyNode*>(jTree->c_body), concurrency, attempts)
 		, c_jTree(jTree)
 	{
 	}
@@ -383,13 +366,8 @@ public:
 			logInfo << "\t";
 		logInfo << c_jTree->c_body->GetName_c()
 				<< ": color = " << c_jTree->GetColor();
-		logInfo << "{";
-			for (auto chain : m_kChains)
-			{
-				chain->Dump(logInfo);
-			}
-		logInfo << "}";
 		LOGIK(logInfo.str().c_str());
+		CIKGroupNode::Dump(n_indents);
 	}
 
 public:
@@ -400,20 +378,20 @@ class CIKGroupTreeGen
 	: public CIKGroupTree
 {
 public:
-	static CIKGroupNodeGen* Generate(const CArtiBodyClrNode* root);
+	static CIKGroupNodeGen* Generate(const CArtiBodyClrNode* root, int concur, int attempts);
 	static void InitKChain(CIKGroupNodeGen* root, const std::vector<CIKChainClr>& chains);
 };
 
-CIKGroupNodeGen* CIKGroupTreeGen::Generate(const CArtiBodyClrNode* root)
+CIKGroupNodeGen* CIKGroupTreeGen::Generate(const CArtiBodyClrNode* root, int concur, int attempts)
 {
-	auto ConstructNodeGroupGen = [] (const CArtiBodyClrNode* src, CIKGroupNodeGen** dst) -> bool
+	auto ConstructNodeGroupGen = [concur, attempts] (const CArtiBodyClrNode* src, CIKGroupNodeGen** dst) -> bool
 								{
 									const CArtiBodyClrNode* src_p = src->GetParent();
 									bool new_group = ( (NULL == src_p)
 													|| src->GetColor() != src_p->GetColor() );
 									if (new_group)
 									{
-										*dst = new CIKGroupNodeGen(src);
+										*dst = new CIKGroupNodeGen(src, concur, attempts);
 									}
 									return new_group;
 								};
@@ -449,10 +427,7 @@ void CIKGroupTreeGen::InitKChain(CIKGroupNodeGen* root, const std::vector<CIKCha
 					const GroupChains& g_chains = c_gid2gchains[clr_this];
 					for (const CIKChainClr& chainclr : g_chains)
 					{
-						CIKChain *chain = chainclr.Generate();
-						if (NULL != chain)
-							node_this_gen->Join(chain);
-						else
+						if (NULL == node_this_gen->AddChain(chainclr.c_conf))
 						{
 							std::stringstream err;
 							err << "Chain: " << chainclr.c_eef->c_body->GetName_c() << " failed initialization!!!";
@@ -483,10 +458,12 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
 #if defined _DEBUG || defined SMOOTH_LOGGING
 		CArtiBodyClrTree::Dump(root_clr);	// step 1
 #endif
-		if (root_clr->Colored() 
+		if (root_clr->Colored()
 			|| (ikChainConf.Name2IKChainIdx(root->GetName_c()) > -1))	//root node is either colored or an end effector
 		{
- 			CIKGroupNodeGen* root_gen = CIKGroupTreeGen::Generate(root_clr);
+ 			CIKGroupNodeGen* root_gen = CIKGroupTreeGen::Generate(root_clr
+																, ikChainConf.PG_restart_concurrency()
+																, ikChainConf.PG_restart_attempts());
 			if (root_gen)
 			{
 #if defined _DEBUG || defined SMOOTH_LOGGING

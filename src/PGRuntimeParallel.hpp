@@ -19,6 +19,8 @@ private:
 class CPGRuntimeParallel
 {
 public:
+	typedef std::vector<CThreadPGProj*>* Locker;
+public:
 	CPGRuntimeParallel();
 	~CPGRuntimeParallel();
 	bool Load(const char* pgDir, CArtiBodyNode* rootBody, int radius);
@@ -45,8 +47,15 @@ public:
 		return pose_id_ret;
 	}
 
+	CPGRuntime* Lock(Locker* locker);
+	void UnLock(Locker locker);
 
+	int Radius() const
+	{
+		return m_radius;
+	}
 private:
 	CPGRuntime* m_pg;
 	CThreadPool_W32<CThreadPGProj> m_pool;
+	int m_radius;
 };

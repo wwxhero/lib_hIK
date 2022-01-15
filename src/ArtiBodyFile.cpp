@@ -305,9 +305,9 @@ CArtiBodyNode* CArtiBodyFile::CreateBodyHTR() const
 {
 	CArtiBodyNode* body_bvh = NULL;
 	CArtiBodyNode* body_htr = NULL;
-	auto CloneNode = [](const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt) -> bool
+	auto CloneNode = [](const CArtiBodyNode* src, CArtiBodyNode** dst, const wchar_t* name_dst_opt, bool force_root) -> bool
 		{
-			return CArtiBodyTree::CloneNode_htr(src, dst, Eigen::Matrix3r::Identity(), name_dst_opt);
+			return CArtiBodyTree::CloneNode_htr(src, dst, Eigen::Matrix3r::Identity(), name_dst_opt, force_root);
 		};
 	bool created = (NULL != (body_bvh = CreateBodyBVH())
 					&& CArtiBodyTree::Clone(body_bvh, &body_htr, CloneNode));

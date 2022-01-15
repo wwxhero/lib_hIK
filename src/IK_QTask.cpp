@@ -89,7 +89,7 @@ bool IK_QPositionTask::Completed() const
 	LOGIKVarNJK(LogInfoCharPtr, m_eef->GetName_c());
 	LOGIKVarNJK(LogInfoReal, dist_sqr);
 
-	const Real c_errMaxSqr = 4; // err < 2 cm
+	const Real c_errMaxSqr = 9; // err < 3 cm
 	return dist_sqr < c_errMaxSqr;
 }
 
@@ -184,7 +184,9 @@ bool IK_QOrientationTask::Completed() const
 	LOGIKVarNJK(LogInfoCharPtr, m_eef->GetName_c());
 	LOGIKVarNJK(LogInfoReal, err);
 
-	const Real c_errMax = (Real)0.0152; // (Real)(1 - cos(deg2rad(20*0.5)));
+	// const Real c_errMax = (Real)0.0152; // (Real)(1 - cos(deg2rad(20*0.5)));
+	// const Real c_errMax = (Real)0.0038; // (Real)(1 - cos(deg2rad(10*0.5)));
+	const Real c_errMax = (Real)0.008555; // (Real)(1 - cos(deg2rad(15*0.5)));
 	return err < c_errMax;
 }
 
