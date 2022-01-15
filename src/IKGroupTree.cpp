@@ -4,13 +4,11 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKGroupNode:
-#define N_CONCURRENCY_SECONDARY 6
-#define N_SEEDS_SECONDARY 30
 
-
-CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
+CIKGroupNode::CIKGroupNode(CArtiBodyNode* root, int concurrency, int attempts)
 	: m_primary(root)
-	, m_secondary(root, N_CONCURRENCY_SECONDARY)
+	, m_secondary(root, concurrency)
+	, c_restartAttempts(attempts)
 	, m_pg(NULL)
 {
 
@@ -19,6 +17,7 @@ CIKGroupNode::CIKGroupNode(CArtiBodyNode* root)
 CIKGroupNode::CIKGroupNode(CIKGroupNode& src)
 	: m_primary(src.m_primary)
 	, m_secondary(src.m_secondary)
+	, c_restartAttempts(src.c_restartAttempts)
 {
 	m_pg = src.m_pg; src.m_pg = NULL;
 }
@@ -102,7 +101,7 @@ void CIKGroupNode::IKUpdate()
 			auto IKErr = [&](int pose_id, bool* stop_searching) -> Real
 				{
 					n_errs ++;
-					*stop_searching = (updated || n_errs > m_pg->Radius() || n_localMinima > N_SEEDS_SECONDARY);
+					*stop_searching = (updated || n_errs > m_pg->Radius() || n_localMinima > c_restartAttempts);
 					if (*stop_searching)
 					{
 						// LOGIKVarErr(LogInfoBool, updated);
@@ -166,9 +165,6 @@ void CIKGroupNode::Dump(int n_indents, std::ostream& logInfo) const
 {
 	m_primary.Dump(n_indents, logInfo);
 }
-
-#undef N_SEEDS_SECONDARY
-#undef N_CONCURRENCY_SECONDARY
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CArtiBodyClrNode
@@ -358,8 +354,8 @@ class CIKGroupNodeGen 		// G
 	: public CIKGroupNode
 {
 public:
-	CIKGroupNodeGen(const CArtiBodyClrNode* jTree)
-		: CIKGroupNode(const_cast<CArtiBodyNode*>(jTree->c_body))
+	CIKGroupNodeGen(const CArtiBodyClrNode* jTree, int concurrency, int attempts)
+		: CIKGroupNode(const_cast<CArtiBodyNode*>(jTree->c_body), concurrency, attempts)
 		, c_jTree(jTree)
 	{
 	}
@@ -382,20 +378,20 @@ class CIKGroupTreeGen
 	: public CIKGroupTree
 {
 public:
-	static CIKGroupNodeGen* Generate(const CArtiBodyClrNode* root);
+	static CIKGroupNodeGen* Generate(const CArtiBodyClrNode* root, int concur, int attempts);
 	static void InitKChain(CIKGroupNodeGen* root, const std::vector<CIKChainClr>& chains);
 };
 
-CIKGroupNodeGen* CIKGroupTreeGen::Generate(const CArtiBodyClrNode* root)
+CIKGroupNodeGen* CIKGroupTreeGen::Generate(const CArtiBodyClrNode* root, int concur, int attempts)
 {
-	auto ConstructNodeGroupGen = [] (const CArtiBodyClrNode* src, CIKGroupNodeGen** dst) -> bool
+	auto ConstructNodeGroupGen = [concur, attempts] (const CArtiBodyClrNode* src, CIKGroupNodeGen** dst) -> bool
 								{
 									const CArtiBodyClrNode* src_p = src->GetParent();
 									bool new_group = ( (NULL == src_p)
 													|| src->GetColor() != src_p->GetColor() );
 									if (new_group)
 									{
-										*dst = new CIKGroupNodeGen(src);
+										*dst = new CIKGroupNodeGen(src, concur, attempts);
 									}
 									return new_group;
 								};
@@ -462,10 +458,12 @@ CIKGroupNode* CIKGroupTree::Generate(const CArtiBodyNode* root, const CONF::CBod
 #if defined _DEBUG || defined SMOOTH_LOGGING
 		CArtiBodyClrTree::Dump(root_clr);	// step 1
 #endif
-		if (root_clr->Colored() 
+		if (root_clr->Colored()
 			|| (ikChainConf.Name2IKChainIdx(root->GetName_c()) > -1))	//root node is either colored or an end effector
 		{
- 			CIKGroupNodeGen* root_gen = CIKGroupTreeGen::Generate(root_clr);
+ 			CIKGroupNodeGen* root_gen = CIKGroupTreeGen::Generate(root_clr
+																, ikChainConf.PG_restart_concurrency()
+																, ikChainConf.PG_restart_attempts());
 			if (root_gen)
 			{
 #if defined _DEBUG || defined SMOOTH_LOGGING

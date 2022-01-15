@@ -7,7 +7,7 @@
 class CIKGroupNode : public TreeNode<CIKGroupNode>
 {
 public:
-	CIKGroupNode(CArtiBodyNode* root);
+	CIKGroupNode(CArtiBodyNode* root, int concurrency, int attempts);
 	explicit CIKGroupNode(CIKGroupNode& src);
 	~CIKGroupNode();
 
@@ -33,6 +33,7 @@ public:
 protected:
 	CIKGroup m_primary;
 	CIKGroupsParallel m_secondary;
+	const int c_restartAttempts;
 	CPGRuntimeParallel* m_pg;
 	TransformArchive m_tmk0; 	//the starting posture for frame k for the secondary solution
 	TransformArchive m_tmk; 	//the ending posture for frame k for the secondary solution

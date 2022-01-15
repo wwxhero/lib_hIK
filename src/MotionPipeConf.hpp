@@ -188,6 +188,8 @@ namespace CONF
 		const wchar_t* PG_dir_w() const;
 		const char* PG_dir_c() const;
 		int PG_radius() const;
+		int PG_restart_concurrency() const;
+		int PG_restart_attempts() const;
 
 		void AddScale(const char* name, Real x, Real y, Real z);
 		void AddTarget(const char* name);
@@ -195,6 +197,8 @@ namespace CONF
 		void SetRecord(const char* rc_file);
 		void SetPGDir(const char* pg_dir);
 		void SetPGRadius(int radius);
+		void SetPGRestartConcurrency(int concur);
+		void SetPGRestartAttempts(int attempts);
 
 		BODY_TYPE type() const;
 
@@ -225,6 +229,8 @@ namespace CONF
 		std::wstring m_pgDir_w;
 		std::string m_pgDir_c;
 		int m_pgRadius;
+		int m_pgRestartConcurrency;
+		int m_pgRestartAttempts;
 	public:
 		std::vector<CIKChainConf> IK_Chains;
 	private:
