@@ -298,7 +298,23 @@ CIKGroupsParallel::~CIKGroupsParallel()
 
 bool CIKGroupsParallel::Update_A(const TransformArchive& tmk)
 {
-	auto thread_i = m_pool.WaitForAReadyThread_main(INFINITE);
+	// check for all ready threads, if exists one that has been SUCCESSFULLY updated, return true
+	bool exist_an_update = false;
+	std::list<CThreadIKGroup*> readies;
+	CThreadIKGroup* thread_i = NULL;
+	while (!exist_an_update
+		&& NULL != (thread_i = m_pool.WaitForAReadyThread_main(0)))
+	{
+		if (thread_i->Updated())
+			exist_an_update = true;
+		readies.push_back(thread_i);
+	}
+	for (auto thread_i : readies)
+		thread_i->HoldReadyOn_main();
+	if (exist_an_update)
+		return true;
+
+	thread_i = m_pool.WaitForAReadyThread_main(INFINITE);
 	if (thread_i->Updated())
 	{
 		thread_i->HoldReadyOn_main();
