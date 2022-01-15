@@ -40,6 +40,7 @@ void AssertionFail(const char *file, unsigned int line);
 #	if defined _DEBUG
 
 #		define LOGIKVar(func, var) func(__FILE__, __LINE__, #    var, var);
+#		define LOGIKVarRel(msg)
 #		define LOGIKVarErr(func, var)\
 			func(__FILE__, __LINE__, "ERROR: "#var, var);\
 			LOGIKFlush();
@@ -62,6 +63,7 @@ void AssertionFail(const char *file, unsigned int line);
 #    	endif
 
 #		define LOGIKVar(func, var)
+#		define LOGIKVarRel(func, var) func(__FILE__, __LINE__, #    var, var);
 #		define LOGIKVarErr(func, var)\
 			func(__FILE__, __LINE__, "ERROR: "#var, var);\
 			LOGIKFlush();
