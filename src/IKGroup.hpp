@@ -38,7 +38,14 @@ public:
 	bool BeginUpdate(const Transform_TR& w2g, const TransformArchive& tm_0);
 	bool Update();
 	void EndUpdate();
-	void IKReset();
+
+	template<bool G_SPACE>
+	void IKReset()
+	{
+		for (auto chain_i : m_kChains)
+			chain_i->Reset();
+		CArtiBodyTree::FK_Update<G_SPACE>(m_rootBody);
+	}
 
 	void SetupTargets(const std::map<std::wstring, CArtiBodyNode*>& nameSrc2bodyDst, const Eigen::Matrix3r& src2dst_w, const Eigen::Matrix3r& dst2src_w);
 	void Dump(int indent) const;

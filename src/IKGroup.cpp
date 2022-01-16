@@ -114,13 +114,6 @@ void CIKGroup::EndUpdate()
 	}
 }
 
-void CIKGroup::IKReset()
-{
-	for (auto chain_i : m_kChains)
-		chain_i->Reset();
-	CArtiBodyTree::FK_Update<false>(m_rootBody);
-}
-
 void CIKGroup::Dump(int n_indents) const
 {
 	std::stringstream logInfo;

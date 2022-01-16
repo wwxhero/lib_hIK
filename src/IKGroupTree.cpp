@@ -77,8 +77,8 @@ void CIKGroupNode::IKUpdate()
 
 	if (m_pg)
 		m_pg->ApplyActivePosture<true>();  		// apply active posture with respect to group space
-	else if (NULL != root_body->GetParent()) 	//for root of the three FK_Update<G_SPACE=true> has no effect but waist of computational resource
-		CArtiBodyTree::FK_Update<true>(root_body);
+	else
+		m_primary.IKReset<true>();				// for the group which has no posture graph, searching from the binding posture
 
 	bool updated = m_primary.Update();
 
@@ -153,7 +153,7 @@ void CIKGroupNode::IKReset()
 {
 	if (m_pg)
 		m_pg->SetActivePosture<false>(0, false);
-	m_primary.IKReset();
+	m_primary.IKReset<false>();
 }
 
 void CIKGroupNode::Dump(int n_indents) const
