@@ -17,12 +17,10 @@ const Real c_10epsilon = 1e-4f;
 const Real c_100epsilon = 1e-3f;
 const Real c_epsilonsqrt = 3e-3f;
 const Real c_rotm_epsilon = (Real)0.005;
-const Real c_tt_epsilon = (Real)0.25; 				//in centimeter
-const Real c_tt_epsilon_sqr = (Real)0.0625;
-const Real c_rotq_epsilon = (Real)0.5/(Real)180.0;	//err_dot: [1, 0] -> err_deg [0, 180]
+const Real c_tt_epsilon = (Real)0.1; 				//in centimeter
+const Real c_tt_epsilon_sqr = (Real)0.01;
+const Real c_rotq_epsilon = (Real)2.38e-4;	//err_dot: [1, 0] -> err_deg [0, 180]; ((Real)1 - (Real)cos((Real)2.5/(Real)180 * 0.5 * 3.1416));
 const Real c_rotq_epsilon_sqrnorm = (Real)0.001;
-
-const Real c_err_q_epsilon = ((Real)1 - (Real)cos((Real)2.5/(Real)180 * 0.5 * 3.1416));
 
 #pragma push_macro("new")
 #undef new
@@ -93,7 +91,7 @@ inline Real Error_q(const Eigen::Quaternionr& q_this, const Eigen::Quaternionr& 
 }
 
 // err_q_epsilon in range [0 1], can be defined as 1-cos(0.5*alpha)
-inline bool Equal(const Eigen::Quaternionr& q_this, const Eigen::Quaternionr& q_other, const Real err_q_epsilon = c_err_q_epsilon)
+inline bool Equal(const Eigen::Quaternionr& q_this, const Eigen::Quaternionr& q_other, const Real err_q_epsilon = c_rotq_epsilon)
 {
 	return Error_q(q_this, q_other) < err_q_epsilon;
 }

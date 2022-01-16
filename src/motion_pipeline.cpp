@@ -155,6 +155,15 @@ bool InitBody_Internal_ik(HBODY bodySrc
 
 	root_ikGroup = CIKGroupTree::Generate(CAST_2PBODY(hBody), *body_conf_i);
 
+	bool valid_fk_body = VALID_HANDLE(hBody);
+	bool valid_ik_group = (NULL != root_ikGroup);
+	IKAssert(valid_fk_body);
+	IKAssert(valid_ik_group);
+	initialized = valid_fk_body && valid_ik_group;
+
+	if (!initialized)
+		return false;
+
 	const wchar_t* pg_dir = body_conf_i->PG_dir_w();
 	if (NULL != pg_dir)
 	{
@@ -197,12 +206,8 @@ bool InitBody_Internal_ik(HBODY bodySrc
 		}
 	}
 
-	bool valid_fk_body = VALID_HANDLE(hBody);
-	bool valid_ik_group = (NULL != root_ikGroup);
-	IKAssert(valid_fk_body);
-	IKAssert(valid_ik_group);
-	initialized = valid_fk_body && valid_ik_group;
-	return initialized;
+
+	return true;
 }
 
 bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit onInitBodyProc[2], void* paramProc)
@@ -232,8 +237,9 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 
 		HBODY body_ref = H_INVALID;
 
+		bool initialized = true;
 		// initialize bodies
-		for (int i_bodyConf = c_idxFBX; i_bodyConf > -1; i_bodyConf --)
+		for (int i_bodyConf = c_idxFBX; i_bodyConf > -1 && initialized; i_bodyConf --)
 		{
 			auto InitBody_External_i = onInitBodyProc[i_bodyConf];
 			if (NULL != InitBody_External_i)
@@ -261,6 +267,7 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 				CPairsConf::Data_free(namesOnPair, n_pairs);
 				CBodyConf::Scale_free(scales, n_scales);
 				CBodyConf::Targets_free(nameTargets, n_targets);
+				initialized = VALID_HANDLE(mopipe->bodies[i_bodyConf]);
 			}
 			else
 			{
@@ -270,7 +277,6 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 				CBodyLogger* logger = NULL;
 				const CBodyConf* body_confs[] = {&(mp_conf->Source), &(mp_conf->Destination)};
 				const CBodyConf* body_conf_i = body_confs[i_bodyConf];
-				bool initialized = false;
 				BODY_TYPE body_type = body_conf_i->type();
 				bool exists_fk_source = (body_type&BODY_TYPE::sim) || (body_type&BODY_TYPE::anim);
 				if (exists_fk_source)
@@ -295,10 +301,11 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 													, mopipe->logger);
 					mopipe->type = MotionPipeInternal::IK;
 				}
-				IKAssert(initialized);
 			}
 			body_ref = mopipe->bodies[i_bodyConf];
 		}
+		IKAssert(initialized);
+
 
 		// initialize motion pipe
 		HBODY body_fbx = mopipe->bodies[c_idxFBX];
@@ -309,7 +316,7 @@ bool load_mopipe(MotionPipe** pp_mopipe, const wchar_t* confXML, FuncBodyInit on
 		bool sim_created = VALID_HANDLE(body_sim);
 		LOGIKVar(LogInfoBool, sim_created);
 
-		bool ok = fbx_created && sim_created;
+		bool ok = fbx_created && sim_created && initialized;
 
 		if (ok)
 		{
