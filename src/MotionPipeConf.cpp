@@ -635,6 +635,33 @@ namespace CONF
 		free(matches);
 	}
 
+	int CPairsConf::Data_alloc(const wchar_t* (**a_matches)[2], bool** force_root) const
+	{
+		int n_pairs = (int)m_pairs.size();
+		const wchar_t* (*matches)[2] = (const wchar_t* (*)[2])malloc(n_pairs * sizeof(const wchar_t*) * 2);
+		IKAssert(n_pairs == m_forceRoot.size());
+		(*force_root) = (bool*)malloc(n_pairs * sizeof(bool));
+		for (int i_pair = 0; i_pair < n_pairs; i_pair ++)
+		{
+			m_pairs[i_pair].first.AllocCopyTo(&(matches[i_pair][0]));
+			m_pairs[i_pair].second.AllocCopyTo(&(matches[i_pair][1]));
+			(*force_root)[i_pair] = m_forceRoot[i_pair];
+		}
+		*a_matches = matches;
+		return n_pairs;
+	}
+
+	void CPairsConf::Data_free(const wchar_t* (*matches)[2], bool* force_root, int n_pairs)
+	{
+		for (int i_pair = 0; i_pair < n_pairs; i_pair ++)
+		{
+			Name::FreeCopy(matches[i_pair][0]);
+			Name::FreeCopy(matches[i_pair][1]);
+		}
+		free(matches);
+		free(force_root);
+	}
+
 	void CPairsConf::Map(std::map<std::wstring, std::wstring>& name2name, bool forward)
 	{
 		int src;
@@ -654,11 +681,12 @@ namespace CONF
 		}
 	}
 
-	void CPairsConf::Add(const char* from, const char* to)
+	void CPairsConf::Add(const char* from, const char* to, bool force_root)
 	{
 		auto pair = std::make_pair(Name(from)
 								, Name(to));
 		m_pairs.push_back(pair);
+		m_forceRoot.push_back(force_root);
 	}
 
 #ifdef _DEBUG
@@ -769,11 +797,17 @@ namespace CONF
 				{
 					const char* j_from = ele->Attribute("from");
 					const char* j_to = ele->Attribute("to");
+					bool force_root = false;
+					int force_root_value = 0;
+					if (TIXML_SUCCESS == ele->QueryIntAttribute("force_root", &force_root_value))
+					{
+						force_root = (0 != force_root_value);
+					}
 					bool valid_pair = (NULL != j_from && NULL != j_to);
 					IKAssert(valid_pair);
 					ret = valid_pair;
 					if (valid_pair)
-						Pair.Add(j_from, j_to);
+						Pair.Add(j_from, j_to, force_root);
 				}
 				else if ((is_a_source = ("Source" == name))
 					|| (is_a_desti = ("Destination" == name)))

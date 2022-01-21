@@ -72,7 +72,7 @@ HIKLIB(HBODY,			create_bvh_body_node_c)(const char* name, const _TRANSFORM*  tm_
 HIKLIB(bool,			clone_body_fbx)(HBODY src, HBODY* dst);
 HIKLIB(bool,			clone_body_bvh)(HBODY src, HBODY* dst);
 HIKLIB(bool,			clone_body_htr)(HBODY src, HBODY* dst, const Real src2dst_w[3][3]);
-HIKLIB(bool,			clone_body_interests_htr)(HBODY src, HBODY* dst, const wchar_t* (*matches)[2], int n_matches, bool src_on_match0, const Real src2dst_w[3][3]);
+HIKLIB(bool,			clone_body_interests_htr)(HBODY src, HBODY* dst, const wchar_t* (*matches)[2], bool force_root[], int n_matches, bool src_on_match0, const Real src2dst_w[3][3]);
 HIKLIB(void,			destroy_tree_body_node)(HBODY hBody);
 HIKLIB(void,			destroy_tree_body)(HBODY hBody);
 HIKLIB(void,			cnn_arti_body)(HBODY from, HBODY to, enum CNN);

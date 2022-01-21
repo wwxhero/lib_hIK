@@ -240,17 +240,20 @@ namespace CONF
 	class CPairsConf
 	{
 	public:
-		void Add(const char* from, const char* to);
+		void Add(const char* from, const char* to, bool force_root);
 		int Data_alloc(int i_body, const wchar_t** &namesOnPair) const;
 		static void Data_free(const wchar_t** namesOnPair, int n_pairs);
 		int Data_alloc(const wchar_t* (**matches)[2]) const;
 		static void Data_free(const wchar_t* (*matches)[2], int n_pairs);
+		int Data_alloc(const wchar_t* (**matches)[2], bool** force_root) const;
+		static void Data_free(const wchar_t* (*matches)[2], bool* force_root, int n_pairs);
 		void Map(std::map<std::wstring, std::wstring>& name2name, bool forward);
 #ifdef _DEBUG
 		void Dump_Dbg() const;
 #endif
 	private:
 		std::vector<std::pair<Name, Name>> m_pairs;
+		std::vector<bool> m_forceRoot;
 	};
 
 

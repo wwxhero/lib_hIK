@@ -128,7 +128,8 @@ bool InitBody_Internal_ik(HBODY bodySrc
 
 	IKAssert(VALID_HANDLE(bodySrc));
 	const wchar_t* (*matches)[2] = NULL;
-	int n_match = mp_conf.Pair.Data_alloc(&matches);
+	bool* force_root = NULL;
+	int n_match = mp_conf.Pair.Data_alloc(&matches, &force_root);
 	HBODY body_htr_1 = H_INVALID;
 	HBODY body_htr_2 = H_INVALID;
 	Real identity[3][3] = {
@@ -136,11 +137,11 @@ bool InitBody_Internal_ik(HBODY bodySrc
 		{0, 1, 0},
 		{0, 0, 1}
 	};
-	if (!(clone_body_interests_htr(bodySrc, &body_htr_1, matches, n_match, false, identity)  	// body_htr_1 is an intermediate body, orient bone with src bone information
+	if (!(clone_body_interests_htr(bodySrc, &body_htr_1, matches, force_root, n_match, false, identity)  	// body_htr_1 is an intermediate body, orient bone with src bone information
 	 			&& clone_body_htr(body_htr_1, &body_htr_2, mp_conf.m_inv))) 			// body_htr_2 is the result, orient bone with the interest bone information
 	 		body_htr_2 = H_INVALID;
 
-	CPairsConf::Data_free(matches, n_match);
+	CPairsConf::Data_free(matches, force_root, n_match);
 
 	#if 0 // defined _DEBUG
 		UE_LOG(LogHIK, Display, TEXT("ArtiBody_SIM"));
