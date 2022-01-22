@@ -262,6 +262,12 @@ public:
 		Init(tm);
 	}
 
+	Transform_TR(const Eigen::Vector3r& tt, const Eigen::Quaternionr& q)
+		: m_tt(tt)
+	{
+		m_rotq = q;
+	}
+
 	Transform_TR()
 	{
 		c_type = t_tr;

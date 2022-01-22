@@ -2,6 +2,7 @@
 #include "IKChain.hpp"
 
 BEGIN_ENUM_STR(CIKChain, Algor)
+	ENUM_ITEM(None)
 	ENUM_ITEM(Proj)
 	ENUM_ITEM(DLS)
 	ENUM_ITEM(SDLS)
@@ -28,7 +29,8 @@ CIKChain::~CIKChain()
 
 bool CIKChain::Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>&)
 {
-	IKAssert(Proj != c_algor || 1 == len); // (c_algor == Proj) -> 1 == len
+	IKAssert((Proj != c_algor || 1 == len)			// (c_algor == Proj) -> 1 == len
+			&& (None != c_algor || 0 == len));		// (c_algor == None) -> 0 == len
 	m_eefSrc = const_cast<CArtiBodyNode*>(eef);
 	m_nodes.resize(len);
 	CArtiBodyNode* body_p = NULL;
@@ -44,7 +46,7 @@ bool CIKChain::Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::C
 		node_i.body = body_p;
 	}
 
-	bool initialized = (i == i_end && len > 0);
+	bool initialized = (i == i_end);
 	IKAssert(initialized);
 	return initialized;
 }
@@ -130,7 +132,57 @@ void CIKChain::Dump(std::ostream& info) const
 	info << "}";
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// CIKChainNone:
 
+CIKChainNone::CIKChainNone()
+	: CIKChain(None, 1)
+{
+}
+
+CIKChainNone::~CIKChainNone()
+{
+}
+
+bool CIKChainNone::Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>& joints_conf)
+{
+	bool initialized = (0 == len)
+					&&  CIKChain::Init(eef, len, joints_conf);
+	return initialized;
+}
+
+void CIKChainNone::Dump(std::ostream& info) const
+{
+	info << "CIKChainNone:";
+	CIKChain::Dump(info);
+}
+
+bool CIKChainNone::BeginUpdate(const Transform_TR& w2g)
+{
+	if (!CIKChain::BeginUpdate(w2g))
+		return false;
+	return true;
+}
+
+bool CIKChainNone::Update()
+{
+	_TRANSFORM goal;
+	m_eefSrc->GetGoal(goal);
+	IKAssert(NoScale(goal));
+
+	const Transform* l2p_0_temp = m_eefSrc->GetTransformLocal2Parent0();
+	IKAssert(t_tr == l2p_0_temp->Type());
+	const Transform_TR* l2p_0 = static_cast<const Transform_TR*>(l2p_0_temp);
+	Transform_TR l2p(goal);
+	// l2p_0 * delta = l2p;
+	//		=> delta = (l2p_0^-1)*l2p
+	Transform_TR delta;
+	delta.Update(l2p_0->inverse(), l2p);
+	auto joint_eef = m_eefSrc->GetJoint();
+	joint_eef->SetRotation(delta.getRotation_q());
+	joint_eef->SetTranslation(delta.getTranslation());
+	return true;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CIKChainProj:
@@ -195,9 +247,7 @@ bool CIKChainProj::Update()
 
 	for (int i_kina = 0; i_kina < 2; i_kina ++)
 	{
-		Transform_TR l2p_i;
-		l2p_i.setRotation(*Rs[i_kina]);
-		l2p_i.setTranslation(*Ts[i_kina]);
+		Transform_TR l2p_i(*Ts[i_kina], *Rs[i_kina]);
 		const Transform* l2p_i_0_temp = bodies[i_kina]->GetTransformLocal2Parent0();
 		IKAssert(t_tr == l2p_i_0_temp->Type());
 		const Transform_TR* l2p_i_0 = static_cast<const Transform_TR*>(l2p_i_0_temp);
@@ -209,7 +259,5 @@ bool CIKChainProj::Update()
 		joint_i->SetRotation(delta_i.getRotation_q());
 		joint_i->SetTranslation(delta_i.getTranslation());
 	}
-
-	// CArtiBodyTree::FK_Update<true>(m_nodes[0].body);
 	return true;
 }

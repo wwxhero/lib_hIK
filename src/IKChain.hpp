@@ -12,11 +12,12 @@ class CIKChain
 public:
 	enum Algor
 	{
-		Proj = 0x00000001
-		, DLS = 0x00000002
-		, SDLS = 0x00000004
-		, NUM = 0x00000006
-		, Unknown
+		None = 0x00000000,
+		Proj = 0x00000001,
+		DLS = 0x00000002,
+		SDLS = 0x00000004,
+		NUM = 0x00000006,
+		Unknown,
 	};
 
 	static Real ERROR_MIN;
@@ -104,6 +105,28 @@ private:
 	Eigen::Matrix3r m_src2dstW_Offset;
 	Eigen::Matrix3r m_dst2srcW;
 
+};
+
+class CIKChainNone : public CIKChain
+{
+public:
+	CIKChainNone();
+	virtual ~CIKChainNone();
+	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>&) override;
+
+	virtual Real Error() const
+	{
+		return (Real)0;
+	}
+
+	virtual void Dump(std::ostream& info) const override;
+	virtual bool BeginUpdate(const Transform_TR& w2g) override;
+	// this is a quick IK update solution
+	virtual bool Update();
+	virtual bool UpdateCompleted() const
+	{
+		return true;
+	}
 };
 
 class CIKChainProj : public CIKChain

@@ -338,6 +338,7 @@ void CArtiBodyClrTree::ColorGid(CArtiBodyClrNode* root_clr
 				clr = clr_prime;
 		}
 
+		chain.c_eef->SetColor(clr);		// for 0 length IK chain, eef must be colored
 		for (i = 0, p_i_node = chain.c_eef->GetParent()
 			; i < i_end && NULL != p_i_node
 			; i ++, p_i_node = p_i_node->GetParent())

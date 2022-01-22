@@ -162,6 +162,9 @@ CIKChain* CIKGroup::AddChain(const CONF::CIKChainConf* conf)
 	CIKChain* chain = NULL;
 	switch(conf->algor)
 	{
+		case CIKChain::None:
+			chain = new CIKChainNone();
+			break;
 		case CIKChain::Proj:
 			chain = new CIKChainProj(conf->up);
 			break;
