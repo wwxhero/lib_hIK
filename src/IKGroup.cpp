@@ -178,6 +178,9 @@ CIKChain* CIKGroup::AddChain(const CONF::CIKChainConf* conf)
 											, conf->weight_r
 											, conf->n_iter);
 			break;
+		default:
+			LOGIKVarErr(LogInfoCharPtr, CIKChain::from_Algor(conf->algor)); // not yet supportedthe type
+			break;
 	}
 
 	if (!chain->Init(eef, conf->len, conf->Joints))

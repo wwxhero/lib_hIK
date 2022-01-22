@@ -112,15 +112,12 @@ class CIKChainNone : public CIKChain
 public:
 	CIKChainNone();
 	virtual ~CIKChainNone();
-	virtual bool Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>&) override;
-
 	virtual Real Error() const
 	{
 		return (Real)0;
 	}
 
 	virtual void Dump(std::ostream& info) const override;
-	virtual bool BeginUpdate(const Transform_TR& w2g) override;
 	// this is a quick IK update solution
 	virtual bool Update();
 	virtual bool UpdateCompleted() const

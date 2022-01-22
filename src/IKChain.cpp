@@ -144,24 +144,10 @@ CIKChainNone::~CIKChainNone()
 {
 }
 
-bool CIKChainNone::Init(const CArtiBodyNode* eef, int len, const std::vector<CONF::CJointConf>& joints_conf)
-{
-	bool initialized = (0 == len)
-					&&  CIKChain::Init(eef, len, joints_conf);
-	return initialized;
-}
-
 void CIKChainNone::Dump(std::ostream& info) const
 {
 	info << "CIKChainNone:";
 	CIKChain::Dump(info);
-}
-
-bool CIKChainNone::BeginUpdate(const Transform_TR& w2g)
-{
-	if (!CIKChain::BeginUpdate(w2g))
-		return false;
-	return true;
 }
 
 bool CIKChainNone::Update()
