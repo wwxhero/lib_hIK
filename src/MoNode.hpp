@@ -131,9 +131,16 @@ public:
 			}
 			else
 			{
-				std::stringstream ss;
-				ss << "can not find pair: [" << name_from.c_str() << ", " << name_to.c_str() << "]";
-				LOGIK(ss.str().c_str());
+				if (sizeof(CHAR) == sizeof(char))
+				{
+					LOGIKVarErr(LogInfoCharPtr, (const char*)name_from.c_str());
+					LOGIKVarErr(LogInfoCharPtr, (const char*)name_to.c_str());
+				}
+				else if (sizeof(CHAR) == sizeof(wchar_t))
+				{
+					LOGIKVarErr(LogInfoWCharPtr, (const wchar_t*)name_from.c_str());
+					LOGIKVarErr(LogInfoWCharPtr, (const wchar_t*)name_to.c_str());
+				}
 			}
 		}
 		if (!ok)
@@ -145,7 +152,7 @@ public:
 			}
 			m_jointPairs.clear();
 		}
-		assert(ok && "the given pair should be consistant with the given arti body");
+		IKAssert(ok); // "the given pair should be consistant with the given arti body"
 		return ok;
 	}
 

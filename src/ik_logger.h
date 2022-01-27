@@ -48,7 +48,9 @@ void AssertionFail(const char *file, unsigned int line);
 			func(__FILE__, __LINE__, "WARNING: "#var, var);\
 			LOGIKFlush();
 #		define LOGIK(msg) LogInfo(__FILE__, __LINE__, msg);
-#		define LOGIKErr(msg) LogInfoErr(__FILE__, __LINE__, msg);
+#		define LOGIKErr(msg)\
+			LogInfoErr(__FILE__, __LINE__, msg);\
+			LOGIKFlush();
 #		if defined HARDASSERTION
 #			define IKAssert assert
 #		else
@@ -71,7 +73,9 @@ void AssertionFail(const char *file, unsigned int line);
 			func(__FILE__, __LINE__, "WARNING: "#var, var);\
 			LOGIKFlush();
 #		define LOGIK(msg)
-#		define LOGIKErr(msg) LogInfoErr(__FILE__, __LINE__, msg);
+#		define LOGIKErr(msg)\
+			LogInfoErr(__FILE__, __LINE__, msg);\
+			LOGIKFlush();
 #		define IKAssert(v)\
 				if(!(v))\
 					AssertionFail(__FILE__, __LINE__);
