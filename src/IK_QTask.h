@@ -94,7 +94,7 @@ class IK_QPositionTask : public IK_QTask {
 		m_goal = goal;
 	}
 
-	void Complete(){}
+	void End(){}
 	virtual bool Completed() const;
 	Eigen::Vector3r Beta() const;
 	virtual void SetSegment(const std::vector<IK_QSegment*>& segments) override;
@@ -115,7 +115,7 @@ class IK_QOrientationTask : public IK_QTask {
 		m_goalQ = goal;
 	}
 
-	void Complete();
+	void End();
 	virtual bool Completed() const;
 
  private:

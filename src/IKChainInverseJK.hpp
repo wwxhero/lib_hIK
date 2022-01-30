@@ -224,8 +224,8 @@ public:
 
 	virtual void EndUpdate() override
 	{
-		m_taskP.Complete();
-		m_taskR.Complete();
+		m_taskP.End();
+		m_taskR.End();
 		// analyze_add_run(max_iterations, analyze_time()-dt);
 		LOGIKVar(LogInfoInt, m_jacobian.rows());
 		LOGIKVar(LogInfoInt, m_jacobian.cols());

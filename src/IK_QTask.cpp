@@ -164,10 +164,9 @@ void IK_QOrientationTask::ComputeJacobian(IK_QJacobian &jacobian)
 	}
 }
 
-void IK_QOrientationTask::Complete()
+void IK_QOrientationTask::End()
 {
-	if (Completed())
-		return;
+	IKAssert(Completed());
 	int n_segs = (int)m_segments.size();
 	if (n_segs > 0)
 	{

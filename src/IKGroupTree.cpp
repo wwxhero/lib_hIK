@@ -82,7 +82,8 @@ void CIKGroupNode::IKUpdate()
 
 	bool updated = m_primary.Update();
 
-	m_primary.EndUpdate();
+	if (updated)
+		m_primary.EndUpdate();
 
 	// LOGIKErr("EndPrimaryUpdate");
 	if (m_pg)
