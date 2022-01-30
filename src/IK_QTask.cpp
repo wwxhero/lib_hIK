@@ -166,7 +166,7 @@ void IK_QOrientationTask::ComputeJacobian(IK_QJacobian &jacobian)
 
 void IK_QOrientationTask::End()
 {
-	IKAssert(Completed());
+	// IKAssert(Completed());  unconditionaly end task for primary group
 	int n_segs = (int)m_segments.size();
 	if (n_segs > 0)
 	{
