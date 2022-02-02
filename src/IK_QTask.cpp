@@ -166,15 +166,14 @@ void IK_QOrientationTask::ComputeJacobian(IK_QJacobian &jacobian)
 
 void IK_QOrientationTask::End()
 {
-	// IKAssert(Completed());  unconditionaly end task for primary group
-	Eigen::Quaternionr rot_eef = Transform::getRotation_q(m_eef->GetTransformLocal2World());
-	if (Equal(rot_eef, m_goalQ))
-		return;
-	int n_segs = (int)m_segments.size();
-	if (n_segs > 0)
+	if(Completed())
 	{
-		Eigen::Quaternionr goal(m_goalQ);
-		m_eef->GetJoint()->SetRotation_w(goal);
+		int n_segs = (int)m_segments.size();
+		if (n_segs > 0)
+		{
+			Eigen::Quaternionr goal(m_goalQ);
+			m_eef->GetJoint()->SetRotation_w(goal);
+		}
 	}
 }
 
