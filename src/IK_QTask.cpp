@@ -42,8 +42,10 @@ IK_QTask::IK_QTask(Type type
 // IK_QPositionTask
 
 IK_QPositionTask::IK_QPositionTask(bool primary
-								, CArtiBodyNode*& eef)
+								, CArtiBodyNode*& eef
+								, Real tol)
 		: IK_QTask(Position, 3, primary, eef)
+		, c_errMaxSqr(tol * tol)
 {
 }
 
@@ -89,7 +91,6 @@ bool IK_QPositionTask::Completed() const
 	LOGIKVarNJK(LogInfoCharPtr, m_eef->GetName_c());
 	LOGIKVarNJK(LogInfoReal, dist_sqr);
 
-	const Real c_errMaxSqr = 9; // err < 3 cm
 	return dist_sqr < c_errMaxSqr;
 }
 
@@ -127,8 +128,10 @@ void IK_QPositionTask::SetSegment(const std::vector<IK_QSegment*>& segments)
 // IK_QOrientationTask
 
 IK_QOrientationTask::IK_QOrientationTask(bool primary
-									, CArtiBodyNode*& eef)
+									, CArtiBodyNode*& eef
+									, Real tol)
 		: IK_QTask(Orientation, 3, primary, eef)
+		, c_errMax(1-cos(deg2rad(tol*(Real)0.5)))
 {
 }
 
@@ -184,10 +187,10 @@ bool IK_QOrientationTask::Completed() const
 
 	LOGIKVarNJK(LogInfoCharPtr, m_eef->GetName_c());
 	LOGIKVarNJK(LogInfoReal, err);
-
-	// const Real c_errMax = (Real)0.0152; // (Real)(1 - cos(deg2rad(20*0.5)));
-	// const Real c_errMax = (Real)0.0038; // (Real)(1 - cos(deg2rad(10*0.5)));
-	const Real c_errMax = (Real)0.008555; // (Real)(1 - cos(deg2rad(15*0.5)));
+	// const Real c_errMax = (Real)0.0937;			// (Real)(1 - cos(deg2rad(50*0.5)))
+	// const Real c_errMax = (Real)0.0152;		// (Real)(1 - cos(deg2rad(20*0.5)));
+	// const Real c_errMax = (Real)0.0038;		// (Real)(1 - cos(deg2rad(10*0.5)));
+	// const Real c_errMax = (Real)0.008555;	// (Real)(1 - cos(deg2rad(15*0.5)));
 	return err < c_errMax;
 }
 

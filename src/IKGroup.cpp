@@ -171,12 +171,16 @@ CIKChain* CIKGroup::AddChain(const CONF::CIKChainConf* conf)
 		case CIKChain::DLS:
 			chain = new CIKChainInverseJK_DLS(conf->weight_p
 											, conf->weight_r
-											, conf->n_iter);
+											, conf->n_iter
+											, conf->tol_p
+											, conf->tol_r);
 			break;
 		case CIKChain::SDLS:
 			chain = new CIKChainInverseJK_SDLS(conf->weight_p
 											, conf->weight_r
-											, conf->n_iter);
+											, conf->n_iter
+											, conf->tol_p
+											, conf->tol_r);
 			break;
 		default:
 			LOGIKVarErr(LogInfoCharPtr, CIKChain::from_Algor(conf->algor)); // not yet supportedthe type

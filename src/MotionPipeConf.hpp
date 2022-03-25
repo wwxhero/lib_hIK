@@ -140,6 +140,8 @@ namespace CONF
 					, Real weight_p
 					, Real weight_r
 					, int n_iter
+					, Real tol_p
+					, Real tol_r
 					, const char* P_Graph);
 		CIKChainConf(const char* eef_name
 					, int len
@@ -162,6 +164,8 @@ namespace CONF
 				Real weight_p;
 				Real weight_r;
 				int n_iter;
+				Real tol_p;
+				Real tol_r;
 			};
 			struct //Proj
 			{
@@ -208,6 +212,8 @@ namespace CONF
 						, Real weight_p
 						, Real weight_r
 						, int n_iter
+						, Real tol_p
+						, Real tol_r
 						, const char* P_Graph);
 		void AddIKChain(const char* eef_name
 						, int len

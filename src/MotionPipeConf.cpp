@@ -52,6 +52,8 @@ namespace CONF
 							, Real a_weight_p
 							, Real a_weight_r
 							, int a_n_iter
+							, Real a_tol_p
+							, Real a_tol_r
 							, const char* a_P_Graph)
 		: eef(a_eef_name)
 		, len(a_len)
@@ -59,6 +61,8 @@ namespace CONF
 		, weight_p(a_weight_p)
 		, weight_r(a_weight_r)
 		, n_iter(a_n_iter)
+		, tol_p(a_tol_p)
+		, tol_r(a_tol_r)
 		, P_Graph(a_P_Graph)
 	{
 	}
@@ -85,6 +89,8 @@ namespace CONF
 			weight_p = src.weight_p;
 			weight_r = src.weight_r;
 			n_iter = src.n_iter;
+			tol_p = src.tol_p;
+			tol_r = src.tol_r;
 		}
 		else if(CIKChain::Proj == src.algor)
 		{
@@ -359,9 +365,11 @@ namespace CONF
 						, Real weight_p
 						, Real weight_r
 						, int n_iter
+						, Real tol_p
+						, Real tol_r
 						, const char* P_Graph)
 	{
-		CIKChainConf chain_conf(eef_name, len, algor, weight_p, weight_r, n_iter, P_Graph);
+		CIKChainConf chain_conf(eef_name, len, algor, weight_p, weight_r, n_iter, tol_p, tol_r, P_Graph);
 		int i_new_chain = (int)IK_Chains.size();
 		IK_Chains.push_back(chain_conf);
 		m_name2chainIdx[eef_name] = i_new_chain;
@@ -519,6 +527,12 @@ namespace CONF
 					if (TIXML_SUCCESS != ele->QueryIntAttribute("n_iter", &n_iter))
 						n_iter = 20;
 
+					Real tol_p = (Real)3.1;
+					TiXMLHelper::QueryRealAttribute(ele, "tol_p", &tol_p);
+
+					Real tol_r = (Real)15;
+					TiXMLHelper::QueryRealAttribute(ele, "tol_r", &tol_r);
+
 					const char* P_Graph = ele->Attribute("P_Graph");
 
 					if (numerical_algor)
@@ -528,6 +542,8 @@ namespace CONF
 								, weight_p
 								, weight_r
 								, n_iter
+								, tol_p
+								, tol_r
 								, NULL != P_Graph ? P_Graph : "");
 					else
 						AddIKChain(eef_name

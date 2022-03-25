@@ -85,7 +85,7 @@ protected:
 
 class IK_QPositionTask : public IK_QTask {
  public:
-	IK_QPositionTask(bool primary, CArtiBodyNode*& eef);
+	IK_QPositionTask(bool primary, CArtiBodyNode*& eef, Real tol);
 
 	void ComputeJacobian(IK_QJacobian &jacobian);
 
@@ -102,11 +102,12 @@ class IK_QPositionTask : public IK_QTask {
  private:
 	Eigen::Vector3r m_goal;
 	Real m_clamp_length;
+	const Real c_errMaxSqr; // err < 3 cm
 };
 
 class IK_QOrientationTask : public IK_QTask {
  public:
-	IK_QOrientationTask(bool primary, CArtiBodyNode*& eef);
+	IK_QOrientationTask(bool primary, CArtiBodyNode*& eef, Real tol);
 
 	void ComputeJacobian(IK_QJacobian &jacobian);
 
@@ -120,6 +121,7 @@ class IK_QOrientationTask : public IK_QTask {
 
  private:
 	Eigen::Quaternionr m_goalQ;
+	const Real c_errMax;
 };
 
 

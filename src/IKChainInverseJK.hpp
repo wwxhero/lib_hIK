@@ -7,10 +7,10 @@ class IKChainInverseJK : public CIKChainNumerical
 {
 	typedef CIKChainNumerical Super;
 public:
-	IKChainInverseJK(CIKChain::Algor algor, Real weight_p, Real weight_r, int n_iter)
+	IKChainInverseJK(CIKChain::Algor algor, Real weight_p, Real weight_r, int n_iter, Real tol_p, Real tol_r)
 		: Super(algor, n_iter, weight_p, weight_r)
-		, m_taskP(true, m_eefSrc)
-		, m_taskR(true, m_eefSrc)
+		, m_taskP(true, m_eefSrc, tol_p)
+		, m_taskR(true, m_eefSrc, tol_r)
 	{
 		if (weight_p > 0)
 			m_tasksReg.push_back(&m_taskP);
@@ -321,13 +321,13 @@ private:
 class CIKChainInverseJK_DLS : public IKChainInverseJK<IK_QJacobianDLS>
 {
 public:
-	CIKChainInverseJK_DLS(Real weight_p, Real weight_r, int n_iter);
+	CIKChainInverseJK_DLS(Real weight_p, Real weight_r, int n_iter, Real tol_p, Real tol_r);
 	virtual ~CIKChainInverseJK_DLS();
 };
 
 class CIKChainInverseJK_SDLS : public IKChainInverseJK<IK_QJacobianSDLS>
 {
 public:
-	CIKChainInverseJK_SDLS(Real weight_p, Real weight_r, int n_iter);
+	CIKChainInverseJK_SDLS(Real weight_p, Real weight_r, int n_iter, Real tol_p, Real tol_r);
 	virtual ~CIKChainInverseJK_SDLS();
 };
